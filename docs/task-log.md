@@ -60,7 +60,7 @@
 | 任务名称 | 定义错误码和校验结果类型 |
 | 完成时间 | 2026-05-18 21:45 |
 | 作者/智能体 | OpenCode/deepseek-v4-pro |
-| Git Commit | （待提交后补填） |
+| Git Commit | 1e1fd10 |
 | 修改记录 | 新建：src/core/errors.ts；修改：src/core/index.ts；新建：src/tests/unit/errors.test.ts；修改：README.md、docs/api-registry.md |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0046 ～ API-0050（共 5 项）|
