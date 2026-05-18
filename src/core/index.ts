@@ -55,3 +55,18 @@ export type {
   GeometryAdapter,
   AnchorPoint,
 } from './types';
+
+export {
+  ErrorCode,
+} from './errors';
+
+export type {
+  ValidationSeverity,
+  ValidationError,
+  ValidationResult,
+} from './errors';
+
+export {
+  successResult,
+  failureResult,
+} from './errors';

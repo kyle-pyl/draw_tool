@@ -887,3 +887,98 @@
 | 输出参数 | 无（接口类型） |
 | 典型用例 | `const anchor: AnchorPoint = { id: 'top', position: {x:0.5,y:0}, direction: -PI/2 }` |
 | 修订历史 | 2026-05-18, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0046 ErrorCode
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0046 |
+| 名称 | ErrorCode |
+| 所属系统 | core |
+| 所属模块 | errors |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-18 |
+| 最后修订日期 | 2026-05-18 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 稳定错误码枚举，覆盖 schema 校验、引用完整性、几何规则和业务规则四类校验场景 |
+| 输入参数 | 无（枚举类型） |
+| 输出参数 | SCHEMA_MISSING_ID, SCHEMA_INVALID_TYPE, SCHEMA_FIELD_TYPE_ERROR, REF_LAYER_NOT_FOUND, REF_GROUP_NOT_FOUND, REF_CONNECTOR_ENDPOINT_NOT_FOUND, GEO_SAME_LAYER_OVERLAP, GEO_MOVE_TARGET_CONFLICT, RULE_MAX_LAYER_EXCEEDED, RULE_LOCKED_ELEMENT_EDITED, RULE_HIDDEN_OVERLAP |
+| 典型用例 | `const code = ErrorCode.GEO_SAME_LAYER_OVERLAP` |
+| 修订历史 | 2026-05-18, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0047 ValidationSeverity
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0047 |
+| 名称 | ValidationSeverity |
+| 所属系统 | core |
+| 所属模块 | errors |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-18 |
+| 最后修订日期 | 2026-05-18 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 校验错误严重性级别类型 |
+| 输入参数 | 无（类型别名） |
+| 输出参数 | 'error' | 'warning' |
+| 典型用例 | `const sev: ValidationSeverity = 'error'` |
+| 修订历史 | 2026-05-18, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0048 ValidationError
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0048 |
+| 名称 | ValidationError |
+| 所属系统 | core |
+| 所属模块 | errors |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-18 |
+| 最后修订日期 | 2026-05-18 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 单个校验错误结构，包含错误码、消息、严重性、受影响图层/元素 ID、冲突包围盒和修复建议 |
+| 输入参数 | code: string, message: string, severity: ValidationSeverity, layerIds?: string[], elementIds?: string[], bboxes?: BBox[], suggestion?: string |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const err: ValidationError = { code: 'SCHEMA_MISSING_ID', message: 'Missing id', severity: 'error' }` |
+| 修订历史 | 2026-05-18, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0049 ValidationResult
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0049 |
+| 名称 | ValidationResult |
+| 所属系统 | core |
+| 所属模块 | errors |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-18 |
+| 最后修订日期 | 2026-05-18 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 校验结果接口，包含 valid 布尔值和 errors 数组，作为所有校验函数的统一返回类型 |
+| 输入参数 | valid: boolean, errors: ValidationError[] |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const result = validateScene(data); if (!result.valid) { showErrors(result.errors); }` |
+| 修订历史 | 2026-05-18, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0050 successResult / failureResult
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0050 |
+| 名称 | successResult / failureResult |
+| 所属系统 | core |
+| 所属模块 | errors |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-18 |
+| 最后修订日期 | 2026-05-18 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 创建 ValidationResult 的辅助函数：successResult() 返回 valid: true、failureResult(...errors) 返回 valid: false 并携带错误列表 |
+| 输入参数 | successResult(): 无；failureResult(...errors: ValidationError[]): 一个或多个 ValidationError |
+| 输出参数 | ValidationResult |
+| 典型用例 | `return successResult()` / `return failureResult({ code: 'SCHEMA_INVALID_TYPE', message: '...', severity: 'error' })` |
+| 修订历史 | 2026-05-18, OpenCode/deepseek-v4-pro, 初始创建 |
