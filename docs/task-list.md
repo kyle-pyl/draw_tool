@@ -65,7 +65,7 @@
 | 任务编号 | T-01-01 |
 | 任务名称 | 定义核心 TypeScript 类型 |
 | 前置任务 | T-00-01 |
-| 状态 | 待执行 |
+| 状态 | 已完成 |
 
 **任务说明：** 在 src/core/types.ts 中定义顶层设计文档第 10-13 章规定的所有核心类型，包括 SceneDocument、ProjectMeta、CanvasConfig、ViewportState、SceneRules、Layer、BaseElement 及所有元素子类型（ShapeElement、TextElement、ImageElement、ConnectorElement、ChartElement、ContainerElement、RtlModuleElement、RtlPortElement、MindNodeElement、TopologyNodeElement）、ElementGroup、DataSource、ChartDefinition、TemplateInstance、ExportPreset、Transform2D、ElementStyle、BBox、ConnectorEndpoint、ConnectorRoute、ConnectorLabel、ArrowStyle。
 
