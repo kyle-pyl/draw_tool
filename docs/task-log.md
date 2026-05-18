@@ -38,3 +38,16 @@
 | 修改记录 | 新建：package.json, vite.config.ts, tsconfig.json, tsconfig.app.json, tsconfig.node.json, eslint.config.js, index.html, src/core/index.ts, src/canvas/index.ts, src/ui/index.ts, src/io/index.ts, src/modules/index.ts, src/tests/unit/sample.test.ts, src/main.tsx, src/App.tsx, src/App.css, src/index.css, src/vite-env.d.ts |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | 无（本任务仅建立工程骨架） |
+
+### T-01-01 定义核心 TypeScript 类型
+
+| 字段 | 内容 |
+|---|---|
+| 任务编号 | T-01-01 |
+| 任务名称 | 定义核心 TypeScript 类型 |
+| 完成时间 | 2026-05-18 21:02 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| Git Commit | （待填） |
+| 修改记录 | 新建：src/core/types.ts；修改：src/core/index.ts；新建：src/tests/unit/types.test.ts |
+| 发现缺陷 | 无 |
+| 产出接口/函数 | API-0001, API-0002, API-0003, API-0004, API-0005, API-0006, API-0007, API-0008, API-0009, API-0010, API-0011, API-0012, API-0013, API-0014, API-0015, API-0016, API-0017, API-0018, API-0019, API-0020, API-0021, API-0022, API-0023, API-0024, API-0025, API-0026, API-0027, API-0028, API-0029, API-0030, API-0031, API-0032, API-0033, API-0034, API-0035, API-0036, API-0037, API-0038 |

@@ -33,4 +33,21 @@
 
 ## 接口记录
 
-（项目初始化阶段无接口记录，后续任务完成时逐条追加。）
+### API-0001 ～ API-0038 Core Types (src/core/types.ts)
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0001 ～ API-0038 |
+| 名称 | 核心 TypeScript 类型集合 |
+| 所属系统 | core |
+| 所属模块 | types |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-18 |
+| 最后修订日期 | 2026-05-18 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 定义所有场景文档、元素、图层、连接线、数据源、图表、模板、导出预设等核心类型，与顶层设计文档第 10-13 章一致 |
+| 输入参数 | 无（纯类型定义） |
+| 输出参数 | 从 src/core/index.ts 桶导出以下类型：ElementType, ShapeKind, ChartType, RtlPortDirection, TopologyDeviceType, ConnectorRouteType, ArrowStyleKind, ConnectorSemanticKind, CollisionStrategy, ExportRegion, ExportFormat, Transform2D, ElementStyle, BBox, GeometryShape, BaseElement, ShapeElement, TextElement, ImageElement, ConnectorEndpoint, ConnectorRoute, ConnectorLabel, ArrowStyle, ConnectorElement, ChartElement, ColumnMappings, ContainerElement, RtlPortElement, RtlModuleElement, MindNodeElement, TopologyNodeElement, SceneElement, Layer, ElementGroup, ProjectMeta, CanvasConfig, ViewportState, SceneRules, DataSource, ChartDefinition, TemplateInstance, ExportPreset, SceneDocument, GeometryAdapter, AnchorPoint |
+| 典型用例 | 其他模块引用这些类型定义场景数据结构、元素模型和配置对象 |
+| 修订历史 | 2026-05-18, OpenCode/deepseek-v4-pro, 初始创建 38 个类型/接口 |
