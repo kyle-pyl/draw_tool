@@ -6,10 +6,10 @@ Agent 友好的论文与技术图表绘制工具。纯 Web 应用，本地优先
 
 | 项目 | 状态 |
 |---|---|
-| 阶段 | 阶段 2：SVG 无限画布 |
-| 版本 | 0.2.0 |
-| 可用功能 | 核心类型已定义（scene.json 结构、元素模型、图层、连接线、图表等），错误码和校验结果类型已定义，scene.json Schema 结构校验器已实现（含引用完整性校验），示例项目 examples/basic/ 已创建并通过校验，ID 生成工具已实现（generateId），视口变换管理器（Viewport）已实现，SVG 画布渲染组件已实现（CanvasView：支持 shape、text、image、connector 渲染，支持滚轮缩放和拖拽平移交互，支持元素单选、多选和框选（marquee selection），显示蓝色选择包围盒和 8 个控制柄） |
-| 构建状态 | 可安装、可启动、可构建、可运行测试（266 个测试通过） |
+| 阶段 | 阶段 3：项目打开保存 |
+| 版本 | 0.3.0 |
+| 可用功能 | 核心类型已定义（scene.json 结构、元素模型、图层、连接线、图表等），错误码和校验结果类型已定义，scene.json Schema 结构校验器已实现（含引用完整性校验），示例项目 examples/basic/ 已创建并通过校验，ID 生成工具已实现（generateId），视口变换管理器（Viewport）已实现，SVG 画布渲染组件已实现（CanvasView：支持 shape、text、image、connector 渲染，支持滚轮缩放和拖拽平移交互，支持元素单选、多选和框选（marquee selection），显示蓝色选择包围盒和 8 个控制柄），Document Store 已实现（useDocumentStore：管理 scene、视口、选择集和脏标志，支持 loadScene/updateScene/getScene/markClean） |
+| 构建状态 | 可安装、可启动、可构建、可运行测试（278 个测试通过） |
 
 ## 功能目标
 

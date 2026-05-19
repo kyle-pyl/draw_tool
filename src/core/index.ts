@@ -74,3 +74,6 @@ export {
 } from './errors';
 
 export { generateId } from './utils';
+
+export { useDocumentStore } from './store';
+export type { DocumentStore } from './store';

@@ -369,7 +369,7 @@
 | 任务编号 | T-03-01 |
 | 任务名称 | 实现 Document Store |
 | 前置任务 | T-01-01, T-01-06 |
-| 状态 | 待执行 |
+| 状态 | 已完成 |
 
 **任务说明：** 在 src/core/store.ts 中使用 Zustand 实现 Document Store，保存当前 scene、选择集、视口状态和 UI 临时状态。
 

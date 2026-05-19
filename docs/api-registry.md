@@ -1115,3 +1115,41 @@
 | 输出参数 | select(id): void; toggleSelect(id): void; clearSelection(): void; selectAll(scene): void; selectByIds(ids): void; addToSelection(ids): void; removeFromSelection(ids): void; isSelected(id): boolean; getSelectedElements(scene): SceneElement[]; count: number; selectedIds: ReadonlySet<string> |
 | 典型用例 | `const sm = new SelectionManager(); sm.select('e1'); sm.toggleSelect('e2'); const els = sm.getSelectedElements(scene);` |
 | 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-02-04）|
+
+### API-0059 DocumentStore
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0059 |
+| 名称 | DocumentStore |
+| 所属系统 | core |
+| 所属模块 | store |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | Zustand Document Store 的状态类型接口。管理当前 scene、视口（zoom/offsetX/offsetY）、选择集（selectedIds）、脏标志（isDirty），并提供 loadScene、updateScene、getScene、markClean、setViewport、setSelectedIds 等方法 |
+| 输入参数 | 无（接口类型，由 Zustand store 实现） |
+| 输出参数 | scene: SceneDocument \| null; zoom: number; offsetX: number; offsetY: number; selectedIds: string[]; isDirty: boolean; loadScene(scene): void; updateScene(updater): void; getScene(): SceneDocument \| null; markClean(): void; setViewport(zoom, offsetX, offsetY): void; setSelectedIds(ids): void |
+| 典型用例 | `const store = useDocumentStore.getState(); store.loadScene(scene);` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-03-01）|
+
+### API-0060 useDocumentStore
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0060 |
+| 名称 | useDocumentStore |
+| 所属系统 | core |
+| 所属模块 | store |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | Zustand React Hook，提供对 DocumentStore 的响应式访问。组件通过此 hook 订阅 store 状态变化，自动重渲染。可解构 scene、isDirty、selectedIds 等字段或调用 loadScene、updateScene 等操作方法 |
+| 输入参数 | 无（直接作为 hook 调用） |
+| 输出参数 | DocumentStore 的全部字段和方法 |
+| 典型用例 | `const { scene, isDirty, loadScene } = useDocumentStore();` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-03-01）|
