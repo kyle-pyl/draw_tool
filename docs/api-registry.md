@@ -1058,3 +1058,41 @@
 | 输出参数 | string - 格式为 `{prefix}_{12随机字符}` 或纯 12 随机字符（URL 安全字符集 A-Za-z0-9_-） |
 | 典型用例 | `const id = generateId('shape') // → "shape_aB3dEfGhIjKl"` |
 | 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-01-06）|
+
+### API-0055 ViewportConfig
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0055 |
+| 名称 | ViewportConfig |
+| 所属系统 | canvas |
+| 所属模块 | viewport |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | Viewport 类的配置接口，定义缩放范围、步长和初始状态参数 |
+| 输入参数 | minZoom: number, maxZoom: number, zoomStep: number, initialZoom: number, initialOffsetX: number, initialOffsetY: number |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const vp = new Viewport({ minZoom: 0.1, maxZoom: 10, zoomStep: 1.2 })` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-02-01）|
+
+### API-0056 Viewport
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0056 |
+| 名称 | Viewport |
+| 所属系统 | canvas |
+| 所属模块 | viewport |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 视口变换管理器类，管理画布的缩放（zoom）和平移（offset）状态，提供屏幕坐标与画布坐标的双向转换、以指定点为中心的定点缩放、步进缩放（zoomIn/zoomOut）、适应区域（fitToRect）、重置和 SVG transform 矩阵生成等功能 |
+| 输入参数 | constructor(config?: Partial<ViewportConfig>) |
+| 输出参数 | screenToCanvas(sx, sy): { x, y }; canvasToScreen(cx, cy): { x, y }; pan(dx, dy): void; zoomTo(zoom, cx?, cy?): void; zoomIn(cx?, cy?): void; zoomOut(cx?, cy?): void; fitToRect(bbox, containerW, containerH, padding?): void; reset(): void; getTransformMatrix(): string |
+| 典型用例 | `const vp = new Viewport(); const canvasCoords = vp.screenToCanvas(300, 200); vp.zoomIn(300, 200); const matrix = vp.getTransformMatrix();` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-02-01）|

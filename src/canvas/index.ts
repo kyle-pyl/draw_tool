@@ -2,4 +2,5 @@
  * Canvas module - SVG infinite canvas, viewport transforms, selection, handles.
  */
 
-export {};
+export { Viewport } from './viewport';
+export type { ViewportConfig } from './viewport';
