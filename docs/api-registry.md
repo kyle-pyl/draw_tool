@@ -1420,7 +1420,158 @@
 | 典型用例 | `const hl = new ConflictHighlighter(); hl.setCollisions(result.collisions, scene.elements, scene.layers); if (hl.hasConflicts) { showPanel(hl.getConflicts()); }` |
 | 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-05）|
 
-### API-0078 SceneCommand
+### API-0081 ElementInput
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0081 |
+| 名称 | ElementInput |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | CreateElementCommand 的元素输入接口。定义创建新元素所需的全部参数，包括 type（必需）、layerId（必需）、transform、style 及各类元素特有字段（shapeKind、text、src 等）。buildElementFromInput 函数据此构建完整的 SceneElement 对象 |
+| 输入参数 | type: ElementType, layerId: string, name?, transform: Transform2D, style: ElementStyle, visible?, locked?, shapeKind?, text?, src?, 等 |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const input: ElementInput = { type: 'shape', layerId: 'l1', shapeKind: 'rect', transform: { x: 0, y: 0, width: 100, height: 50, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#fff', stroke: '#000', strokeWidth: 2, opacity: 1 } }` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-02）|
+
+### API-0082 CreateElementCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0082 |
+| 名称 | CreateElementCommand |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 在指定图层创建新元素的命令。validate 检查目标图层存在且新元素不与同层其他元素重叠（connector 豁免）。execute 将元素添加到 scene.elements 数组。invert 生成删除元素的逆命令。支持创建 shape、text、image 类型元素 |
+| 输入参数 | constructor(input: ElementInput, label?: string) - elementId 由内部 generateId 自动生成 |
+| 输出参数 | implements SceneCommand - scenes 可通过 CommandExecutor 执行、撤销和重做 |
+| 典型用例 | `const cmd = new CreateElementCommand({ type: 'shape', layerId: 'l1', shapeKind: 'rect', transform, style }); executor.execute(cmd);` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-02）|
+
+### API-0083 MoveElementsCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0083 |
+| 名称 | MoveElementsCommand |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 移动一个或多个元素平面位置的命令。validate 检查元素存在、未锁定且移动后不与同层其他元素重叠（connector 豁免）。execute 更新元素 transform.x 和 transform.y。连接线端点跟随其锚定元素自动位移。invert 生成反向 delta 的 MoveElements 命令 |
+| 输入参数 | constructor(elementIds: string[], delta: { dx: number, dy: number }, label?: string) |
+| 输出参数 | implements SceneCommand |
+| 典型用例 | `executor.execute(new MoveElementsCommand(['e1', 'e2'], { dx: 50, dy: 30 }));` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-03）|
+
+### API-0084 ElementChanges
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0084 |
+| 名称 | ElementChanges |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | UpdateElementCommand 的变更参数类型。支持修改元素的 style、transform、visible、locked、name、text、shapeKind 等部分属性。修改 transform（位置/尺寸）时触发碰撞检测 |
+| 输入参数 | Partial<{ style: Partial<ElementStyle>, transform: Partial<Transform2D>, visible, locked, name, text, ... }> |
+| 输出参数 | 无（类型别名） |
+| 典型用例 | `const changes: ElementChanges = { style: { fill: '#f00' }, visible: false }` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-04）|
+
+### API-0085 UpdateElementCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0085 |
+| 名称 | UpdateElementCommand |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 修改元素属性的命令。validate 检查元素存在、未锁定，若修改 transform 则检查碰撞。execute 合并 changes 到目标元素。invert 保存修改前的值并生成反向 UpdateElement 命令。支持 style、transform、visible、locked、name、text、shapeKind 等属性修改 |
+| 输入参数 | constructor(elementId: string, changes: ElementChanges, label?: string) |
+| 输出参数 | implements SceneCommand |
+| 典型用例 | `executor.execute(new UpdateElementCommand('e1', { style: { fill: '#f00' } }));` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-04）|
+
+### API-0086 ChangeLayerCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0086 |
+| 名称 | ChangeLayerCommand |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 将元素移动到另一图层的命令。validate 检查目标图层存在、元素存在且未锁定、移入后不与目标图层现有元素重叠（connector 豁免碰撞检查）。execute 更新 element.layerId。invert 记录原始 layerId 并生成还原命令 |
+| 输入参数 | constructor(elementIds: string[], targetLayerId: string, label?: string) |
+| 输出参数 | implements SceneCommand |
+| 典型用例 | `executor.execute(new ChangeLayerCommand(['e1', 'e2'], 'l2'));` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-05）|
+
+### API-0087 TransformParams
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0087 |
+| 名称 | TransformParams |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | TransformElementsCommand 的变换参数类型。支持缩放（scaleX、scaleY）、旋转（rotation）、尺寸（width、height）和位置（x、y）的变化，所有字段均为可选 |
+| 输入参数 | scaleX?, scaleY?, rotation?, width?, height?, x?, y? |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const params: TransformParams = { scaleX: 2, rotation: 45 }` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-06）|
+
+### API-0088 TransformElementsCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0088 |
+| 名称 | TransformElementsCommand |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 缩放和旋转元素的命令。validate 检查元素存在、未锁定且变换后不与同层其他元素重叠（connector 豁免）。execute 将 TransformParams 合并到元素 transform。invert 保存变换前完整 transform 并生成还原命令。支持同时变换多个元素 |
+| 输入参数 | constructor(elementIds: string[], params: TransformParams, label?: string) |
+| 输出参数 | implements SceneCommand |
+| 典型用例 | `executor.execute(new TransformElementsCommand(['e1'], { scaleX: 2, rotation: 45 }));` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-06）|
+
 
 | 字段 | 内容 |
 |---|---|

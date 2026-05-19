@@ -6,10 +6,10 @@ Agent 友好的论文与技术图表绘制工具。纯 Web 应用，本地优先
 
 | 项目 | 状态 |
 |---|---|
-| 阶段 | 阶段 4：图层和校验 |
-| 版本 | 0.4.0 |
-| 可用功能 | 核心类型已定义（scene.json 结构、元素模型、图层、连接线、图表等），错误码和校验结果类型已定义，scene.json Schema 结构校验器已实现（含引用完整性校验和几何规则校验），示例项目 examples/basic/ 已创建并通过校验，ID 生成工具已实现（generateId），视口变换管理器（Viewport）已实现，SVG 画布渲染组件已实现（CanvasView：支持 shape、text、image、connector 渲染，支持滚轮缩放和拖拽平移交互，支持元素单选、多选和框选（marquee selection），显示蓝色选择包围盒和 8 个控制柄，隐藏图层使用 visibility:hidden 保留 DOM 空间，锁定图层元素不响应交互），Document Store 已实现（useDocumentStore），JSON 项目文件加载已实现（loadSceneFromFile），File System Access API 项目目录打开已实现（loadProjectFromDirectory），ZIP 项目导入导出已实现（importProjectFromZip/exportProjectToZip），项目保存功能已实现（saveProject），BBox 计算器已实现（getBBox：支持所有 10 种元素类型、旋转 AABB、文本尺寸估算、连接线端点包围盒），同层碰撞检测已实现（checkLayerCollisions：线性扫描 O(n^2)，排除 connector，支持隐藏/锁定元素过滤选项），图层冲突校验器已实现（validateScene Stage 6：图层内元素碰撞检测 GEO_SAME_LAYER_OVERLAP 和最大层数检查 RULE_MAX_LAYER_EXCEEDED），图层渲染顺序已实现（按 layer.order 升序渲染，隐藏图层使用 visibility:hidden，锁定图层元素不响应点击和框选），冲突高亮显示已实现（ConflictHighlighter：管理冲突状态、红色虚线包围盒渲染在画布冲突叠层、ConflictPanel 右下角浮动面板显示冲突详情（图层、元素名、建议）、可关闭面板、冲突清除后自动消失） |
-| 构建状态 | 可安装、可启动、可构建、可运行测试（431 个测试通过） |
+| 阶段 | 阶段 5：基础编辑 |
+| 版本 | 0.5.0 |
+| 可用功能 | 核心类型已定义（scene.json 结构、元素模型、图层、连接线、图表等），错误码和校验结果类型已定义，scene.json Schema 结构校验器已实现（含引用完整性校验和几何规则校验），示例项目 examples/basic/ 已创建并通过校验，ID 生成工具已实现（generateId），视口变换管理器（Viewport）已实现，SVG 画布渲染组件已实现（CanvasView：支持 shape、text、image、connector 渲染，支持滚轮缩放和拖拽平移交互，支持元素单选、多选和框选（marquee selection），显示蓝色选择包围盒和 8 个控制柄，隐藏图层使用 visibility:hidden 保留 DOM 空间，锁定图层元素不响应交互），Document Store 已实现（useDocumentStore），JSON 项目文件加载已实现（loadSceneFromFile），File System Access API 项目目录打开已实现（loadProjectFromDirectory），ZIP 项目导入导出已实现（importProjectFromZip/exportProjectToZip），项目保存功能已实现（saveProject），BBox 计算器已实现（getBBox：支持所有 10 种元素类型），同层碰撞检测已实现（checkLayerCollisions：线性扫描 O(n^2)，排除 connector），图层冲突校验器已实现（validateScene Stage 6），图层渲染顺序和冲突高亮已实现（ConflictHighlighter + ConflictPanel），命令系统框架已实现（SceneCommand 接口 + CommandExecutor：执行/校验/撤销/重做/历史管理），CreateElement 命令已实现（含碰撞检测/撤销重做），MoveElements 命令已实现（含碰撞/锁定/连接线跟随），UpdateElement 命令已实现（含样式/变换/属性修改），ChangeLayer 命令已实现（跨层移动/connector 豁免碰撞），TransformElements 命令已实现（缩放/旋转/尺寸变换） |
+| 构建状态 | 可安装、可启动、可构建、可运行测试（493 个测试通过） |
 
 ## 功能目标
 

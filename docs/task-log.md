@@ -325,3 +325,68 @@
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0078（SceneCommand）、API-0079（CommandHistoryEntry）、API-0080（CommandExecutor） |
 
+### T-05-02 实现 CreateElement 命令
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-05-02 |
+| 任务名称      | 实现 CreateElement 命令 |
+| 完成时间      | 2026-05-19 22:06 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | 76fdde4 |
+| 修改记录      | 修改：src/core/commands.ts（新增 ElementInput 接口、buildElementFromInput/checkElementCollision 辅助函数、CreateElementCommand 类）、src/tests/unit/commands.test.ts（新增 10 个 CreateElementCommand 测试用例） |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0081（ElementInput）、API-0082（CreateElementCommand） |
+
+### T-05-03 实现 MoveElements 命令
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-05-03 |
+| 任务名称      | 实现 MoveElements 命令 |
+| 完成时间      | 2026-05-19 22:14 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | b09e339 |
+| 修改记录      | 修改：src/core/commands.ts（新增 MoveElementsCommand 类，支持碰撞检测、锁定检查、连接线端点跟随）、src/tests/unit/commands.test.ts（新增 9 个 MoveElementsCommand 测试用例） |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0083（MoveElementsCommand） |
+
+### T-05-04 实现 UpdateElement 命令
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-05-04 |
+| 任务名称      | 实现 UpdateElement 命令 |
+| 完成时间      | 2026-05-19 22:17 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | 1a653b8 |
+| 修改记录      | 修改：src/core/commands.ts（新增 ElementChanges 类型、UpdateElementCommand 类，支持样式/位置/尺寸/可见性/锁定等属性修改）、src/tests/unit/commands.test.ts（新增 10 个 UpdateElementCommand 测试用例） |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0084（ElementChanges）、API-0085（UpdateElementCommand） |
+
+### T-05-05 实现 ChangeLayer 命令
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-05-05 |
+| 任务名称      | 实现 ChangeLayer 命令 |
+| 完成时间      | 2026-05-19 22:20 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | a2ccfc6 |
+| 修改记录      | 修改：src/core/commands.ts（新增 ChangeLayerCommand 类，支持跨层移动、connector 豁免碰撞、锁定检查）、src/tests/unit/commands.test.ts（新增 9 个 ChangeLayerCommand 测试用例） |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0086（ChangeLayerCommand） |
+
+### T-05-06 实现 TransformElements 命令
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-05-06 |
+| 任务名称      | 实现 TransformElements 命令 |
+| 完成时间      | 2026-05-19 22:23 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | 58bffb4 |
+| 修改记录      | 修改：src/core/commands.ts（新增 TransformParams 类型、TransformElementsCommand 类，支持缩放、旋转、尺寸变换及碰撞检测）、src/tests/unit/commands.test.ts（新增 9 个 TransformElementsCommand 测试用例） |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0087（TransformParams）、API-0088（TransformElementsCommand） |
+
