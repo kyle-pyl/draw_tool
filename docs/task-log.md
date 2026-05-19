@@ -208,3 +208,16 @@
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0061（loadSceneFromFile）、API-0062（loadSceneFromFileObject） |
 
+### T-03-03 实现 File System Access API 项目目录打开
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-03-03 |
+| 任务名称      | 实现 File System Access API 项目目录打开 |
+| 完成时间      | 2026-05-19 16:50 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | 待填入 |
+| 修改记录      | 修改：src/io/importers.ts（新增 loadProjectFromDirectory 及辅助函数 readFileFromDirectory、readAllFilesFromDirectory、isImageFile、inferDataSourceType、revokeTrackedBlobUrls）、src/core/store.ts（新增 directoryHandle 和 setDirectoryHandle）、src/io/index.ts（新增导出）、src/tests/unit/importers.test.ts（新增 14 个测试用例） |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0063（loadProjectFromDirectory）、API-0059（DocumentStore 修订：新增 directoryHandle/setDirectoryHandle） |
+

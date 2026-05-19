@@ -1129,11 +1129,11 @@
 | 最后修订日期 | 2026-05-19 |
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | Zustand Document Store 的状态类型接口。管理当前 scene、视口（zoom/offsetX/offsetY）、选择集（selectedIds）、脏标志（isDirty），并提供 loadScene、updateScene、getScene、markClean、setViewport、setSelectedIds 等方法 |
+| 功能描述 | Zustand Document Store 的状态类型接口。管理当前 scene、视口（zoom/offsetX/offsetY）、选择集（selectedIds）、脏标志（isDirty）、目录句柄（directoryHandle），并提供 loadScene、updateScene、getScene、markClean、setViewport、setSelectedIds、setDirectoryHandle 等方法 |
 | 输入参数 | 无（接口类型，由 Zustand store 实现） |
-| 输出参数 | scene: SceneDocument \| null; zoom: number; offsetX: number; offsetY: number; selectedIds: string[]; isDirty: boolean; loadScene(scene): void; updateScene(updater): void; getScene(): SceneDocument \| null; markClean(): void; setViewport(zoom, offsetX, offsetY): void; setSelectedIds(ids): void |
+| 输出参数 | scene: SceneDocument \| null; zoom: number; offsetX: number; offsetY: number; selectedIds: string[]; isDirty: boolean; directoryHandle: FileSystemDirectoryHandle \| null; loadScene(scene): void; updateScene(updater): void; getScene(): SceneDocument \| null; markClean(): void; setViewport(zoom, offsetX, offsetY): void; setSelectedIds(ids): void; setDirectoryHandle(handle): void |
 | 典型用例 | `const store = useDocumentStore.getState(); store.loadScene(scene);` |
-| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-03-01）|
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-03-01）；2026-05-19, OpenCode/deepseek-v4-pro, T-03-03 新增 directoryHandle 和 setDirectoryHandle |
 
 ### API-0060 useDocumentStore
 
@@ -1191,3 +1191,22 @@
 | 输出参数 | Promise\<ValidationResult\> - valid 为 true 时场景已加载到 store，isDirty 重置为 false |
 | 典型用例 | `const result = await loadSceneFromFileObject(file); if (result.valid) { startEditing(); }` |
 | 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-03-02）|
+
+### API-0063 loadProjectFromDirectory
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0063 |
+| 名称 | loadProjectFromDirectory |
+| 所属系统 | io |
+| 所属模块 | importers |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 使用 File System Access API (showDirectoryPicker) 打开项目目录，读取 scene.json 校验加载。扫描 data/ 子目录，将 CSV/JSON/XLSX/XLS 文件自动添加为 DataSource 条目。扫描 assets/ 子目录，为图片文件创建 blob URL 并解析 ImageElement 的 src 引用。保存目录句柄到 store。若浏览器不支持 showDirectoryPicker 则返回 FEATURE_NOT_SUPPORTED 错误并提示使用 ZIP 导入 |
+| 输入参数 | 无 |
+| 输出参数 | Promise\<ValidationResult\> - 含 FEATURE_NOT_SUPPORTED、USER_CANCELLED、IO_ERROR、PARSE_ERROR、SCHEMA_* 等错误码 |
+| 典型用例 | `const result = await loadProjectFromDirectory(); if (result.valid) { startEditing(); }` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-03-03）|

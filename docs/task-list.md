@@ -423,7 +423,7 @@
 | 任务编号 | T-03-03 |
 | 任务名称 | 实现 File System Access API 项目目录打开 |
 | 前置任务 | T-03-02 |
-| 状态 | 待执行 |
+| 状态 | 已完成 |
 
 **任务说明：** 在 src/io/importers.ts 中实现 loadProjectFromDirectory 函数，使用 File System Access API 打开项目目录，读取 scene.json、data/ 和 assets/ 内容。
 

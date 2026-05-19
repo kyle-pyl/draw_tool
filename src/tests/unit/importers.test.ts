@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { loadSceneFromFileObject, loadSceneFromFile } from '../../io/importers';
+import { loadSceneFromFileObject, loadSceneFromFile, loadProjectFromDirectory } from '../../io/importers';
 import { useDocumentStore } from '../../core/store';
 
 function makeValidSceneJson(): string {
@@ -319,5 +319,402 @@ describe('loadSceneFromFile', () => {
 
     createElementSpy.mockRestore();
     vi.unstubAllGlobals();
+  });
+});
+
+// ─── loadProjectFromDirectory helpers ─────────────────────────────────────────
+
+interface MockFileHandle {
+  kind: 'file';
+  name: string;
+  getFile: () => Promise<File>;
+}
+
+interface MockDirHandle {
+  kind: 'directory';
+  name: string;
+  files: Map<string, MockFileHandle | MockDirHandle>;
+  getFileHandle: (name: string) => Promise<MockFileHandle>;
+  getDirectoryHandle: (name: string) => Promise<MockDirHandle>;
+  entries: () => AsyncIterableIterator<[string, MockFileHandle | MockDirHandle]>;
+}
+
+function createMockFileHandle(name: string, file: File): MockFileHandle {
+  return {
+    kind: 'file',
+    name,
+    getFile: () => Promise.resolve(file),
+  };
+}
+
+function createMockDirHandle(name: string, files: Map<string, MockFileHandle | MockDirHandle> = new Map()): MockDirHandle {
+  return {
+    kind: 'directory',
+    name,
+    files,
+    getFileHandle: async (n: string) => {
+      const entry = files.get(n);
+      if (entry && entry.kind === 'file') {
+        return entry as MockFileHandle;
+      }
+      throw new DOMException(`File ${n} not found`, 'NotFoundError');
+    },
+    getDirectoryHandle: async (n: string) => {
+      const entry = files.get(n);
+      if (entry && entry.kind === 'directory') {
+        return entry as MockDirHandle;
+      }
+      throw new DOMException(`Directory ${n} not found`, 'NotFoundError');
+    },
+    entries: () => {
+      const entries = Array.from(files.entries());
+      let i = 0;
+      return {
+        [Symbol.asyncIterator]() {
+          return this;
+        },
+        async next() {
+          if (i < entries.length) {
+            const [k, v] = entries[i++];
+            return { value: [k, v] as [string, MockFileHandle | MockDirHandle], done: false };
+          }
+          return { value: undefined, done: true };
+        },
+      } as AsyncIterableIterator<[string, MockFileHandle | MockDirHandle]>;
+    },
+  };
+}
+
+function makeCsvFile(name: string): File {
+  return new File(['a,b,c\n1,2,3\n4,5,6'], name, { type: 'text/csv' });
+}
+
+function makePngFile(name: string): File {
+  return new File(['fake-png-data'], name, { type: 'image/png' });
+}
+
+function makeValidSceneFile(): File {
+  return createFile('scene.json', makeValidSceneJson());
+}
+
+// ─── loadProjectFromDirectory tests ───────────────────────────────────────────
+
+describe('loadProjectFromDirectory', () => {
+  beforeEach(() => {
+    useDocumentStore.setState({
+      scene: null,
+      zoom: 1,
+      offsetX: 0,
+      offsetY: 0,
+      selectedIds: [],
+      isDirty: false,
+      directoryHandle: null,
+    });
+    vi.stubGlobal('URL', {
+      ...globalThis.URL,
+      createObjectURL: vi.fn().mockImplementation(() => 'blob:mock-url'),
+      revokeObjectURL: vi.fn(),
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('returns FEATURE_NOT_SUPPORTED when showDirectoryPicker is unavailable', async () => {
+    vi.stubGlobal('showDirectoryPicker', undefined);
+
+    const result = await loadProjectFromDirectory();
+
+    expect(result.valid).toBe(false);
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0].code).toBe('FEATURE_NOT_SUPPORTED');
+    expect(result.errors[0].message).toContain('ZIP import');
+  });
+
+  it('returns USER_CANCELLED when directory selection is aborted', async () => {
+    const abortError = new DOMException('User cancelled', 'AbortError');
+    vi.stubGlobal('showDirectoryPicker', vi.fn().mockRejectedValue(abortError));
+
+    const result = await loadProjectFromDirectory();
+
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].code).toBe('USER_CANCELLED');
+  });
+
+  it('returns IO_ERROR when scene.json is missing from directory', async () => {
+    const dirHandle = createMockDirHandle('project');
+    vi.stubGlobal('showDirectoryPicker', vi.fn().mockResolvedValue(dirHandle));
+
+    const result = await loadProjectFromDirectory();
+
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].code).toBe('IO_ERROR');
+    expect(result.errors[0].message).toContain('scene.json not found');
+  });
+
+  it('loads a valid project with scene.json only (no data/ or assets/)', async () => {
+    const dirHandle = createMockDirHandle('project', new Map([
+      ['scene.json', createMockFileHandle('scene.json', makeValidSceneFile())],
+    ]));
+    vi.stubGlobal('showDirectoryPicker', vi.fn().mockResolvedValue(dirHandle));
+
+    const result = await loadProjectFromDirectory();
+
+    expect(result.valid).toBe(true);
+    expect(result.errors).toEqual([]);
+
+    const state = useDocumentStore.getState();
+    expect(state.scene).not.toBeNull();
+    expect(state.scene?.schemaVersion).toBe('1.0.0');
+    expect(state.directoryHandle).not.toBeNull();
+    expect(state.directoryHandle).toBe(dirHandle);
+    expect(state.isDirty).toBe(false);
+  });
+
+  it('returns PARSE_ERROR when scene.json is not valid JSON', async () => {
+    const badFile = new File(['not json {{{'], 'scene.json', { type: 'application/json' });
+    const dirHandle = createMockDirHandle('project', new Map([
+      ['scene.json', createMockFileHandle('scene.json', badFile)],
+    ]));
+    vi.stubGlobal('showDirectoryPicker', vi.fn().mockResolvedValue(dirHandle));
+
+    const result = await loadProjectFromDirectory();
+
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].code).toBe('PARSE_ERROR');
+  });
+
+  it('returns validation errors for invalid scene.json in directory', async () => {
+    const invalidFile = new File([JSON.stringify({
+      project: { name: 'No Schema' },
+      canvas: { units: 'px', background: '#fff', defaultFont: 'Arial', gridSize: 0, snapToGrid: false },
+      rules: { maxLayerCount: 10, collisionStrategy: 'bbox', hiddenElementsCollide: false, lockedElementsCollide: false, connectorsExempt: true },
+      layers: [], elements: [], groups: [], dataSources: [], charts: [], templates: [], exportPresets: [],
+    })], 'scene.json', { type: 'application/json' });
+    const dirHandle = createMockDirHandle('project', new Map([
+      ['scene.json', createMockFileHandle('scene.json', invalidFile)],
+    ]));
+    vi.stubGlobal('showDirectoryPicker', vi.fn().mockResolvedValue(dirHandle));
+
+    const result = await loadProjectFromDirectory();
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((e) => e.code === 'SCHEMA_MISSING_ID')).toBe(true);
+  });
+
+  it('adds data files from data/ directory as DataSources', async () => {
+    const dataDir = createMockDirHandle('data', new Map([
+      ['sample.csv', createMockFileHandle('sample.csv', makeCsvFile('sample.csv'))],
+      ['config.json', createMockFileHandle('config.json', new File(['{}'], 'config.json', { type: 'application/json' }))],
+    ]));
+    const dirHandle = createMockDirHandle('project', new Map([
+      ['scene.json', createMockFileHandle('scene.json', makeValidSceneFile())],
+      ['data', dataDir],
+    ]));
+    vi.stubGlobal('showDirectoryPicker', vi.fn().mockResolvedValue(dirHandle));
+
+    const result = await loadProjectFromDirectory();
+
+    expect(result.valid).toBe(true);
+    const scene = useDocumentStore.getState().scene;
+    expect(scene).not.toBeNull();
+    expect(scene!.dataSources).toHaveLength(2);
+    expect(scene!.dataSources.some((ds) => ds.path === 'data/sample.csv' && ds.type === 'csv')).toBe(true);
+    expect(scene!.dataSources.some((ds) => ds.path === 'data/config.json' && ds.type === 'json')).toBe(true);
+  });
+
+  it('does not duplicate DataSources already present in scene.json', async () => {
+    const sceneJson = JSON.parse(makeValidSceneJson());
+    sceneJson.dataSources = [{ id: 'ds-existing', path: 'data/sample.csv', type: 'csv' }];
+
+    const sceneFile = createFile('scene.json', JSON.stringify(sceneJson));
+    const dataDir = createMockDirHandle('data', new Map([
+      ['sample.csv', createMockFileHandle('sample.csv', makeCsvFile('sample.csv'))],
+    ]));
+    const dirHandle = createMockDirHandle('project', new Map([
+      ['scene.json', createMockFileHandle('scene.json', sceneFile)],
+      ['data', dataDir],
+    ]));
+    vi.stubGlobal('showDirectoryPicker', vi.fn().mockResolvedValue(dirHandle));
+
+    const result = await loadProjectFromDirectory();
+
+    expect(result.valid).toBe(true);
+    const scene = useDocumentStore.getState().scene;
+    expect(scene!.dataSources).toHaveLength(1);
+  });
+
+  it('resolves ImageElement src to blob URLs from assets/', async () => {
+    const sceneJson = JSON.parse(makeValidSceneJson());
+    sceneJson.elements = [
+      {
+        id: 'img1',
+        type: 'image',
+        layerId: 'l1',
+        transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { fill: 'none', stroke: '#000', strokeWidth: 1, opacity: 1 },
+        visible: true,
+        locked: false,
+        src: 'assets/logo.png',
+        originalWidth: 200,
+        originalHeight: 200,
+      },
+    ];
+
+    const sceneFile = createFile('scene.json', JSON.stringify(sceneJson));
+    const assetsDir = createMockDirHandle('assets', new Map([
+      ['logo.png', createMockFileHandle('logo.png', makePngFile('logo.png'))],
+    ]));
+    const dirHandle = createMockDirHandle('project', new Map([
+      ['scene.json', createMockFileHandle('scene.json', sceneFile)],
+      ['assets', assetsDir],
+    ]));
+    vi.stubGlobal('showDirectoryPicker', vi.fn().mockResolvedValue(dirHandle));
+
+    const result = await loadProjectFromDirectory();
+
+    expect(result.valid).toBe(true);
+    const scene = useDocumentStore.getState().scene;
+    expect(scene!.elements).toHaveLength(1);
+    const imgEl = scene!.elements[0] as { src: string };
+    expect(imgEl.src).toBe('blob:mock-url');
+  });
+
+  it('resolves ImageElement src by basename match', async () => {
+    const sceneJson = JSON.parse(makeValidSceneJson());
+    sceneJson.elements = [
+      {
+        id: 'img1',
+        type: 'image',
+        layerId: 'l1',
+        transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { fill: 'none', stroke: '#000', strokeWidth: 1, opacity: 1 },
+        visible: true,
+        locked: false,
+        src: 'logo.png',
+        originalWidth: 200,
+        originalHeight: 200,
+      },
+    ];
+
+    const sceneFile = createFile('scene.json', JSON.stringify(sceneJson));
+    const assetsDir = createMockDirHandle('assets', new Map([
+      ['logo.png', createMockFileHandle('logo.png', makePngFile('logo.png'))],
+    ]));
+    const dirHandle = createMockDirHandle('project', new Map([
+      ['scene.json', createMockFileHandle('scene.json', sceneFile)],
+      ['assets', assetsDir],
+    ]));
+    vi.stubGlobal('showDirectoryPicker', vi.fn().mockResolvedValue(dirHandle));
+
+    const result = await loadProjectFromDirectory();
+
+    expect(result.valid).toBe(true);
+    const scene = useDocumentStore.getState().scene;
+    const imgEl = scene!.elements[0] as { src: string };
+    expect(imgEl.src).toBe('blob:mock-url');
+  });
+
+  it('handles directory with both data/ and assets/ simultaneously', async () => {
+    const sceneJson = JSON.parse(makeValidSceneJson());
+    sceneJson.elements = [
+      {
+        id: 'img1',
+        type: 'image',
+        layerId: 'l1',
+        transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { fill: 'none', stroke: '#000', strokeWidth: 1, opacity: 1 },
+        visible: true,
+        locked: false,
+        src: 'assets/photo.jpg',
+        originalWidth: 200,
+        originalHeight: 200,
+      },
+    ];
+
+    const sceneFile = createFile('scene.json', JSON.stringify(sceneJson));
+    const dataDir = createMockDirHandle('data', new Map([
+      ['stats.csv', createMockFileHandle('stats.csv', makeCsvFile('stats.csv'))],
+    ]));
+    const assetsDir = createMockDirHandle('assets', new Map([
+      ['photo.jpg', createMockFileHandle('photo.jpg', new File(['jpg'], 'photo.jpg', { type: 'image/jpeg' }))],
+    ]));
+    const dirHandle = createMockDirHandle('project', new Map([
+      ['scene.json', createMockFileHandle('scene.json', sceneFile)],
+      ['data', dataDir],
+      ['assets', assetsDir],
+    ]));
+    vi.stubGlobal('showDirectoryPicker', vi.fn().mockResolvedValue(dirHandle));
+
+    const result = await loadProjectFromDirectory();
+
+    expect(result.valid).toBe(true);
+    const scene = useDocumentStore.getState().scene;
+    expect(scene!.dataSources).toHaveLength(1);
+    expect(scene!.dataSources[0].path).toBe('data/stats.csv');
+    const imgEl = scene!.elements[0] as { src: string };
+    expect(imgEl.src).toBe('blob:mock-url');
+  });
+
+  it('does not resolve non-image assets to blob URLs', async () => {
+    const sceneJson = JSON.parse(makeValidSceneJson());
+    sceneJson.elements = [
+      {
+        id: 'img1',
+        type: 'image',
+        layerId: 'l1',
+        transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { fill: 'none', stroke: '#000', strokeWidth: 1, opacity: 1 },
+        visible: true,
+        locked: false,
+        src: 'assets/readme.txt',
+        originalWidth: 200,
+        originalHeight: 200,
+      },
+    ];
+
+    const sceneFile = createFile('scene.json', JSON.stringify(sceneJson));
+    const assetsDir = createMockDirHandle('assets', new Map([
+      ['readme.txt', createMockFileHandle('readme.txt', new File(['text'], 'readme.txt', { type: 'text/plain' }))],
+    ]));
+    const dirHandle = createMockDirHandle('project', new Map([
+      ['scene.json', createMockFileHandle('scene.json', sceneFile)],
+      ['assets', assetsDir],
+    ]));
+    vi.stubGlobal('showDirectoryPicker', vi.fn().mockResolvedValue(dirHandle));
+
+    const result = await loadProjectFromDirectory();
+
+    expect(result.valid).toBe(true);
+    const scene = useDocumentStore.getState().scene;
+    const imgEl = scene!.elements[0] as { src: string };
+    // src should remain unchanged because .txt is not an image
+    expect(imgEl.src).toBe('assets/readme.txt');
+  });
+
+  it('returns IO_ERROR on generic directory picker failure', async () => {
+    vi.stubGlobal('showDirectoryPicker', vi.fn().mockRejectedValue(new Error('Permission denied')));
+
+    const result = await loadProjectFromDirectory();
+
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].code).toBe('IO_ERROR');
+    expect(result.errors[0].message).toContain('Permission denied');
+  });
+
+  it('resets store state on successful load (isDirty=false, selectedIds empty)', async () => {
+    useDocumentStore.setState({ isDirty: true, selectedIds: ['x', 'y'] });
+
+    const dirHandle = createMockDirHandle('project', new Map([
+      ['scene.json', createMockFileHandle('scene.json', makeValidSceneFile())],
+    ]));
+    vi.stubGlobal('showDirectoryPicker', vi.fn().mockResolvedValue(dirHandle));
+
+    await loadProjectFromDirectory();
+
+    const state = useDocumentStore.getState();
+    expect(state.isDirty).toBe(false);
+    expect(state.selectedIds).toEqual([]);
   });
 });

@@ -18,6 +18,8 @@ export interface DocumentStore {
   selectedIds: string[];
   /** Whether the document has unsaved modifications */
   isDirty: boolean;
+  /** File System Access API directory handle for project-directory-based save */
+  directoryHandle: FileSystemDirectoryHandle | null;
 
   /** Load a scene document into the store, resetting dirty flag and selection */
   loadScene: (scene: SceneDocument) => void;
@@ -31,6 +33,8 @@ export interface DocumentStore {
   setViewport: (zoom: number, offsetX: number, offsetY: number) => void;
   /** Replace the current selection set */
   setSelectedIds: (ids: string[]) => void;
+  /** Store the FSAA directory handle for later project-directory saves */
+  setDirectoryHandle: (handle: FileSystemDirectoryHandle | null) => void;
 }
 
 export const useDocumentStore = create<DocumentStore>((set, get) => ({
@@ -40,6 +44,7 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
   offsetY: 0,
   selectedIds: [],
   isDirty: false,
+  directoryHandle: null,
 
   loadScene: (scene: SceneDocument) => {
     set({ scene, isDirty: false, selectedIds: [] });
@@ -63,5 +68,9 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
 
   setSelectedIds: (ids: string[]) => {
     set({ selectedIds: ids });
+  },
+
+  setDirectoryHandle: (handle: FileSystemDirectoryHandle | null) => {
+    set({ directoryHandle: handle });
   },
 }));
