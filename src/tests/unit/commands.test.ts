@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CommandExecutor, CreateElementCommand } from '../../core/commands';
+import { CommandExecutor, CreateElementCommand, MoveElementsCommand } from '../../core/commands';
 import type { SceneCommand, CommandHistoryEntry, ElementInput } from '../../core/commands';
 import type { SceneDocument } from '../../core/types';
 import { successResult, failureResult } from '../../core/errors';
@@ -533,5 +533,184 @@ describe('CreateElementCommand', () => {
     const el = useDocumentStore.getState().getScene()!.elements[0];
     expect(el.visible).toBe(true);
     expect(el.locked).toBe(false);
+  });
+});
+
+// ─── T-05-03 MoveElementsCommand Tests ──────────────────────────────────────
+
+describe('MoveElementsCommand', () => {
+  let executor: CommandExecutor;
+
+  function populateScene() {
+    const scene = makeSceneWithLayers();
+    useDocumentStore.getState().loadScene(structuredClone(scene));
+
+    // Add three non-overlapping elements
+    const inputs: ElementInput[] = [
+      { type: 'shape', layerId: 'l1', shapeKind: 'rect', name: 'A',
+        transform: { x: 0, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { ...defaultStyle } },
+      { type: 'shape', layerId: 'l1', shapeKind: 'circle', name: 'B',
+        transform: { x: 100, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { ...defaultStyle } },
+      { type: 'text', layerId: 'l1', text: 'Label', name: 'C',
+        transform: { x: 0, y: 100, width: 80, height: 30, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { ...defaultStyle } },
+    ];
+
+    const elIds: string[] = [];
+    for (const input of inputs) {
+      const cmd = new CreateElementCommand(input);
+      executor.execute(cmd);
+      const el = useDocumentStore.getState().getScene()!.elements.at(-1)!;
+      elIds.push(el.id);
+    }
+
+    return elIds;
+  }
+
+  beforeEach(() => {
+    executor = new CommandExecutor();
+  });
+
+  it('moves a single element by delta', () => {
+    const [idA] = populateScene();
+    const el = useDocumentStore.getState().getScene()!.elements[0];
+    const origX = el.transform.x;
+    const origY = el.transform.y;
+
+    const cmd = new MoveElementsCommand([idA], { dx: 50, dy: 30 });
+    const result = executor.execute(cmd);
+
+    expect(result.valid).toBe(true);
+    const moved = useDocumentStore.getState().getScene()!.elements[0];
+    expect(moved.transform.x).toBe(origX + 50);
+    expect(moved.transform.y).toBe(origY + 30);
+  });
+
+  it('moves multiple elements by the same delta', () => {
+    const [idA, idB, idC] = populateScene();
+
+    const cmd = new MoveElementsCommand([idA, idB, idC], { dx: 10, dy: 20 });
+    executor.execute(cmd);
+
+    const scene = useDocumentStore.getState().getScene()!;
+    for (const el of scene.elements.slice(0, 3)) {
+      if (el.name === 'A') { expect(el.transform.x).toBe(10); expect(el.transform.y).toBe(20); }
+      if (el.name === 'B') { expect(el.transform.x).toBe(110); expect(el.transform.y).toBe(20); }
+      if (el.name === 'C') { expect(el.transform.x).toBe(10); expect(el.transform.y).toBe(120); }
+    }
+  });
+
+  it('fails when moving into overlapping position', () => {
+    const [idA, idB] = populateScene();
+    // Move A to exactly overlap B
+    const cmd = new MoveElementsCommand([idA], { dx: 100, dy: 0 });
+    const result = executor.execute(cmd);
+
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].code).toBe('GEO_MOVE_TARGET_CONFLICT');
+  });
+
+  it('fails when element is locked', () => {
+    const [idA] = populateScene();
+    // Lock element A
+    useDocumentStore.getState().updateScene((s) => ({
+      ...s,
+      elements: s.elements.map((el) => el.id === idA ? { ...el, locked: true } : el),
+    }));
+
+    const cmd = new MoveElementsCommand([idA], { dx: 10, dy: 10 });
+    const result = executor.execute(cmd);
+
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].code).toBe('RULE_LOCKED_ELEMENT_EDITED');
+  });
+
+  it('fails when element does not exist', () => {
+    populateScene();
+    const cmd = new MoveElementsCommand(['nonexistent'], { dx: 10, dy: 10 });
+    const result = executor.execute(cmd);
+
+    expect(result.valid).toBe(false);
+  });
+
+  it('undo restores original position', () => {
+    const [idA] = populateScene();
+    const origX = useDocumentStore.getState().getScene()!.elements[0].transform.x;
+
+    executor.execute(new MoveElementsCommand([idA], { dx: 50, dy: 30 }));
+    expect(useDocumentStore.getState().getScene()!.elements[0].transform.x).toBe(origX + 50);
+
+    executor.undo();
+    expect(useDocumentStore.getState().getScene()!.elements[0].transform.x).toBe(origX);
+  });
+
+  it('redo re-applies the move', () => {
+    const [idA] = populateScene();
+    const origX = useDocumentStore.getState().getScene()!.elements[0].transform.x;
+
+    executor.execute(new MoveElementsCommand([idA], { dx: 50, dy: 30 }));
+    executor.undo();
+    expect(useDocumentStore.getState().getScene()!.elements[0].transform.x).toBe(origX);
+
+    executor.redo();
+    expect(useDocumentStore.getState().getScene()!.elements[0].transform.x).toBe(origX + 50);
+  });
+
+  it('undo then redo multiple moves', () => {
+    const [idA] = populateScene();
+    const origX = useDocumentStore.getState().getScene()!.elements[0].transform.x;
+
+    executor.execute(new MoveElementsCommand([idA], { dx: 10, dy: 0 }));
+    executor.execute(new MoveElementsCommand([idA], { dx: 20, dy: 0 }));
+    expect(useDocumentStore.getState().getScene()!.elements[0].transform.x).toBe(origX + 30);
+
+    executor.undo();
+    expect(useDocumentStore.getState().getScene()!.elements[0].transform.x).toBe(origX + 10);
+
+    executor.undo();
+    expect(useDocumentStore.getState().getScene()!.elements[0].transform.x).toBe(origX);
+
+    executor.redo();
+    expect(useDocumentStore.getState().getScene()!.elements[0].transform.x).toBe(origX + 10);
+
+    executor.redo();
+    expect(useDocumentStore.getState().getScene()!.elements[0].transform.x).toBe(origX + 30);
+  });
+
+  it('moves connector endpoints that reference moved elements', () => {
+    const scene = makeSceneWithLayers();
+    useDocumentStore.getState().loadScene(structuredClone(scene));
+
+    const shapeCmd = new CreateElementCommand({
+      type: 'shape', layerId: 'l1', shapeKind: 'rect', name: 'Shape',
+      transform: { x: 100, y: 100, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { ...defaultStyle },
+    });
+    executor.execute(shapeCmd);
+    const sceneAfterShape = useDocumentStore.getState().getScene()!;
+    const shapeId = sceneAfterShape.elements[0].id;
+
+    const connCmd = new CreateElementCommand({
+      type: 'connector', layerId: 'l1', name: 'Conn',
+      transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { ...defaultStyle },
+      source: { elementId: shapeId, x: 100, y: 125 },
+      target: { x: 200, y: 125 },
+    });
+    executor.execute(connCmd);
+
+    const sceneBeforeMove = useDocumentStore.getState().getScene()!;
+    const connBefore = sceneBeforeMove.elements.find((el) => el.type === 'connector');
+    expect(connBefore).toBeDefined();
+
+    const moveCmd = new MoveElementsCommand([shapeId], { dx: 50, dy: 30 });
+    executor.execute(moveCmd);
+
+    const sceneAfterMove = useDocumentStore.getState().getScene()!;
+    const connAfter = sceneAfterMove.elements.find((el) => el.type === 'connector')! as any;
+    expect(connAfter.source.x).toBe(150);
+    expect(connAfter.source.y).toBe(155);
   });
 });

@@ -219,6 +219,8 @@ function checkElementCollision(
   newElement: SceneElement,
   existingElements: SceneElement[],
 ): ValidationError | null {
+  if (newElement.type === 'connector') return null;
+
   const geometryAdapter = createGeometryAdapter();
   const newBBox = geometryAdapter.getBBox(newElement);
 
@@ -303,5 +305,143 @@ export class CreateElementCommand implements SceneCommand {
       }),
       invert: () => null,
     };
+  }
+}
+
+// ─── MoveElements Command ──────────────────────────────────────────────────────
+
+export class MoveElementsCommand implements SceneCommand {
+  id: string;
+  label: string;
+  private elementIds: string[];
+  private delta: { dx: number; dy: number };
+
+  constructor(elementIds: string[], delta: { dx: number; dy: number }, label?: string) {
+    this.id = generateId('move');
+    this.elementIds = elementIds;
+    this.delta = delta;
+    this.label = label || `Move ${elementIds.length} element(s)`;
+  }
+
+  validate(scene: SceneDocument): ValidationResult {
+    const movedIdSet = new Set(this.elementIds);
+    const geometryAdapter = createGeometryAdapter();
+
+    for (const elementId of this.elementIds) {
+      const element = scene.elements.find((el) => el.id === elementId);
+      if (!element) {
+        return failureResult({
+          code: ErrorCode.REF_GROUP_NOT_FOUND as string,
+          message: `Element "${elementId}" not found in scene`,
+          severity: 'error',
+          elementIds: [elementId],
+          suggestion: 'The element may have been deleted',
+        });
+      }
+
+      if (element.locked) {
+        return failureResult({
+          code: ErrorCode.RULE_LOCKED_ELEMENT_EDITED as string,
+          message: `Element "${element.name || element.id}" is locked and cannot be moved`,
+          severity: 'error',
+          elementIds: [element.id],
+          suggestion: 'Unlock the element before moving it',
+        });
+      }
+
+      if (element.type === 'connector') continue;
+
+      const prospectiveTransform = {
+        ...element.transform,
+        x: element.transform.x + this.delta.dx,
+        y: element.transform.y + this.delta.dy,
+      };
+      const prospectiveElement = { ...element, transform: prospectiveTransform };
+      const prospectiveBBox = geometryAdapter.getBBox(prospectiveElement);
+
+      const layerElements = scene.elements.filter(
+        (el) => el.layerId === element.layerId && el.type !== 'connector' && !movedIdSet.has(el.id),
+      );
+
+      for (const other of layerElements) {
+        const otherBBox = geometryAdapter.getBBox(other);
+        if (bboxesOverlap(prospectiveBBox, otherBBox)) {
+          const overlapX = Math.max(prospectiveBBox.x, otherBBox.x);
+          const overlapY = Math.max(prospectiveBBox.y, otherBBox.y);
+          const overlapW = Math.min(prospectiveBBox.x + prospectiveBBox.width, otherBBox.x + otherBBox.width) - overlapX;
+          const overlapH = Math.min(prospectiveBBox.y + prospectiveBBox.height, otherBBox.y + otherBBox.height) - overlapY;
+
+          return failureResult({
+            code: ErrorCode.GEO_MOVE_TARGET_CONFLICT as string,
+            message: `Moving "${element.name || element.id}" would overlap with "${other.name || other.id}" in layer "${element.layerId}"`,
+            severity: 'error',
+            layerIds: [element.layerId],
+            elementIds: [element.id, other.id],
+            bboxes: [{ x: overlapX, y: overlapY, width: overlapW, height: overlapH }],
+            suggestion: 'Move to a different position or use another layer',
+          });
+        }
+      }
+    }
+
+    return successResult();
+  }
+
+  execute(scene: SceneDocument): SceneDocument {
+    const movedIdSet = new Set(this.elementIds);
+
+    const updatedElements = scene.elements.map((el) => {
+      if (!movedIdSet.has(el.id)) return el;
+
+      return {
+        ...el,
+        transform: {
+          ...el.transform,
+          x: el.transform.x + this.delta.dx,
+          y: el.transform.y + this.delta.dy,
+        },
+      };
+    });
+
+    // Update connectors that reference moved elements
+    const finalElements = updatedElements.map((el) => {
+      if (el.type !== 'connector') return el;
+
+      let updated = { ...el };
+
+      if (el.source?.elementId && movedIdSet.has(el.source.elementId)) {
+        updated = {
+          ...updated,
+          source: {
+            ...updated.source,
+            x: updated.source.x + this.delta.dx,
+            y: updated.source.y + this.delta.dy,
+          },
+        };
+      }
+
+      if (el.target?.elementId && movedIdSet.has(el.target.elementId)) {
+        updated = {
+          ...updated,
+          target: {
+            ...updated.target,
+            x: updated.target.x + this.delta.dx,
+            y: updated.target.y + this.delta.dy,
+          },
+        };
+      }
+
+      return updated;
+    });
+
+    return { ...scene, elements: finalElements };
+  }
+
+  invert(_scene: SceneDocument): SceneCommand | null {
+    return new MoveElementsCommand(
+      this.elementIds,
+      { dx: -this.delta.dx, dy: -this.delta.dy },
+      `Undo: ${this.label}`,
+    );
   }
 }
