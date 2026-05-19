@@ -194,3 +194,17 @@
 | 修改记录      | 新建：src/core/store.ts、src/tests/unit/store.test.ts；修改：src/core/index.ts（新增 useDocumentStore 和 DocumentStore 导出） |
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0059（DocumentStore）、API-0060（useDocumentStore） |
+
+### T-03-02 实现 JSON 项目文件加载
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-03-02 |
+| 任务名称      | 实现 JSON 项目文件加载 |
+| 完成时间      | 2026-05-19 15:55 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | 19c1a68 |
+| 修改记录      | 新建：src/io/importers.ts（loadSceneFromFile、loadSceneFromFileObject）、src/tests/unit/importers.test.ts（13 个测试用例）；修改：src/io/index.ts（新增导出） |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0061（loadSceneFromFile）、API-0062（loadSceneFromFileObject） |
+

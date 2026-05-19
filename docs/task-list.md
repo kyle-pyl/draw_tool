@@ -398,7 +398,7 @@
 | 任务编号 | T-03-02 |
 | 任务名称 | 实现 JSON 项目文件加载 |
 | 前置任务 | T-03-01, T-01-03 |
-| 状态 | 待执行 |
+| 状态 | 已完成 |
 
 **任务说明：** 在 src/io/importers.ts 中实现 loadSceneFromFile 函数，通过浏览器文件选择器读取 scene.json 文件，校验后加载到 Document Store。
 

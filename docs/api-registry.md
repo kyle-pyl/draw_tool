@@ -1153,3 +1153,41 @@
 | 输出参数 | DocumentStore 的全部字段和方法 |
 | 典型用例 | `const { scene, isDirty, loadScene } = useDocumentStore();` |
 | 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-03-01）|
+
+### API-0061 loadSceneFromFile
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0061 |
+| 名称 | loadSceneFromFile |
+| 所属系统 | io |
+| 所属模块 | importers |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 打开浏览器原生文件选择器，让用户选取 .json 文件，自动解析、校验并加载为 SceneDocument。优先使用 File System Access API（showOpenFilePicker），不可用时回退到隐藏 `<input type="file">` 元素。校验通过后自动调用 store.loadScene 加载，返回 ValidationResult 供 UI 展示结果 |
+| 输入参数 | 无 |
+| 输出参数 | Promise\<ValidationResult\> - valid 为 true 且场景已加载到 store；valid 为 false 时 errors 包含 PARSE_ERROR（JSON 语法错误）、SCHEMA_*（校验失败）、USER_CANCELLED（用户取消）等错误信息 |
+| 典型用例 | `const result = await loadSceneFromFile(); if (result.valid) { /* scene loaded */ } else { showErrors(result.errors); }` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-03-02）|
+
+### API-0062 loadSceneFromFileObject
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0062 |
+| 名称 | loadSceneFromFileObject |
+| 所属系统 | io |
+| 所属模块 | importers |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 接收 File 对象，读取文本内容，解析 JSON，校验后加载到 Document Store。可作为 loadSceneFromFile 的内部实现复用，也可直接用于拖放导入等场景 |
+| 输入参数 | file: File - 用户选取的 JSON 文件对象 |
+| 输出参数 | Promise\<ValidationResult\> - valid 为 true 时场景已加载到 store，isDirty 重置为 false |
+| 典型用例 | `const result = await loadSceneFromFileObject(file); if (result.valid) { startEditing(); }` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-03-02）|
