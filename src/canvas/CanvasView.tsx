@@ -1,3 +1,4 @@
+import { useRef, useState, useEffect, useCallback } from 'react';
 import type { SceneDocument, SceneElement, ShapeElement, TextElement, ImageElement, ConnectorElement, ConnectorEndpoint, ElementStyle } from '../core/types';
 import type { Viewport } from './viewport';
 
@@ -7,6 +8,7 @@ interface CanvasViewProps {
   width?: number | string;
   height?: number | string;
   className?: string;
+  onViewportChange?: () => void;
 }
 
 function getElementTransform(el: SceneElement): string {
@@ -207,7 +209,7 @@ function renderElement(el: SceneElement, elements: SceneElement[]): React.ReactE
   }
 }
 
-export function CanvasView({ scene, viewport, width, height, className }: CanvasViewProps) {
+export function CanvasView({ scene, viewport, width, height, className, onViewportChange }: CanvasViewProps) {
   const layersSorted = [...scene.layers].sort((a, b) => a.order - b.order);
   const layerElementMap = new Map<string, SceneElement[]>();
 
@@ -222,12 +224,109 @@ export function CanvasView({ scene, viewport, width, height, className }: Canvas
 
   const viewportTransform = viewport.getTransformMatrix();
 
+  const [spacePressed, setSpacePressed] = useState(false);
+  const [isPanning, setIsPanning] = useState(false);
+  const isPanningRef = useRef(false);
+  const lastMouseRef = useRef({ x: 0, y: 0 });
+
+  const notifyChange = useCallback(() => {
+    onViewportChange?.();
+  }, [onViewportChange]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !e.repeat) {
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+        e.preventDefault();
+        setSpacePressed(true);
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        setSpacePressed(false);
+        if (isPanningRef.current) {
+          isPanningRef.current = false;
+          setIsPanning(false);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+
+  const handleWheel = useCallback(
+    (e: React.WheelEvent<SVGSVGElement>) => {
+      e.preventDefault();
+      const rect = e.currentTarget.getBoundingClientRect();
+      const centerX = e.clientX - rect.left;
+      const centerY = e.clientY - rect.top;
+
+      if (e.deltaY < 0) {
+        viewport.zoomIn(centerX, centerY);
+      } else {
+        viewport.zoomOut(centerX, centerY);
+      }
+      notifyChange();
+    },
+    [viewport, notifyChange]
+  );
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent<SVGSVGElement>) => {
+      if (e.button === 1 || (e.button === 0 && spacePressed)) {
+        e.preventDefault();
+        isPanningRef.current = true;
+        setIsPanning(true);
+        lastMouseRef.current = { x: e.clientX, y: e.clientY };
+      }
+    },
+    [spacePressed]
+  );
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<SVGSVGElement>) => {
+      if (!isPanningRef.current) return;
+      const dx = e.clientX - lastMouseRef.current.x;
+      const dy = e.clientY - lastMouseRef.current.y;
+      lastMouseRef.current = { x: e.clientX, y: e.clientY };
+      viewport.pan(dx, dy);
+      notifyChange();
+    },
+    [viewport, notifyChange]
+  );
+
+  const handleMouseUp = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
+    if ((e.button === 1 || e.button === 0) && isPanningRef.current) {
+      isPanningRef.current = false;
+      setIsPanning(false);
+    }
+  }, []);
+
+  const handleContextMenu = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
+    if (isPanningRef.current) {
+      e.preventDefault();
+    }
+  }, []);
+
+  const cursor = isPanning ? 'grabbing' : spacePressed ? 'grab' : 'default';
+
   return (
     <svg
       width={width ?? '100%'}
       height={height ?? '100%'}
       className={className}
-      style={{ display: 'block', background: scene.canvas.background }}
+      style={{ display: 'block', background: scene.canvas.background, cursor }}
+      onWheel={handleWheel}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      onContextMenu={handleContextMenu}
     >
       <g transform={viewportTransform}>
         {layersSorted.map((layer) => {

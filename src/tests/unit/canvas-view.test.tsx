@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, fireEvent } from '@testing-library/react';
 import { CanvasView } from '../../canvas/CanvasView';
 import { Viewport } from '../../canvas/viewport';
 import type { SceneDocument } from '../../core/types';
@@ -510,6 +510,213 @@ describe('CanvasView', () => {
       const l2Group = rootG.querySelector('[data-layer-name="Layer 2"]')!;
       expect(l1Group.querySelector('text')).toHaveTextContent('Layer1Text');
       expect(l2Group.querySelector('text')).toHaveTextContent('Layer2Text');
+    });
+  });
+
+  describe('interaction: zoom', () => {
+    it('should zoom in on wheel up (deltaY < 0)', () => {
+      const vp = new Viewport({ initialZoom: 1 });
+      const onChange = vi.fn();
+      const { container } = render(
+        <CanvasView scene={scene} viewport={vp} onViewportChange={onChange} />
+      );
+      const svg = container.querySelector('svg')!;
+
+      Object.defineProperty(svg, 'getBoundingClientRect', {
+        value: () => ({ left: 0, top: 0, right: 800, bottom: 600, width: 800, height: 600 }),
+        configurable: true,
+      });
+
+      fireEvent.wheel(svg, { deltaY: -100, clientX: 400, clientY: 300 });
+      expect(vp.zoom).toBeGreaterThan(1);
+      expect(onChange).toHaveBeenCalled();
+    });
+
+    it('should zoom out on wheel down (deltaY > 0)', () => {
+      const vp = new Viewport({ initialZoom: 1 });
+      const { container } = render(<CanvasView scene={scene} viewport={vp} />);
+      const svg = container.querySelector('svg')!;
+
+      Object.defineProperty(svg, 'getBoundingClientRect', {
+        value: () => ({ left: 0, top: 0, right: 800, bottom: 600, width: 800, height: 600 }),
+        configurable: true,
+      });
+
+      fireEvent.wheel(svg, { deltaY: 100, clientX: 400, clientY: 300 });
+      expect(vp.zoom).toBeLessThan(1);
+    });
+
+    it('should zoom centered on mouse position', () => {
+      const vp = new Viewport({ initialZoom: 1, initialOffsetX: 0, initialOffsetY: 0 });
+      const { container } = render(<CanvasView scene={scene} viewport={vp} />);
+      const svg = container.querySelector('svg')!;
+
+      Object.defineProperty(svg, 'getBoundingClientRect', {
+        value: () => ({ left: 0, top: 0, right: 800, bottom: 600, width: 800, height: 600 }),
+        configurable: true,
+      });
+
+      fireEvent.wheel(svg, { deltaY: -100, clientX: 400, clientY: 300 });
+      const canvasCoords = vp.screenToCanvas(400, 300);
+      expect(canvasCoords.x).toBeCloseTo(400, 0);
+      expect(canvasCoords.y).toBeCloseTo(300, 0);
+    });
+
+    it('should not zoom beyond minZoom', () => {
+      const vp = new Viewport({ initialZoom: 0.1, minZoom: 0.1 });
+      const { container } = render(<CanvasView scene={scene} viewport={vp} />);
+      const svg = container.querySelector('svg')!;
+
+      Object.defineProperty(svg, 'getBoundingClientRect', {
+        value: () => ({ left: 0, top: 0, right: 800, bottom: 600, width: 800, height: 600 }),
+        configurable: true,
+      });
+
+      fireEvent.wheel(svg, { deltaY: 100, clientX: 400, clientY: 300 });
+      expect(vp.zoom).toBe(0.1);
+    });
+
+    it('should not zoom beyond maxZoom', () => {
+      const vp = new Viewport({ initialZoom: 10, maxZoom: 10 });
+      const { container } = render(<CanvasView scene={scene} viewport={vp} />);
+      const svg = container.querySelector('svg')!;
+
+      Object.defineProperty(svg, 'getBoundingClientRect', {
+        value: () => ({ left: 0, top: 0, right: 800, bottom: 600, width: 800, height: 600 }),
+        configurable: true,
+      });
+
+      fireEvent.wheel(svg, { deltaY: -100, clientX: 400, clientY: 300 });
+      expect(vp.zoom).toBe(10);
+    });
+  });
+
+  describe('interaction: pan', () => {
+    it('should pan on middle mouse button drag', () => {
+      const vp = new Viewport({ initialZoom: 1, initialOffsetX: 0, initialOffsetY: 0 });
+      const onChange = vi.fn();
+      const { container } = render(
+        <CanvasView scene={scene} viewport={vp} onViewportChange={onChange} />
+      );
+      const svg = container.querySelector('svg')!;
+
+      fireEvent.mouseDown(svg, { button: 1, clientX: 100, clientY: 100 });
+      fireEvent.mouseMove(svg, { clientX: 150, clientY: 130 });
+      fireEvent.mouseUp(svg, { button: 1, clientX: 150, clientY: 130 });
+
+      expect(vp.offsetX).toBe(50);
+      expect(vp.offsetY).toBe(30);
+      expect(onChange).toHaveBeenCalled();
+    });
+
+    it('should not pan on left click without space', () => {
+      const vp = new Viewport({ initialZoom: 1, initialOffsetX: 0, initialOffsetY: 0 });
+      const { container } = render(<CanvasView scene={scene} viewport={vp} />);
+      const svg = container.querySelector('svg')!;
+
+      fireEvent.mouseDown(svg, { button: 0, clientX: 100, clientY: 100 });
+      fireEvent.mouseMove(svg, { clientX: 150, clientY: 130 });
+      fireEvent.mouseUp(svg, { button: 0, clientX: 150, clientY: 130 });
+
+      expect(vp.offsetX).toBe(0);
+      expect(vp.offsetY).toBe(0);
+    });
+
+    it('should pan on left click with space pressed', () => {
+      const vp = new Viewport({ initialZoom: 1, initialOffsetX: 0, initialOffsetY: 0 });
+      const { container } = render(<CanvasView scene={scene} viewport={vp} />);
+      const svg = container.querySelector('svg')!;
+
+      fireEvent.keyDown(window, { code: 'Space' });
+      fireEvent.mouseDown(svg, { button: 0, clientX: 100, clientY: 100 });
+      fireEvent.mouseMove(svg, { clientX: 200, clientY: 250 });
+      fireEvent.mouseUp(svg, { button: 0, clientX: 200, clientY: 250 });
+
+      expect(vp.offsetX).toBe(100);
+      expect(vp.offsetY).toBe(150);
+    });
+
+    it('should stop panning on mouse leave', () => {
+      const vp = new Viewport({ initialZoom: 1, initialOffsetX: 0, initialOffsetY: 0 });
+      const { container } = render(<CanvasView scene={scene} viewport={vp} />);
+      const svg = container.querySelector('svg')!;
+
+      fireEvent.mouseDown(svg, { button: 1, clientX: 100, clientY: 100 });
+      fireEvent.mouseMove(svg, { clientX: 150, clientY: 130 });
+      fireEvent.mouseLeave(svg);
+      fireEvent.mouseMove(svg, { clientX: 200, clientY: 200 });
+
+      expect(vp.offsetX).toBe(50);
+      expect(vp.offsetY).toBe(30);
+    });
+  });
+
+  describe('interaction: cursor styles', () => {
+    it('should have default cursor by default', () => {
+      const { container } = render(<CanvasView scene={scene} viewport={viewport} />);
+      const svg = container.querySelector('svg')!;
+      expect(svg.style.cursor).toBe('default');
+    });
+
+    it('should show grab cursor when space is pressed', () => {
+      const { container } = render(<CanvasView scene={scene} viewport={viewport} />);
+      const svg = container.querySelector('svg')!;
+
+      fireEvent.keyDown(window, { code: 'Space' });
+      expect(svg.style.cursor).toBe('grab');
+    });
+
+    it('should show grabbing cursor when panning', () => {
+      const { container } = render(<CanvasView scene={scene} viewport={viewport} />);
+      const svg = container.querySelector('svg')!;
+
+      fireEvent.mouseDown(svg, { button: 1, clientX: 100, clientY: 100 });
+      expect(svg.style.cursor).toBe('grabbing');
+    });
+  });
+
+  describe('interaction: onViewportChange', () => {
+    it('should call onViewportChange on zoom', () => {
+      const vp = new Viewport();
+      const onChange = vi.fn();
+      const { container } = render(
+        <CanvasView scene={scene} viewport={vp} onViewportChange={onChange} />
+      );
+      const svg = container.querySelector('svg')!;
+
+      Object.defineProperty(svg, 'getBoundingClientRect', {
+        value: () => ({ left: 0, top: 0, right: 800, bottom: 600, width: 800, height: 600 }),
+        configurable: true,
+      });
+
+      fireEvent.wheel(svg, { deltaY: -100, clientX: 400, clientY: 300 });
+      expect(onChange).toHaveBeenCalledTimes(1);
+    });
+
+    it('should call onViewportChange on pan', () => {
+      const vp = new Viewport();
+      const onChange = vi.fn();
+      const { container } = render(
+        <CanvasView scene={scene} viewport={vp} onViewportChange={onChange} />
+      );
+      const svg = container.querySelector('svg')!;
+
+      fireEvent.mouseDown(svg, { button: 1, clientX: 100, clientY: 100 });
+      fireEvent.mouseMove(svg, { clientX: 150, clientY: 130 });
+      expect(onChange).toHaveBeenCalled();
+    });
+
+    it('should not throw when onViewportChange is not provided', () => {
+      const vp = new Viewport();
+      const { container } = render(<CanvasView scene={scene} viewport={vp} />);
+      const svg = container.querySelector('svg')!;
+
+      Object.defineProperty(svg, 'getBoundingClientRect', {
+        value: () => ({ left: 0, top: 0, right: 800, bottom: 600, width: 800, height: 600 }),
+        configurable: true,
+      });
+
+      expect(() => fireEvent.wheel(svg, { deltaY: -100, clientX: 400, clientY: 300 })).not.toThrow();
     });
   });
 });

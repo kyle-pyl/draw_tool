@@ -1091,11 +1091,11 @@
 | 最后修订日期 | 2026-05-19 |
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | React SVG 画布渲染组件。接收 SceneDocument 和 Viewport 作为 props，按图层 order 升序渲染所有元素到 SVG。支持渲染 shape（rect、circle、ellipse、polygon、path）、text（含对齐和样式）、image（img 引用）、connector（polyline 占位）。应用 Viewport 的 transform 矩阵到根 `<g>` 元素，画布背景可配置。 |
-| 输入参数 | props: { scene: SceneDocument, viewport: Viewport, width?: number | string, height?: number | string, className?: string } |
+| 功能描述 | React SVG 画布渲染组件。接收 SceneDocument 和 Viewport 作为 props，按图层 order 升序渲染所有元素到 SVG。支持渲染 shape（rect、circle、ellipse、polygon、path）、text（含对齐和样式）、image（img 引用）、connector（polyline 占位）。支持滚轮缩放（以鼠标位置为中心）、空格+拖拽平移、中键拖拽平移交互，光标样式自动切换（default/grab/grabbing），通过 onViewportChange 回调通知父组件重渲染。 |
+| 输入参数 | props: { scene: SceneDocument, viewport: Viewport, width?: number | string, height?: number | string, className?: string, onViewportChange?: () => void } |
 | 输出参数 | ReactElement - SVG 元素，包含按图层组织的 `<g>` 元素树 |
 | 典型用例 | `<CanvasView scene={scene} viewport={new Viewport()} />` |
-| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-02-02）|
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-02-02）；2026-05-19, OpenCode/deepseek-v4-pro, T-02-03 新增 onViewportChange prop、滚轮缩放、空格/中键拖拽平移和光标样式切换 |
 
 ### API-0056 Viewport
 
