@@ -625,3 +625,145 @@ export class UpdateElementCommand implements SceneCommand {
     );
   }
 }
+
+// ─── ChangeLayer Command ──────────────────────────────────────────────────────
+
+export class ChangeLayerCommand implements SceneCommand {
+  id: string;
+  label: string;
+  private elementIds: string[];
+  private targetLayerId: string;
+  private previousLayerIds: Map<string, string>;
+
+  constructor(elementIds: string[], targetLayerId: string, label?: string) {
+    this.id = generateId('changelayer');
+    this.elementIds = elementIds;
+    this.targetLayerId = targetLayerId;
+    this.label = label || `Move ${elementIds.length} element(s) to layer`;
+    this.previousLayerIds = new Map();
+  }
+
+  validate(scene: SceneDocument): ValidationResult {
+    const targetLayer = scene.layers.find((l) => l.id === this.targetLayerId);
+    if (!targetLayer) {
+      return failureResult({
+        code: ErrorCode.REF_LAYER_NOT_FOUND as string,
+        message: `Target layer "${this.targetLayerId}" does not exist`,
+        severity: 'error',
+        layerIds: [this.targetLayerId],
+        suggestion: 'Create the layer first or specify an existing layer',
+      });
+    }
+
+    const geometryAdapter = createGeometryAdapter();
+    const existingInTarget = scene.elements.filter(
+      (el) => el.layerId === this.targetLayerId && el.type !== 'connector',
+    );
+
+    for (const elementId of this.elementIds) {
+      const element = scene.elements.find((el) => el.id === elementId);
+      if (!element) {
+        return failureResult({
+          code: ErrorCode.REF_GROUP_NOT_FOUND as string,
+          message: `Element "${elementId}" not found`,
+          severity: 'error',
+          elementIds: [elementId],
+          suggestion: 'The element may have been deleted',
+        });
+      }
+
+      if (element.locked) {
+        return failureResult({
+          code: ErrorCode.RULE_LOCKED_ELEMENT_EDITED as string,
+          message: `Element "${element.name || element.id}" is locked and cannot be moved to another layer`,
+          severity: 'error',
+          elementIds: [element.id],
+          suggestion: 'Unlock the element first',
+        });
+      }
+
+      // Connectors don't need collision checks
+      if (element.type === 'connector') continue;
+      // Skip if already in the target layer
+      if (element.layerId === this.targetLayerId) continue;
+
+      const prospectiveBBox = geometryAdapter.getBBox(element);
+
+      for (const other of existingInTarget) {
+        // Skip elements that are also being moved (would not be there)
+        if (this.elementIds.includes(other.id)) continue;
+
+        const otherBBox = geometryAdapter.getBBox(other);
+        if (bboxesOverlap(prospectiveBBox, otherBBox)) {
+          const overlapX = Math.max(prospectiveBBox.x, otherBBox.x);
+          const overlapY = Math.max(prospectiveBBox.y, otherBBox.y);
+          const overlapW = Math.min(prospectiveBBox.x + prospectiveBBox.width, otherBBox.x + otherBBox.width) - overlapX;
+          const overlapH = Math.min(prospectiveBBox.y + prospectiveBBox.height, otherBBox.y + otherBBox.height) - overlapY;
+
+          return failureResult({
+            code: ErrorCode.GEO_MOVE_TARGET_CONFLICT as string,
+            message: `Moving "${element.name || element.id}" to layer "${this.targetLayerId}" would overlap with "${other.name || other.id}"`,
+            severity: 'error',
+            layerIds: [this.targetLayerId],
+            elementIds: [element.id, other.id],
+            bboxes: [{ x: overlapX, y: overlapY, width: overlapW, height: overlapH }],
+            suggestion: 'Move the element to a different position or use another target layer',
+          });
+        }
+      }
+    }
+
+    return successResult();
+  }
+
+  execute(scene: SceneDocument): SceneDocument {
+    const movedIdSet = new Set(this.elementIds);
+
+    const updatedElements = scene.elements.map((el) => {
+      if (!movedIdSet.has(el.id)) return el;
+      this.previousLayerIds.set(el.id, el.layerId);
+      return { ...el, layerId: this.targetLayerId };
+    });
+
+    return { ...scene, elements: updatedElements };
+  }
+
+  invert(_scene: SceneDocument): SceneCommand | null {
+    // Create reverse commands for each element
+    const reverseLayerIds = new Map<string, string>();
+    for (const [elementId, originalLayerId] of this.previousLayerIds) {
+      reverseLayerIds.set(elementId, originalLayerId);
+    }
+
+    const elementIds = this.elementIds.filter((id) => reverseLayerIds.has(id));
+
+    // Move back to original layers in order
+    const groupedByLayer = new Map<string, string[]>();
+    for (const [elementId, layerId] of reverseLayerIds) {
+      if (!groupedByLayer.has(layerId)) groupedByLayer.set(layerId, []);
+      groupedByLayer.get(layerId)!.push(elementId);
+    }
+
+    // Simple invert: create a ChangeLayer command that moves all elements back
+    // We handle this by moving each element back to its original layer
+    const invertCmd: SceneCommand = {
+      id: generateId('changelayer-undo'),
+      label: `Undo: ${this.label}`,
+      validate: () => successResult(),
+      execute: (scene: SceneDocument) => {
+        const movedSet = new Set(this.elementIds);
+        return {
+          ...scene,
+          elements: scene.elements.map((el) => {
+            if (!movedSet.has(el.id)) return el;
+            const origLayerId = reverseLayerIds.get(el.id);
+            return origLayerId ? { ...el, layerId: origLayerId } : el;
+          }),
+        };
+      },
+      invert: () => null,
+    };
+
+    return invertCmd;
+  }
+}

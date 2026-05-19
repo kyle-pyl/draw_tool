@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CommandExecutor, CreateElementCommand, MoveElementsCommand, UpdateElementCommand } from '../../core/commands';
+import { CommandExecutor, CreateElementCommand, MoveElementsCommand, UpdateElementCommand, ChangeLayerCommand } from '../../core/commands';
 import type { SceneCommand, CommandHistoryEntry, ElementInput, ElementChanges } from '../../core/commands';
 import type { SceneDocument } from '../../core/types';
 import { successResult, failureResult } from '../../core/errors';
@@ -847,5 +847,116 @@ describe('UpdateElementCommand', () => {
 
     executor.redo();
     expect(useDocumentStore.getState().getScene()!.elements[0].style.fill).toBe('#00ff00');
+  });
+});
+
+// ─── T-05-05 ChangeLayerCommand Tests ──────────────────────────────────────
+
+describe('ChangeLayerCommand', () => {
+  let executor: CommandExecutor;
+
+  function createShapeOnLayer(layerId: string, name: string, x = 0, y = 0) {
+    const input: ElementInput = {
+      type: 'shape', layerId, shapeKind: 'rect', name,
+      transform: { x, y, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: '#fff', stroke: '#000', strokeWidth: 2, opacity: 1 },
+    };
+    executor.execute(new CreateElementCommand(input));
+    return useDocumentStore.getState().getScene()!.elements.at(-1)!.id;
+  }
+
+  beforeEach(() => {
+    executor = new CommandExecutor();
+    useDocumentStore.getState().loadScene(structuredClone(makeSceneWithLayers()));
+  });
+
+  it('moves an element to another layer', () => {
+    const id = createShapeOnLayer('l1', 'RectA');
+    expect(useDocumentStore.getState().getScene()!.elements[0].layerId).toBe('l1');
+
+    const cmd = new ChangeLayerCommand([id], 'l2');
+    const result = executor.execute(cmd);
+
+    expect(result.valid).toBe(true);
+    expect(useDocumentStore.getState().getScene()!.elements[0].layerId).toBe('l2');
+  });
+
+  it('moves multiple elements to the same layer', () => {
+    const idA = createShapeOnLayer('l1', 'A');
+    const idB = createShapeOnLayer('l1', 'B', 100);
+
+    executor.execute(new ChangeLayerCommand([idA, idB], 'l2'));
+
+    const scene = useDocumentStore.getState().getScene()!;
+    expect(scene.elements[0].layerId).toBe('l2');
+    expect(scene.elements[1].layerId).toBe('l2');
+  });
+
+  it('fails when target layer does not exist', () => {
+    const id = createShapeOnLayer('l1', 'RectA');
+    const result = executor.execute(new ChangeLayerCommand([id], 'nonexistent'));
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].code).toBe('REF_LAYER_NOT_FOUND');
+  });
+
+  it('fails when element does not exist', () => {
+    const result = executor.execute(new ChangeLayerCommand(['nonexistent'], 'l2'));
+    expect(result.valid).toBe(false);
+  });
+
+  it('fails when moving into overlapping position in target layer', () => {
+    const idA = createShapeOnLayer('l1', 'A');
+    createShapeOnLayer('l2', 'B', 25, 25); // overlaps A's position
+
+    const result = executor.execute(new ChangeLayerCommand([idA], 'l2'));
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].code).toBe('GEO_MOVE_TARGET_CONFLICT');
+  });
+
+  it('allows connector to change layer without collision check', () => {
+    createShapeOnLayer('l1', 'Shape', 50, 50);
+    const connCmd = new CreateElementCommand({
+      type: 'connector', layerId: 'l1', name: 'Conn',
+      transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: '#000', stroke: '#000', strokeWidth: 1, opacity: 1 },
+      source: { x: 50, y: 75 },
+      target: { x: 150, y: 75 },
+    });
+    executor.execute(connCmd);
+    const connId = useDocumentStore.getState().getScene()!.elements[1].id;
+
+    const result = executor.execute(new ChangeLayerCommand([connId], 'l2'));
+    expect(result.valid).toBe(true);
+    expect(useDocumentStore.getState().getScene()!.elements[1].layerId).toBe('l2');
+  });
+
+  it('fails when element is locked', () => {
+    const id = createShapeOnLayer('l1', 'RectA');
+    useDocumentStore.getState().updateScene((s) => ({
+      ...s, elements: s.elements.map((el) => (el.id === id ? { ...el, locked: true } : el)),
+    }));
+
+    const result = executor.execute(new ChangeLayerCommand([id], 'l2'));
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].code).toBe('RULE_LOCKED_ELEMENT_EDITED');
+  });
+
+  it('undo returns elements to original layers', () => {
+    const id = createShapeOnLayer('l1', 'RectA');
+    executor.execute(new ChangeLayerCommand([id], 'l2'));
+    expect(useDocumentStore.getState().getScene()!.elements[0].layerId).toBe('l2');
+
+    executor.undo();
+    expect(useDocumentStore.getState().getScene()!.elements[0].layerId).toBe('l1');
+  });
+
+  it('redo reapplies the layer change', () => {
+    const id = createShapeOnLayer('l1', 'RectA');
+    executor.execute(new ChangeLayerCommand([id], 'l2'));
+    executor.undo();
+    expect(useDocumentStore.getState().getScene()!.elements[0].layerId).toBe('l1');
+
+    executor.redo();
+    expect(useDocumentStore.getState().getScene()!.elements[0].layerId).toBe('l2');
   });
 });
