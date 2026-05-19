@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CommandExecutor } from '../../core/commands';
-import type { SceneCommand, CommandHistoryEntry } from '../../core/commands';
+import { CommandExecutor, CreateElementCommand } from '../../core/commands';
+import type { SceneCommand, CommandHistoryEntry, ElementInput } from '../../core/commands';
 import type { SceneDocument } from '../../core/types';
 import { successResult, failureResult } from '../../core/errors';
 import { useDocumentStore } from '../../core/store';
+import type { Transform2D, ElementStyle } from '../../core/types';
 
 function makeScene(): SceneDocument {
   return {
@@ -319,5 +320,218 @@ describe('CommandExecutor', () => {
     executor.redo();
     expect(executor.canUndo()).toBe(true);
     expect(executor.canRedo()).toBe(false);
+  });
+});
+
+// ─── T-05-02 CreateElementCommand Tests ─────────────────────────────────────
+
+const defaultTransform: Transform2D = { x: 100, y: 100, width: 100, height: 50, rotation: 0, scaleX: 1, scaleY: 1 };
+const defaultStyle: ElementStyle = { fill: '#fff', stroke: '#000', strokeWidth: 2, opacity: 1 };
+
+function makeSceneWithLayers(): SceneDocument {
+  return {
+    schemaVersion: '1.0.0',
+    project: { name: 'Test' },
+    canvas: { units: 'px', background: '#fff', defaultFont: 'Arial', gridSize: 0, snapToGrid: false },
+    rules: { maxLayerCount: 10, collisionStrategy: 'bbox', hiddenElementsCollide: true, lockedElementsCollide: true, connectorsExempt: true },
+    layers: [
+      { id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false },
+      { id: 'l2', name: 'Layer 2', order: 2, visible: true, locked: false },
+    ],
+    elements: [],
+    groups: [],
+    dataSources: [],
+    charts: [],
+    templates: [],
+    exportPresets: [],
+  };
+}
+
+describe('CreateElementCommand', () => {
+  let executor: CommandExecutor;
+
+  beforeEach(() => {
+    executor = new CommandExecutor();
+    useDocumentStore.getState().loadScene(structuredClone(makeSceneWithLayers()));
+  });
+
+  it('creates a shape element on the target layer', () => {
+    const input: ElementInput = {
+      type: 'shape',
+      layerId: 'l1',
+      shapeKind: 'rect',
+      name: 'MyRect',
+      transform: { ...defaultTransform },
+      style: { ...defaultStyle },
+    };
+
+    const cmd = new CreateElementCommand(input, 'Create Rectangle');
+    const result = executor.execute(cmd);
+
+    expect(result.valid).toBe(true);
+    const scene = useDocumentStore.getState().getScene()!;
+    expect(scene.elements).toHaveLength(1);
+    expect(scene.elements[0].type).toBe('shape');
+    expect((scene.elements[0] as any).shapeKind).toBe('rect');
+    expect(scene.elements[0].name).toBe('MyRect');
+    expect(scene.elements[0].layerId).toBe('l1');
+  });
+
+  it('creates a text element', () => {
+    const input: ElementInput = {
+      type: 'text',
+      layerId: 'l1',
+      text: 'Hello World',
+      transform: { ...defaultTransform },
+      style: { ...defaultStyle, fontSize: 16 },
+    };
+
+    executor.execute(new CreateElementCommand(input));
+    const scene = useDocumentStore.getState().getScene()!;
+    expect(scene.elements).toHaveLength(1);
+    expect(scene.elements[0].type).toBe('text');
+    expect((scene.elements[0] as any).text).toBe('Hello World');
+  });
+
+  it('creates an image element', () => {
+    const input: ElementInput = {
+      type: 'image',
+      layerId: 'l1',
+      src: 'blob:test',
+      transform: { x: 0, y: 0, width: 200, height: 150, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { ...defaultStyle },
+    };
+
+    executor.execute(new CreateElementCommand(input));
+    const scene = useDocumentStore.getState().getScene()!;
+    expect(scene.elements).toHaveLength(1);
+    expect(scene.elements[0].type).toBe('image');
+    expect((scene.elements[0] as any).src).toBe('blob:test');
+  });
+
+  it('fails when target layer does not exist', () => {
+    const input: ElementInput = {
+      type: 'shape',
+      layerId: 'nonexistent',
+      shapeKind: 'rect',
+      transform: { ...defaultTransform },
+      style: { ...defaultStyle },
+    };
+
+    const cmd = new CreateElementCommand(input);
+    const result = executor.execute(cmd);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].code).toBe('REF_LAYER_NOT_FOUND');
+    expect(useDocumentStore.getState().getScene()!.elements).toHaveLength(0);
+  });
+
+  it('fails when new element overlaps existing element in same layer', () => {
+    // First create an element
+    const input1: ElementInput = {
+      type: 'shape',
+      layerId: 'l1',
+      shapeKind: 'rect',
+      transform: { x: 50, y: 50, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { ...defaultStyle },
+    };
+    executor.execute(new CreateElementCommand(input1));
+
+    // Try to create overlapping element
+    const input2: ElementInput = {
+      type: 'shape',
+      layerId: 'l1',
+      shapeKind: 'circle',
+      transform: { x: 75, y: 75, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { ...defaultStyle },
+    };
+    const cmd2 = new CreateElementCommand(input2);
+    const result = executor.execute(cmd2);
+
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].code).toBe('GEO_SAME_LAYER_OVERLAP');
+    expect(useDocumentStore.getState().getScene()!.elements).toHaveLength(1);
+  });
+
+  it('allows creation on different layers even with overlap', () => {
+    const input1: ElementInput = {
+      type: 'shape', layerId: 'l1', shapeKind: 'rect',
+      transform: { ...defaultTransform }, style: { ...defaultStyle },
+    };
+    executor.execute(new CreateElementCommand(input1));
+
+    const input2: ElementInput = {
+      type: 'shape', layerId: 'l2', shapeKind: 'circle',
+      transform: { ...defaultTransform }, style: { ...defaultStyle },
+    };
+    const result = executor.execute(new CreateElementCommand(input2));
+
+    expect(result.valid).toBe(true);
+    expect(useDocumentStore.getState().getScene()!.elements).toHaveLength(2);
+  });
+
+  it('undo removes the created element', () => {
+    const input: ElementInput = {
+      type: 'shape', layerId: 'l1', shapeKind: 'rect',
+      transform: { ...defaultTransform }, style: { ...defaultStyle },
+    };
+
+    executor.execute(new CreateElementCommand(input));
+    expect(useDocumentStore.getState().getScene()!.elements).toHaveLength(1);
+
+    const undone = executor.undo();
+    expect(undone).toBe(true);
+    expect(useDocumentStore.getState().getScene()!.elements).toHaveLength(0);
+  });
+
+  it('redo recreates the undone element', () => {
+    const input: ElementInput = {
+      type: 'shape', layerId: 'l1', shapeKind: 'rect',
+      transform: { ...defaultTransform }, style: { ...defaultStyle },
+    };
+
+    executor.execute(new CreateElementCommand(input));
+    executor.undo();
+    expect(useDocumentStore.getState().getScene()!.elements).toHaveLength(0);
+
+    const redone = executor.redo();
+    expect(redone).toBe(true);
+    const scene = useDocumentStore.getState().getScene()!;
+    expect(scene.elements).toHaveLength(1);
+    expect(scene.elements[0].type).toBe('shape');
+  });
+
+  it('generates unique IDs for each created element', () => {
+    executor.execute(new CreateElementCommand({
+      type: 'shape', layerId: 'l1', shapeKind: 'rect',
+      transform: { x: 0, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { ...defaultStyle },
+    }));
+    executor.execute(new CreateElementCommand({
+      type: 'shape', layerId: 'l1', shapeKind: 'rect',
+      transform: { x: 100, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { ...defaultStyle },
+    }));
+    executor.execute(new CreateElementCommand({
+      type: 'shape', layerId: 'l1', shapeKind: 'rect',
+      transform: { x: 200, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { ...defaultStyle },
+    }));
+
+    const scene = useDocumentStore.getState().getScene()!;
+    expect(scene.elements).toHaveLength(3);
+    const ids = scene.elements.map((e) => e.id);
+    expect(new Set(ids).size).toBe(3);
+  });
+
+  it('creates with default visible and locked values', () => {
+    const input: ElementInput = {
+      type: 'shape', layerId: 'l1', shapeKind: 'rect',
+      transform: { ...defaultTransform }, style: { ...defaultStyle },
+    };
+
+    executor.execute(new CreateElementCommand(input));
+    const el = useDocumentStore.getState().getScene()!.elements[0];
+    expect(el.visible).toBe(true);
+    expect(el.locked).toBe(false);
   });
 });
