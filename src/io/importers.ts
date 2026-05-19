@@ -2,6 +2,7 @@
  * Project file loaders — JSON scene file import via browser file picker.
  */
 
+import { unzipSync, strFromU8 } from 'fflate';
 import { useDocumentStore } from '../core/store';
 import { validateScene } from '../core/validator';
 import type { SceneDocument } from '../core/types';
@@ -388,6 +389,182 @@ export async function loadProjectFromDirectory(): Promise<ValidationResult> {
     const scene = sceneData as SceneDocument;
     useDocumentStore.getState().loadScene(scene);
     useDocumentStore.getState().setDirectoryHandle(dirHandle);
+  }
+
+  return result;
+}
+
+/**
+ * Import a project from a ZIP file. Decompresses the ZIP, extracts scene.json,
+ * data/ and assets/ directories, validates the scene and loads it into the store.
+ *
+ * - scene.json is required at the ZIP root.
+ * - Files under data/ are added as DataSource entries if not already present.
+ * - Image files under assets/ are converted to blob URLs and referenced from ImageElements.
+ *
+ * This serves as the cross-browser alternative to File System Access API directory import.
+ *
+ * @param file - The ZIP file object (e.g. from `<input type="file">` or drag-and-drop).
+ * @returns ValidationResult — valid means the project loaded successfully.
+ */
+export async function importProjectFromZip(file: File): Promise<ValidationResult> {
+  let buffer: ArrayBuffer;
+  try {
+    buffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as ArrayBuffer);
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsArrayBuffer(file);
+    });
+  } catch (err) {
+    return failureResult({
+      code: 'IO_ERROR',
+      message: `Failed to read ZIP file: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      severity: 'error',
+    });
+  }
+
+  let entries: Record<string, Uint8Array>;
+  try {
+    entries = unzipSync(new Uint8Array(buffer));
+  } catch (err) {
+    return failureResult({
+      code: 'IO_ERROR',
+      message: `Failed to decompress ZIP file: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      severity: 'error',
+    });
+  }
+
+  // ── Find scene.json ─────────────────────────────────────────────────────────
+  let sceneJsonEntry: Uint8Array | undefined;
+  for (const name of Object.keys(entries)) {
+    const normalized = name.replace(/\\/g, '/');
+    if (normalized === 'scene.json' || normalized.endsWith('/scene.json')) {
+      sceneJsonEntry = entries[name];
+      break;
+    }
+  }
+
+  if (!sceneJsonEntry) {
+    return failureResult({
+      code: 'IO_ERROR',
+      message: 'The ZIP file does not contain scene.json at its root.',
+      severity: 'error',
+    });
+  }
+
+  let sceneText: string;
+  try {
+    sceneText = strFromU8(sceneJsonEntry);
+  } catch {
+    return failureResult({
+      code: 'IO_ERROR',
+      message: 'Failed to decode scene.json from ZIP.',
+      severity: 'error',
+    });
+  }
+
+  let sceneData: Record<string, unknown>;
+  try {
+    sceneData = JSON.parse(sceneText);
+  } catch {
+    return failureResult({
+      code: 'PARSE_ERROR',
+      message: 'scene.json content is not valid JSON.',
+      severity: 'error',
+    });
+  }
+
+  // ── Scan data/ entries ──────────────────────────────────────────────────────
+  const dataEntries = new Map<string, Uint8Array>();
+  for (const key of Object.keys(entries)) {
+    const normalized = key.replace(/\\/g, '/');
+    if (normalized.startsWith('data/') && normalized !== 'data/') {
+      dataEntries.set(normalized, entries[key]);
+    }
+  }
+
+  if (dataEntries.size > 0) {
+    const existingDataSources = (sceneData.dataSources as Array<{ path: string }>) ?? [];
+    const existingPaths = new Set(existingDataSources.map((ds) => ds.path));
+    for (const path of dataEntries.keys()) {
+      if (!existingPaths.has(path)) {
+        const fileName = path.split('/').pop() ?? path;
+        existingDataSources.push({
+          id: generateId('ds'),
+          path,
+          type: inferDataSourceType(fileName),
+        });
+      }
+    }
+    sceneData.dataSources = existingDataSources;
+  }
+
+  // ── Scan assets/ entries — create blob URLs for images ──────────────────────
+  const assetBlobs = new Map<string, string>();
+  const blobUrlsToTrack: string[] = [];
+
+  for (const key of Object.keys(entries)) {
+    const normalized = key.replace(/\\/g, '/');
+    if (normalized.startsWith('assets/') && normalized !== 'assets/') {
+      const fileName = normalized.split('/').pop() ?? '';
+      if (isImageFile(fileName)) {
+        const ext = fileName.split('.').pop()?.toLowerCase();
+        const mimeTypes: Record<string, string> = {
+          png: 'image/png',
+          jpg: 'image/jpeg',
+          jpeg: 'image/jpeg',
+          svg: 'image/svg+xml',
+          gif: 'image/gif',
+          webp: 'image/webp',
+        };
+        const mimeType = mimeTypes[ext ?? ''] ?? 'image/png';
+        const blob = new Blob([entries[key]], { type: mimeType });
+        const blobUrl = URL.createObjectURL(blob);
+        assetBlobs.set(normalized, blobUrl);
+        blobUrlsToTrack.push(blobUrl);
+      }
+    }
+  }
+
+  // ── Resolve ImageElement src references to blob URLs ────────────────────────
+  if (assetBlobs.size > 0) {
+    const elements = sceneData.elements as Array<Record<string, unknown>> | undefined;
+    if (elements) {
+      for (const el of elements) {
+        if (el.type === 'image') {
+          const src = el.src as string | undefined;
+          if (src) {
+            for (const [assetPath, blobUrl] of assetBlobs) {
+              const baseName = assetPath.replace(/^assets\//i, '');
+              if (src === assetPath || src === baseName || src.endsWith('/' + baseName)) {
+                el.src = blobUrl;
+                if (!el.metadata) el.metadata = {};
+                (el.metadata as Record<string, unknown>).originalAssetPath = assetPath;
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // ── Validate and load ──────────────────────────────────────────────────────
+  const result = validateScene(sceneData);
+
+  if (result.valid) {
+    revokeTrackedBlobUrls();
+    _activeBlobUrls = blobUrlsToTrack;
+
+    const scene = sceneData as SceneDocument;
+    useDocumentStore.getState().loadScene(scene);
+    useDocumentStore.getState().setDirectoryHandle(null);
+  } else {
+    revokeTrackedBlobUrls();
+    for (const url of blobUrlsToTrack) {
+      URL.revokeObjectURL(url);
+    }
   }
 
   return result;

@@ -450,7 +450,7 @@
 | 任务编号 | T-03-04 |
 | 任务名称 | 实现 ZIP 项目导入导出 |
 | 前置任务 | T-03-02 |
-| 状态 | 待执行 |
+| 状态 | 已完成 |
 
 **任务说明：** 在 src/io/importers.ts 和 src/io/exporters.ts 中实现 ZIP 格式的项目导入和导出，作为 File System Access API 的后备方案。使用轻量 ZIP 库（如 fflate 或 JSZip）。
 

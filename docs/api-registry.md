@@ -1210,3 +1210,41 @@
 | 输出参数 | Promise\<ValidationResult\> - 含 FEATURE_NOT_SUPPORTED、USER_CANCELLED、IO_ERROR、PARSE_ERROR、SCHEMA_* 等错误码 |
 | 典型用例 | `const result = await loadProjectFromDirectory(); if (result.valid) { startEditing(); }` |
 | 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-03-03）|
+
+### API-0064 importProjectFromZip
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0064 |
+| 名称 | importProjectFromZip |
+| 所属系统 | io |
+| 所属模块 | importers |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 从 ZIP 文件导入项目：使用 fflate 解压，提取 scene.json 并校验加载，扫描 data/ 中的文件添加为 DataSource 条目，扫描 assets/ 中的图片文件创建 blob URL 并解析 ImageElement 的 src 引用。作为浏览器不支持 File System Access API 时的后备导入方案 |
+| 输入参数 | file: File - ZIP 文件对象 |
+| 输出参数 | Promise\<ValidationResult\> - valid 为 true 时场景已加载到 store 且 directoryHandle 置空；valid 为 false 时 errors 包含 IO_ERROR（缺少 scene.json 或解压失败）、PARSE_ERROR（JSON 语法错误）、SCHEMA_*（校验失败）等 |
+| 典型用例 | `const result = await importProjectFromZip(zipFile); if (result.valid) { startEditing(); }` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-03-04）|
+
+### API-0065 exportProjectToZip
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0065 |
+| 名称 | exportProjectToZip |
+| 所属系统 | io |
+| 所属模块 | exporters |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 将当前加载的项目导出为 ZIP 归档：序列化当前 scene 为 scene.json，将 ImageElement 的 blob URL 还原为原始资源路径并嵌入对应的图片数据，若有目录句柄则一并导出 data/ 文件。导出结果可被 importProjectFromZip 重新导入 |
+| 输入参数 | 无 |
+| 输出参数 | Promise\<Blob\> - MIME 类型为 application/zip 的 ZIP 压缩包，可直接触发浏览器下载 |
+| 典型用例 | `const blob = await exportProjectToZip(); const url = URL.createObjectURL(blob);` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-03-04）|

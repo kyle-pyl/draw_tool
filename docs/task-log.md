@@ -221,3 +221,16 @@
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0063（loadProjectFromDirectory）、API-0059（DocumentStore 修订：新增 directoryHandle/setDirectoryHandle） |
 
+### T-03-04 实现 ZIP 项目导入导出
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-03-04 |
+| 任务名称      | 实现 ZIP 项目导入导出 |
+| 完成时间      | 2026-05-19 18:36 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | ec250fc |
+| 修改记录      | 新建：src/io/exporters.ts（exportProjectToZip）、src/tests/unit/zip-io.test.ts（19 个测试用例）；修改：src/io/importers.ts（新增 importProjectFromZip 及 fflate 导入）、src/io/index.ts（新增 importProjectFromZip 和 exportProjectToZip 导出）；package.json（新增 fflate 依赖） |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0064（importProjectFromZip）、API-0065（exportProjectToZip） |
+
