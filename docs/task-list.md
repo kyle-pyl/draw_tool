@@ -17,7 +17,7 @@
 5. 对本任务涉及功能进行单元测试。
 6. 对当前项目各模块执行回归测试。
 7. 记录测试出现的缺陷，修复缺陷，直至所有测试通过。
-8. 写任务日志（docs/task-log.md）以及更新接口/函数文档（docs/api-registry.md）。
+8. 写任务日志（docs/task-log.md）以及更新接口/函数文档（docs/api-registry.md）和任务状态。
 9. 进行 git 提交和推送。
 
 ---
@@ -93,11 +93,12 @@
 | 任务编号 | T-01-02 |
 | 任务名称 | 定义错误码和校验结果类型 |
 | 前置任务 | T-01-01 |
-| 状态 | 待执行 |
+| 状态 | 已完成 |
 
 **任务说明：** 在 src/core/errors.ts 中定义 ValidationError、ValidationResult、ErrorCode 枚举。错误码需覆盖顶层设计文档第 16 章的四类校验：schema 校验、引用完整性、几何规则、业务规则。
 
 **功能要求：**
+
 - ValidationError 包含 code、message、severity、layerIds、elementIds、bboxes、suggestion。
 - ValidationResult 包含 valid 布尔值和 errors 数组。
 - ErrorCode 枚举至少包含：SCHEMA_MISSING_ID、SCHEMA_INVALID_TYPE、SCHEMA_FIELD_TYPE_ERROR、REF_LAYER_NOT_FOUND、REF_GROUP_NOT_FOUND、REF_CONNECTOR_ENDPOINT_NOT_FOUND、GEO_SAME_LAYER_OVERLAP、GEO_MOVE_TARGET_CONFLICT、RULE_MAX_LAYER_EXCEEDED、RULE_LOCKED_ELEMENT_EDITED、RULE_HIDDEN_OVERLAP。
@@ -117,7 +118,7 @@
 | 任务编号 | T-01-03 |
 | 任务名称 | 实现 scene.json Schema 校验器 |
 | 前置任务 | T-01-01, T-01-02 |
-| 状态 | 待执行 |
+| 状态 | 已完成 |
 
 **任务说明：** 在 src/core/validator.ts 中实现 validateScene 函数。该函数接收一个 unknown 对象，执行结构校验，返回 ValidationResult。第一版使用手写校验逻辑（不依赖 Zod 或 Ajv），以保持 Lite 包轻量。
 

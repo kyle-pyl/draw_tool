@@ -56,6 +56,8 @@ export type {
   AnchorPoint,
 } from './types';
 
+export { validateScene } from './validator';
+
 export {
   ErrorCode,
 } from './errors';

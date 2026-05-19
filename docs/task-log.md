@@ -64,3 +64,16 @@
 | 修改记录 | 新建：src/core/errors.ts；修改：src/core/index.ts；新建：src/tests/unit/errors.test.ts；修改：README.md、docs/api-registry.md |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0046 ～ API-0050（共 5 项）|
+
+### T-01-03 实现 scene.json Schema 校验器
+
+| 字段 | 内容 |
+|---|---|
+| 任务编号 | T-01-03 |
+| 任务名称 | 实现 scene.json Schema 校验器 |
+| 完成时间 | 2026-05-19 08:55 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| Git Commit | (待填) |
+| 修改记录 | 新建：src/core/validator.ts、src/tests/unit/validator.test.ts；修改：src/core/index.ts、README.md、docs/api-registry.md |
+| 发现缺陷 | 无 |
+| 产出接口/函数 | API-0051 ～ API-0052（共 2 项）|

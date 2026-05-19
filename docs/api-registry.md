@@ -982,3 +982,41 @@
 | 输出参数 | ValidationResult |
 | 典型用例 | `return successResult()` / `return failureResult({ code: 'SCHEMA_INVALID_TYPE', message: '...', severity: 'error' })` |
 | 修订历史 | 2026-05-18, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0051 validateScene
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0051 |
+| 名称 | validateScene |
+| 所属系统 | core |
+| 所属模块 | validator |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 对 unknown 对象执行 SceneDocument schema 结构校验，检查根字段（schemaVersion、project、canvas、rules）、layers 数组（id、order）、elements 数组（id、type、layerId 及 type 合法性）、groups 数组（id、elementIds） |
+| 输入参数 | data: unknown - 待校验的对象 |
+| 输出参数 | ValidationResult - valid 为 true 且 errors 为空表示通过；valid 为 false 且 errors 为非空表示校验失败 |
+| 典型用例 | `const result = validateScene(json); if (result.valid) { loadScene(json as SceneDocument); } else { showErrors(result.errors); }` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0052 validateAndCast
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0052 |
+| 名称 | validateAndCast |
+| 所属系统 | core |
+| 所属模块 | validator |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 便捷封装：先执行 validateScene，若通过则直接将 data 转为 SceneDocument 返回；若失败则返回 ValidationResult |
+| 输入参数 | data: unknown - 待校验的对象 |
+| 输出参数 | SceneDocument | ValidationResult - 校验通过返回类型缩窄后的文档，失败返回校验结果 |
+| 典型用例 | `const doc = validateAndCast(json); if ('valid' in doc) { handleErrors(doc); } else { render(doc); }` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建 |
