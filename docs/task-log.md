@@ -138,7 +138,7 @@
 | 任务名称 | 实现 SVG 画布渲染组件 |
 | 完成时间 | 2026-05-19 14:31 |
 | 作者/智能体 | OpenCode/deepseek-v4-pro |
-| Git Commit | （待提交）|
+| Git Commit | 30e7a90 |
 | 修改记录 | 新建：src/canvas/CanvasView.tsx、src/tests/unit/canvas-view.test.tsx、src/tests/unit/setup.ts；修改：src/canvas/index.ts（新增 CanvasView 导出）、src/App.tsx（改用 CanvasView 渲染示例 scene）、src/App.css（全屏画布布局）、src/index.css（全局样式重置）、vite.config.ts（配置 vitest jsdom 环境和测试设置文件）；新增 npm 依赖：@testing-library/react、@testing-library/jest-dom、@testing-library/dom、jsdom@24 |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0057（CanvasView）|
