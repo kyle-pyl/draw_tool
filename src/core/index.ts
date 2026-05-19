@@ -77,3 +77,5 @@ export { generateId } from './utils';
 
 export { useDocumentStore } from './store';
 export type { DocumentStore } from './store';
+
+export { getBBox, createGeometryAdapter } from './geometry';

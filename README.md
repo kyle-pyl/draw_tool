@@ -6,10 +6,10 @@ Agent 友好的论文与技术图表绘制工具。纯 Web 应用，本地优先
 
 | 项目 | 状态 |
 |---|---|
-| 阶段 | 阶段 3：项目打开保存 |
-| 版本 | 0.3.0 |
-| 可用功能 | 核心类型已定义（scene.json 结构、元素模型、图层、连接线、图表等），错误码和校验结果类型已定义，scene.json Schema 结构校验器已实现（含引用完整性校验），示例项目 examples/basic/ 已创建并通过校验，ID 生成工具已实现（generateId），视口变换管理器（Viewport）已实现，SVG 画布渲染组件已实现（CanvasView：支持 shape、text、image、connector 渲染，支持滚轮缩放和拖拽平移交互，支持元素单选、多选和框选（marquee selection），显示蓝色选择包围盒和 8 个控制柄），Document Store 已实现（useDocumentStore：管理 scene、视口、选择集和脏标志，支持 loadScene/updateScene/getScene/markClean），JSON 项目文件加载已实现（loadSceneFromFile），File System Access API 项目目录打开已实现（loadProjectFromDirectory），ZIP 项目导入导出已实现（importProjectFromZip/exportProjectToZip），项目保存功能已实现（saveProject：目录写入或 ZIP 下载，保存前校验） |
-| 构建状态 | 可安装、可启动、可构建、可运行测试（330 个测试通过） |
+| 阶段 | 阶段 4：图层和校验 |
+| 版本 | 0.4.0 |
+| 可用功能 | 核心类型已定义（scene.json 结构、元素模型、图层、连接线、图表等），错误码和校验结果类型已定义，scene.json Schema 结构校验器已实现（含引用完整性校验），示例项目 examples/basic/ 已创建并通过校验，ID 生成工具已实现（generateId），视口变换管理器（Viewport）已实现，SVG 画布渲染组件已实现（CanvasView：支持 shape、text、image、connector 渲染，支持滚轮缩放和拖拽平移交互，支持元素单选、多选和框选（marquee selection），显示蓝色选择包围盒和 8 个控制柄），Document Store 已实现（useDocumentStore），JSON 项目文件加载已实现（loadSceneFromFile），File System Access API 项目目录打开已实现（loadProjectFromDirectory），ZIP 项目导入导出已实现（importProjectFromZip/exportProjectToZip），项目保存功能已实现（saveProject），BBox 计算器已实现（getBBox：支持所有 10 种元素类型、旋转 AABB、文本尺寸估算、连接线端点包围盒） |
+| 构建状态 | 可安装、可启动、可构建、可运行测试（371 个测试通过） |
 
 ## 功能目标
 
@@ -62,7 +62,7 @@ examples/     # 示例项目
 |---|---|---|---|---|---|
 | 顶层设计文档 | 产品目标、架构、数据模型、实现路线 | docs/top-level-design.md | 2026-05-18 | 初始创建 |
 | 任务清单 | 完整有序的开发任务列表 | docs/task-list.md | 2026-05-19 | T-03-02 |
-| 任务日志 | 每个任务的完成记录 | docs/task-log.md | 2026-05-19 | T-03-02 |
-| 接口/函数文档 | 项目所有公开接口的注册表 | docs/api-registry.md | 2026-05-19 | T-03-02 |
+| 任务日志 | 每个任务的完成记录 | docs/task-log.md | 2026-05-19 | T-04-01 |
+| 接口/函数文档 | 项目所有公开接口的注册表 | docs/api-registry.md | 2026-05-19 | T-04-01 |
 | 缺陷记录表 | 开发过程中的缺陷跟踪 | docs/defect-log.md | 2026-05-18 | T-00-01 |
 | 文档维护指南 | 文档体系说明和维护规则 | docs/documentation-guide.md | 2026-05-18 | T-00-01 |

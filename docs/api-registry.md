@@ -1230,6 +1230,44 @@
 | 典型用例 | `const result = await importProjectFromZip(zipFile); if (result.valid) { startEditing(); }` |
 | 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-03-04）|
 
+### API-0067 getBBox
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0067 |
+| 名称 | getBBox |
+| 所属系统 | core |
+| 所属模块 | geometry |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 计算任意场景元素的轴对齐包围盒（BBox）。根据元素类型分别处理：shape 使用几何属性（rect 用 transform 边界、circle/ellipse 用内接矩形、polygon 用点集边界、path 用 transform 边界），text 根据字符数和字体大小估算尺寸（取与 transform 维度的最大值），image 用 transform 尺寸或原始图片尺寸，connector 计算所有端点和路径点的边界，其他类型使用 transform 边界。旋转通过计算旋转后四个角点的 AABB 处理。circle 跳过旋转（旋转对称） |
+| 输入参数 | element: SceneElement - 需计算包围盒的场景元素 |
+| 输出参数 | BBox - 轴对齐包围盒 { x: number, y: number, width: number, height: number } |
+| 典型用例 | `const bbox = getBBox(someShapeElement); if (bbox.x < 0) { /* out of bounds */ }` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-01）|
+
+### API-0068 createGeometryAdapter
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0068 |
+| 名称 | createGeometryAdapter |
+| 所属系统 | core |
+| 所属模块 | geometry |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 创建 GeometryAdapter 实例的工厂函数。返回的适配器对象包含完整实现的 getBBox 方法，getGeometry 和 intersects 方法预留为 undefined 供未来高级碰撞检测实现 |
+| 输入参数 | 无 |
+| 输出参数 | GeometryAdapter - 包含 getBBox（已实现）、getGeometry（undefined 占位）、intersects（undefined 占位）的适配器对象 |
+| 典型用例 | `const adapter = createGeometryAdapter(); const bbox = adapter.getBBox(element);` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-01）|
+
 ### API-0066 saveProject
 
 | 字段 | 内容 |

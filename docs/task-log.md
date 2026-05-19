@@ -247,3 +247,16 @@
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0066（saveProject） |
 
+### T-04-01 实现 BBox 计算器
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-04-01 |
+| 任务名称      | 实现 BBox 计算器 |
+| 完成时间      | 2026-05-19 20:02 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | 2c9c14a |
+| 修改记录      | 新建：src/core/geometry.ts（getBBox 函数、createGeometryAdapter 工厂函数）、src/tests/unit/geometry.test.ts（41 个测试用例）；修改：src/core/index.ts（新增 getBBox 和 createGeometryAdapter 导出） |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0067（getBBox）、API-0068（createGeometryAdapter） |
+
