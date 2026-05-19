@@ -1078,6 +1078,25 @@
 | 典型用例 | `const vp = new Viewport({ minZoom: 0.1, maxZoom: 10, zoomStep: 1.2 })` |
 | 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-02-01）|
 
+### API-0057 CanvasView
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0057 |
+| 名称 | CanvasView |
+| 所属系统 | canvas |
+| 所属模块 | CanvasView |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | React SVG 画布渲染组件。接收 SceneDocument 和 Viewport 作为 props，按图层 order 升序渲染所有元素到 SVG。支持渲染 shape（rect、circle、ellipse、polygon、path）、text（含对齐和样式）、image（img 引用）、connector（polyline 占位）。应用 Viewport 的 transform 矩阵到根 `<g>` 元素，画布背景可配置。 |
+| 输入参数 | props: { scene: SceneDocument, viewport: Viewport, width?: number | string, height?: number | string, className?: string } |
+| 输出参数 | ReactElement - SVG 元素，包含按图层组织的 `<g>` 元素树 |
+| 典型用例 | `<CanvasView scene={scene} viewport={new Viewport()} />` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-02-02）|
+
 ### API-0056 Viewport
 
 | 字段 | 内容 |

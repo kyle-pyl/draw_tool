@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Viewport, type ViewportConfig } from '../../canvas/viewport';
+import { Viewport } from '../../canvas/viewport';
 
 describe('Viewport', () => {
   describe('constructor', () => {
