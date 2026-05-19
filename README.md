@@ -8,8 +8,8 @@ Agent 友好的论文与技术图表绘制工具。纯 Web 应用，本地优先
 |---|---|
 | 阶段 | 阶段 4：图层和校验 |
 | 版本 | 0.4.0 |
-| 可用功能 | 核心类型已定义（scene.json 结构、元素模型、图层、连接线、图表等），错误码和校验结果类型已定义，scene.json Schema 结构校验器已实现（含引用完整性校验和几何规则校验），示例项目 examples/basic/ 已创建并通过校验，ID 生成工具已实现（generateId），视口变换管理器（Viewport）已实现，SVG 画布渲染组件已实现（CanvasView：支持 shape、text、image、connector 渲染，支持滚轮缩放和拖拽平移交互，支持元素单选、多选和框选（marquee selection），显示蓝色选择包围盒和 8 个控制柄，隐藏图层使用 visibility:hidden 保留 DOM 空间，锁定图层元素不响应交互），Document Store 已实现（useDocumentStore），JSON 项目文件加载已实现（loadSceneFromFile），File System Access API 项目目录打开已实现（loadProjectFromDirectory），ZIP 项目导入导出已实现（importProjectFromZip/exportProjectToZip），项目保存功能已实现（saveProject），BBox 计算器已实现（getBBox：支持所有 10 种元素类型、旋转 AABB、文本尺寸估算、连接线端点包围盒），同层碰撞检测已实现（checkLayerCollisions：线性扫描 O(n^2)，排除 connector，支持隐藏/锁定元素过滤选项），图层冲突校验器已实现（validateScene Stage 6：图层内元素碰撞检测 GEO_SAME_LAYER_OVERLAP 和最大层数检查 RULE_MAX_LAYER_EXCEEDED），图层渲染顺序已实现（按 layer.order 升序渲染，隐藏图层使用 visibility:hidden，锁定图层元素不响应点击和框选） |
-| 构建状态 | 可安装、可启动、可构建、可运行测试（400 个测试通过） |
+| 可用功能 | 核心类型已定义（scene.json 结构、元素模型、图层、连接线、图表等），错误码和校验结果类型已定义，scene.json Schema 结构校验器已实现（含引用完整性校验和几何规则校验），示例项目 examples/basic/ 已创建并通过校验，ID 生成工具已实现（generateId），视口变换管理器（Viewport）已实现，SVG 画布渲染组件已实现（CanvasView：支持 shape、text、image、connector 渲染，支持滚轮缩放和拖拽平移交互，支持元素单选、多选和框选（marquee selection），显示蓝色选择包围盒和 8 个控制柄，隐藏图层使用 visibility:hidden 保留 DOM 空间，锁定图层元素不响应交互），Document Store 已实现（useDocumentStore），JSON 项目文件加载已实现（loadSceneFromFile），File System Access API 项目目录打开已实现（loadProjectFromDirectory），ZIP 项目导入导出已实现（importProjectFromZip/exportProjectToZip），项目保存功能已实现（saveProject），BBox 计算器已实现（getBBox：支持所有 10 种元素类型、旋转 AABB、文本尺寸估算、连接线端点包围盒），同层碰撞检测已实现（checkLayerCollisions：线性扫描 O(n^2)，排除 connector，支持隐藏/锁定元素过滤选项），图层冲突校验器已实现（validateScene Stage 6：图层内元素碰撞检测 GEO_SAME_LAYER_OVERLAP 和最大层数检查 RULE_MAX_LAYER_EXCEEDED），图层渲染顺序已实现（按 layer.order 升序渲染，隐藏图层使用 visibility:hidden，锁定图层元素不响应点击和框选），冲突高亮显示已实现（ConflictHighlighter：管理冲突状态、红色虚线包围盒渲染在画布冲突叠层、ConflictPanel 右下角浮动面板显示冲突详情（图层、元素名、建议）、可关闭面板、冲突清除后自动消失） |
+| 构建状态 | 可安装、可启动、可构建、可运行测试（431 个测试通过） |
 
 ## 功能目标
 
@@ -61,8 +61,8 @@ examples/     # 示例项目
 | 文档名称 | 功能 | 路径 | 最近修订日期 | 修订来源任务 |
 |---|---|---|---|---|---|
 | 顶层设计文档 | 产品目标、架构、数据模型、实现路线 | docs/top-level-design.md | 2026-05-18 | 初始创建 |
-| 任务清单 | 完整有序的开发任务列表 | docs/task-list.md | 2026-05-19 | T-04-03 |
-| 任务日志 | 每个任务的完成记录 | docs/task-log.md | 2026-05-19 | T-04-03 |
-| 接口/函数文档 | 项目所有公开接口的注册表 | docs/api-registry.md | 2026-05-19 | T-04-03 |
+| 任务清单 | 完整有序的开发任务列表 | docs/task-list.md | 2026-05-19 | T-04-05 |
+| 任务日志 | 每个任务的完成记录 | docs/task-log.md | 2026-05-19 | T-04-05 |
+| 接口/函数文档 | 项目所有公开接口的注册表 | docs/api-registry.md | 2026-05-19 | T-04-05 |
 | 缺陷记录表 | 开发过程中的缺陷跟踪 | docs/defect-log.md | 2026-05-18 | T-00-01 |
 | 文档维护指南 | 文档体系说明和维护规则 | docs/documentation-guide.md | 2026-05-18 | T-00-01 |

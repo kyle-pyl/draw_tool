@@ -1400,3 +1400,79 @@
 | 输出参数 | ValidationError[] - 几何规则错误列表，无错误时为空数组 |
 | 典型用例 | `validateScene` 内部调用 `allErrors.push(...validateGeometryRules(obj))` |
 | 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-03）|
+
+### API-0074 ConflictHighlighter
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0074 |
+| 名称 | ConflictHighlighter |
+| 所属系统 | canvas |
+| 所属模块 | conflict |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 冲突高亮管理器类。接收碰撞检测结果（CollisionEntry[]）和场景数据（elements、layers），生成包含图层名、元素名、重叠区域和建议文本的 ConflictInfo 列表。提供 hasConflicts 标志、conflictingLayerIds/conflictingElementIds 集合查询、subscribe 监听机制用于 React 组件订阅更新。clearCollisions 清空所有冲突状态。用于在画布冲突叠层（红色虚线包围盒）和冲突面板中驱动 UI |
+| 输入参数 | constructor() - 无参数，初始无冲突 |
+| 输出参数 | hasConflicts: boolean; conflictingLayerIds: ReadonlySet\<string\>; conflictingElementIds: ReadonlySet\<string\>; getConflicts(): readonly ConflictInfo[]; setCollisions(collisions: CollisionEntry[], elements: SceneElement[], layers: Layer[]): void; clearCollisions(): void; subscribe(listener: () => void): () => void |
+| 典型用例 | `const hl = new ConflictHighlighter(); hl.setCollisions(result.collisions, scene.elements, scene.layers); if (hl.hasConflicts) { showPanel(hl.getConflicts()); }` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-05）|
+
+### API-0075 ConflictInfo
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0075 |
+| 名称 | ConflictInfo |
+| 所属系统 | canvas |
+| 所属模块 | conflict |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 单条冲突信息接口，包含冲突 ID（由冲突元素 ID 拼接）、所在图层 ID 和名称、冲突双方的元素 ID 和名称、重叠包围盒、修复建议文本。由 ConflictHighlighter.setCollisions 生成，供 ConflictPanel 渲染和画布冲突叠层查询使用 |
+| 输入参数 | id: string, layerId: string, layerName: string, elementAId: string, elementAName: string, elementBId: string, elementBName: string, overlapBBox: BBox, suggestion: string |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const info: ConflictInfo = { id: 'e1-e2', layerId: 'l1', layerName: 'Layer 1', elementAId: 'e1', elementAName: 'RectA', elementBId: 'e2', elementBName: 'RectB', overlapBBox: { x: 50, y: 50, width: 50, height: 50 }, suggestion: 'Move "RectA" or "RectB" to avoid overlap.' }` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-05）|
+
+### API-0076 ConflictPanel
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0076 |
+| 名称 | ConflictPanel |
+| 所属系统 | ui |
+| 所属模块 | ConflictPanel |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 冲突面板 React 组件。接收 ConflictHighlighter 实例，通过 subscribe 监听冲突变化。当存在冲突时在右下角显示浮动面板，红底白字标题显示冲突数量，列表中每条冲突显示图层名标签、冲突双方元素名、箭头连接符和修复建议。提供关闭按钮临时隐藏面板，新冲突触发时自动重新显示。冲突清除后面板自动消失 |
+| 输入参数 | props: { conflictHighlighter: ConflictHighlighter } |
+| 输出参数 | ReactElement（条件渲染：有冲突且未关闭时显示，否则返回 null） |
+| 典型用例 | `<ConflictPanel conflictHighlighter={conflictHighlighter} />` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-05）|
+
+### API-0077 ConflictPanelProps
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0077 |
+| 名称 | ConflictPanelProps |
+| 所属系统 | ui |
+| 所属模块 | ConflictPanel |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | ConflictPanel 组件的 Props 类型接口，包含一个 ConflictHighlighter 实例引用 |
+| 输入参数 | conflictHighlighter: ConflictHighlighter |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const props: ConflictPanelProps = { conflictHighlighter: highlighter }` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-05）|

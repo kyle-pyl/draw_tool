@@ -2,6 +2,7 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import type { SceneDocument, SceneElement, ShapeElement, TextElement, ImageElement, ConnectorElement, ConnectorEndpoint, ElementStyle, BBox } from '../core/types';
 import type { Viewport } from './viewport';
 import type { SelectionManager } from './selection';
+import type { ConflictHighlighter } from './conflict';
 
 interface CanvasViewProps {
   scene: SceneDocument;
@@ -12,6 +13,7 @@ interface CanvasViewProps {
   onViewportChange?: () => void;
   selectionManager?: SelectionManager;
   onSelectionChange?: () => void;
+  conflictHighlighter?: ConflictHighlighter;
 }
 
 function getElementBBox(el: SceneElement): BBox {
@@ -241,7 +243,7 @@ interface MarqueeState {
   endY: number;
 }
 
-export function CanvasView({ scene, viewport, width, height, className, onViewportChange, selectionManager, onSelectionChange }: CanvasViewProps) {
+export function CanvasView({ scene, viewport, width, height, className, onViewportChange, selectionManager, onSelectionChange, conflictHighlighter }: CanvasViewProps) {
   const layersSorted = [...scene.layers].sort((a, b) => a.order - b.order);
   const layerElementMap = new Map<string, SceneElement[]>();
   const layerMap = new Map(scene.layers.map((l) => [l.id, l]));
@@ -526,6 +528,65 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
                   strokeWidth={1}
                 />
                 {renderHandles(sx, sy, sw, sh)}
+              </g>
+            );
+          })}
+        </g>
+      )}
+      {conflictHighlighter?.hasConflicts && (
+        <g pointerEvents="none" className="conflict-overlay">
+          {conflictHighlighter.getConflicts().map((conflict) => {
+            const elA = scene.elements.find((e) => e.id === conflict.elementAId);
+            const elB = scene.elements.find((e) => e.id === conflict.elementBId);
+
+            return (
+              <g key={`conflict-${conflict.id}`}>
+                {elA && (() => {
+                  const bbox = getElementBBox(elA);
+                  const sx = viewport.zoom * bbox.x + viewport.offsetX;
+                  const sy = viewport.zoom * bbox.y + viewport.offsetY;
+                  const sw = viewport.zoom * bbox.width;
+                  const sh = viewport.zoom * bbox.height;
+                  return (
+                    <rect
+                      x={sx}
+                      y={sy}
+                      width={sw}
+                      height={sh}
+                      fill="rgba(244, 67, 54, 0.08)"
+                      stroke="#F44336"
+                      strokeWidth={2}
+                      strokeDasharray="6 3"
+                    />
+                  );
+                })()}
+                {elB && (() => {
+                  const bbox = getElementBBox(elB);
+                  const sx = viewport.zoom * bbox.x + viewport.offsetX;
+                  const sy = viewport.zoom * bbox.y + viewport.offsetY;
+                  const sw = viewport.zoom * bbox.width;
+                  const sh = viewport.zoom * bbox.height;
+                  return (
+                    <rect
+                      x={sx}
+                      y={sy}
+                      width={sw}
+                      height={sh}
+                      fill="rgba(244, 67, 54, 0.08)"
+                      stroke="#F44336"
+                      strokeWidth={2}
+                      strokeDasharray="6 3"
+                    />
+                  );
+                })()}
+                <rect
+                  x={viewport.zoom * conflict.overlapBBox.x + viewport.offsetX}
+                  y={viewport.zoom * conflict.overlapBBox.y + viewport.offsetY}
+                  width={viewport.zoom * conflict.overlapBBox.width}
+                  height={viewport.zoom * conflict.overlapBBox.height}
+                  fill="rgba(244, 67, 54, 0.15)"
+                  stroke="none"
+                />
               </g>
             );
           })}

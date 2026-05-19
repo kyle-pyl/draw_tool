@@ -3,6 +3,7 @@ import { render, fireEvent, act } from '@testing-library/react';
 import { CanvasView } from '../../canvas/CanvasView';
 import { Viewport } from '../../canvas/viewport';
 import { SelectionManager } from '../../canvas/selection';
+import { ConflictHighlighter } from '../../canvas/conflict';
 import type { SceneDocument } from '../../core/types';
 
 function createScene(overrides: Partial<SceneDocument> = {}): SceneDocument {
@@ -1325,6 +1326,187 @@ describe('CanvasView', () => {
       });
 
       expect(() => fireEvent.wheel(svg, { deltaY: -100, clientX: 400, clientY: 300 })).not.toThrow();
+    });
+  });
+
+  describe('conflict overlay rendering', () => {
+    let conflictHighlighter: ConflictHighlighter;
+
+    beforeEach(() => {
+      conflictHighlighter = new ConflictHighlighter();
+    });
+
+    function sceneWithOverlappingElements(): SceneDocument {
+      return createScene({
+        elements: [
+          {
+            id: 'e1', type: 'shape', layerId: 'l1', name: 'Element A',
+            transform: { x: 10, y: 10, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: '#f00', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            visible: true, locked: false, shapeKind: 'rect',
+          },
+          {
+            id: 'e2', type: 'shape', layerId: 'l1', name: 'Element B',
+            transform: { x: 50, y: 50, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: '#0f0', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            visible: true, locked: false, shapeKind: 'rect',
+          },
+        ],
+      });
+    }
+
+    it('renders no conflict overlay when no conflicts', () => {
+      const scene = sceneWithOverlappingElements();
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} conflictHighlighter={conflictHighlighter} />
+      );
+      expect(container.querySelector('.conflict-overlay')).toBeNull();
+    });
+
+    it('renders conflict overlay with red dashed bounding boxes', () => {
+      const scene = sceneWithOverlappingElements();
+      conflictHighlighter.setCollisions(
+        [{ elementA: 'e1', elementB: 'e2', overlapBBox: { x: 50, y: 50, width: 50, height: 50 } }],
+        scene.elements,
+        scene.layers
+      );
+
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} conflictHighlighter={conflictHighlighter} />
+      );
+      const overlay = container.querySelector('.conflict-overlay');
+      expect(overlay).toBeInTheDocument();
+
+      const dashedRects = overlay!.querySelectorAll('rect[stroke="#F44336"]');
+      expect(dashedRects.length).toBe(2);
+    });
+
+    it('renders overlap area with red fill', () => {
+      const scene = sceneWithOverlappingElements();
+      conflictHighlighter.setCollisions(
+        [{ elementA: 'e1', elementB: 'e2', overlapBBox: { x: 50, y: 50, width: 50, height: 50 } }],
+        scene.elements,
+        scene.layers
+      );
+
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} conflictHighlighter={conflictHighlighter} />
+      );
+      const overlay = container.querySelector('.conflict-overlay')!;
+      const overlapRect = overlay.querySelector('rect[stroke="none"]');
+      expect(overlapRect).toBeInTheDocument();
+      expect(overlapRect).toHaveAttribute('fill', 'rgba(244, 67, 54, 0.15)');
+    });
+
+    it('conflict overlay has pointerEvents none', () => {
+      const scene = sceneWithOverlappingElements();
+      conflictHighlighter.setCollisions(
+        [{ elementA: 'e1', elementB: 'e2', overlapBBox: { x: 50, y: 50, width: 50, height: 50 } }],
+        scene.elements,
+        scene.layers
+      );
+
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} conflictHighlighter={conflictHighlighter} />
+      );
+      const overlay = container.querySelector('.conflict-overlay')!;
+      expect(overlay).toHaveAttribute('pointer-events', 'none');
+    });
+
+    it('renders conflict bboxes at correct screen positions', () => {
+      const vp = new Viewport({ initialZoom: 2, initialOffsetX: 0, initialOffsetY: 0 });
+      const scene = sceneWithOverlappingElements();
+      conflictHighlighter.setCollisions(
+        [{ elementA: 'e1', elementB: 'e2', overlapBBox: { x: 50, y: 50, width: 50, height: 50 } }],
+        scene.elements,
+        scene.layers
+      );
+
+      const { container } = render(
+        <CanvasView scene={scene} viewport={vp} conflictHighlighter={conflictHighlighter} />
+      );
+      const overlay = container.querySelector('.conflict-overlay')!;
+      const overlapRect = overlay.querySelectorAll('rect')[2];
+      expect(Number(overlapRect.getAttribute('x'))).toBeCloseTo(100, 0);
+      expect(Number(overlapRect.getAttribute('y'))).toBeCloseTo(100, 0);
+      expect(Number(overlapRect.getAttribute('width'))).toBeCloseTo(100, 0);
+      expect(Number(overlapRect.getAttribute('height'))).toBeCloseTo(100, 0);
+    });
+
+    it('conflict overlay updates when conflicts are cleared', () => {
+      const scene = sceneWithOverlappingElements();
+      conflictHighlighter.setCollisions(
+        [{ elementA: 'e1', elementB: 'e2', overlapBBox: { x: 50, y: 50, width: 50, height: 50 } }],
+        scene.elements,
+        scene.layers
+      );
+
+      const { container, rerender } = render(
+        <CanvasView scene={scene} viewport={viewport} conflictHighlighter={conflictHighlighter} />
+      );
+      expect(container.querySelector('.conflict-overlay')).toBeInTheDocument();
+
+      conflictHighlighter.clearCollisions();
+      rerender(
+        <CanvasView scene={scene} viewport={viewport} conflictHighlighter={conflictHighlighter} />
+      );
+      expect(container.querySelector('.conflict-overlay')).toBeNull();
+    });
+
+    it('does not render conflict overlay when conflictHighlighter not provided', () => {
+      const scene = sceneWithOverlappingElements();
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} />
+      );
+      expect(container.querySelector('.conflict-overlay')).toBeNull();
+    });
+
+    it('renders multiple conflict pairs correctly', () => {
+      const scene = createScene({
+        elements: [
+          {
+            id: 'e1', type: 'shape', layerId: 'l1', name: 'A',
+            transform: { x: 0, y: 0, width: 60, height: 60, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: '#f00', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            visible: true, locked: false, shapeKind: 'rect',
+          },
+          {
+            id: 'e2', type: 'shape', layerId: 'l1', name: 'B',
+            transform: { x: 30, y: 30, width: 60, height: 60, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: '#0f0', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            visible: true, locked: false, shapeKind: 'rect',
+          },
+          {
+            id: 'e3', type: 'shape', layerId: 'l2', name: 'C',
+            transform: { x: 0, y: 100, width: 60, height: 60, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: '#00f', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            visible: true, locked: false, shapeKind: 'rect',
+          },
+          {
+            id: 'e4', type: 'shape', layerId: 'l2', name: 'D',
+            transform: { x: 30, y: 130, width: 60, height: 60, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: '#ff0', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            visible: true, locked: false, shapeKind: 'rect',
+          },
+        ],
+      });
+      conflictHighlighter.setCollisions(
+        [
+          { elementA: 'e1', elementB: 'e2', overlapBBox: { x: 30, y: 30, width: 30, height: 30 } },
+          { elementA: 'e3', elementB: 'e4', overlapBBox: { x: 30, y: 130, width: 30, height: 30 } },
+        ],
+        scene.elements,
+        scene.layers
+      );
+
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} conflictHighlighter={conflictHighlighter} />
+      );
+      const overlay = container.querySelector('.conflict-overlay')!;
+      const dashedRects = overlay.querySelectorAll('rect[stroke="#F44336"]');
+      expect(dashedRects.length).toBe(4);
+      const overlapRects = overlay.querySelectorAll('rect[stroke="none"]');
+      expect(overlapRects.length).toBe(2);
     });
   });
 });
