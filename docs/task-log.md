@@ -151,7 +151,7 @@
 | 任务名称 | 实现画布缩放和平移交互 |
 | 完成时间 | 2026-05-19 14:45 |
 | 作者/智能体 | OpenCode/deepseek-v4-pro |
-| Git Commit | （待提交） |
+| Git Commit | 6abc2e8 |
 | 修改记录 | 修改：src/canvas/CanvasView.tsx（新增 onViewportChange prop、滚轮缩放、空格+拖拽平移、中键拖拽平移、光标样式切换）、src/App.tsx（使用 useState 管理 viewport 并传入 onViewportChange 回调）、src/tests/unit/canvas-view.test.tsx（新增 15 个交互测试用例：zoom、pan、cursor、onViewportChange）；更新：docs/api-registry.md（更新 API-0057）、docs/task-list.md（T-02-03 状态改为已完成）、README.md（更新可用功能描述） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0057（CanvasView：新增 onViewportChange prop、交互事件处理）|
