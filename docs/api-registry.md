@@ -1420,7 +1420,63 @@
 | 典型用例 | `const hl = new ConflictHighlighter(); hl.setCollisions(result.collisions, scene.elements, scene.layers); if (hl.hasConflicts) { showPanel(hl.getConflicts()); }` |
 | 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-05）|
 
-### API-0075 ConflictInfo
+### API-0078 SceneCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0078 |
+| 名称 | SceneCommand |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 所有编辑命令的基础接口。定义命令的 id、label、validate（预执行校验，返回非 valid 结果时阻止执行）、execute（纯函数式应用命令到场景，返回新场景）和 invert（生成反向命令用于重做支持，返回 null 表示不可逆）。所有具体命令（CreateElement、MoveElements、UpdateElement、ChangeLayer、TransformElements 等）均实现此接口并通过 CommandExecutor 执行 |
+| 输入参数 | id: string（唯一标识）, label: string（历史记录显示名称）, validate: (scene: SceneDocument) => ValidationResult, execute: (scene: SceneDocument) => SceneDocument, invert: (scene: SceneDocument) => SceneCommand | null |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const cmd: SceneCommand = { id: 'move-1', label: 'Move Elements', validate: (s) => successResult(), execute: (s) => applyMove(s), invert: (s) => reverseMove(s) }` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-01）|
+
+### API-0079 CommandHistoryEntry
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0079 |
+| 名称 | CommandHistoryEntry |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 命令历史记录条目。包含执行的 SceneCommand 和执行前的完整场景快照（SceneDocument）。快照用于 undo 时回滚到命令执行前的状态 |
+| 输入参数 | command: SceneCommand, snapshot: SceneDocument |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const entry: CommandHistoryEntry = { command: cmd, snapshot: preExecScene }` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-01）|
+
+### API-0080 CommandExecutor
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0080 |
+| 名称 | CommandExecutor |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 命令执行器类，管理命令执行、撤销和重做的完整生命周期。execute 先调用命令的 validate 进行预校验，失败返回 ValidationResult 不改变状态；成功时拍摄执行前快照，通过 store.updateScene 应用命令，压入历史栈（超出 maxHistory 时移除最早记录），清空重做栈。undo 弹出历史栈顶、恢复快照、压入重做栈。redo 弹出重做栈顶、拍新快照、重新执行命令。提供 canUndo/canRedo 状态查询和 getHistory 只读历史访问 |
+| 输入参数 | constructor(maxHistory?: number) - 历史最大条数（默认 100） |
+| 输出参数 | execute(command: SceneCommand): ValidationResult; undo(): boolean; redo(): boolean; canUndo(): boolean; canRedo(): boolean; getHistory(): readonly CommandHistoryEntry[] |
+| 典型用例 | `const executor = new CommandExecutor(50); const result = executor.execute(createCmd); if (result.valid) { /* done */ } else { showErrors(result.errors); }` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-01）|
+
 
 | 字段 | 内容 |
 |---|---|

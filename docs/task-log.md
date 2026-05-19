@@ -312,3 +312,16 @@
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0074（ConflictHighlighter）、API-0075（ConflictInfo）、API-0076（ConflictPanel）、API-0077（ConflictPanelProps） |
 
+### T-05-01 实现命令系统框架
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-05-01 |
+| 任务名称      | 实现命令系统框架 |
+| 完成时间      | 2026-05-19 22:01 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | 697fb31 |
+| 修改记录      | 新建：src/core/commands.ts（SceneCommand 接口、CommandHistoryEntry 接口、CommandExecutor 类）、src/tests/unit/commands.test.ts（15 个测试用例）；修改：src/core/index.ts（新增 SceneCommand、CommandHistoryEntry、CommandExecutor 导出） |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0078（SceneCommand）、API-0079（CommandHistoryEntry）、API-0080（CommandExecutor） |
+
