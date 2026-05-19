@@ -125,7 +125,7 @@
 | 任务名称 | 实现视口变换管理器 |
 | 完成时间 | 2026-05-19 11:15 |
 | 作者/智能体 | OpenCode/deepseek-v4-pro |
-| Git Commit | d30957e |
+| Git Commit | 0f0c312 |
 | 修改记录 | 新建：src/canvas/viewport.ts、src/tests/unit/viewport.test.ts；修改：src/canvas/index.ts（新增 Viewport 和 ViewportConfig 导出）|
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0055（ViewportConfig）、API-0056（Viewport）|
