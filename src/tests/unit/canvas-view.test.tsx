@@ -142,7 +142,7 @@ describe('CanvasView', () => {
       expect(layerGroups[2].getAttribute('data-layer-name')).toBe('Middle');
     });
 
-    it('should not render hidden layers', () => {
+    it('should render hidden layers with visibility:hidden to preserve space', () => {
       scene = createScene({
         layers: [
           { id: 'l1', name: 'Visible', order: 1, visible: true, locked: false },
@@ -152,9 +152,11 @@ describe('CanvasView', () => {
 
       const { container } = render(<CanvasView scene={scene} viewport={viewport} />);
       const rootG = container.querySelector('svg > g')!;
-      const layerGroups = rootG.children;
-      expect(layerGroups.length).toBe(1);
+      const layerGroups = Array.from(rootG.children);
+      expect(layerGroups.length).toBe(2);
       expect(layerGroups[0].getAttribute('data-layer-name')).toBe('Visible');
+      expect(layerGroups[1].getAttribute('data-layer-name')).toBe('Hidden');
+      expect((layerGroups[1] as HTMLElement).style.visibility).toBe('hidden');
     });
   });
 
@@ -816,6 +818,36 @@ describe('CanvasView', () => {
       expect(onChange).toHaveBeenCalledTimes(1);
     });
 
+    it('should not select elements in locked layers', () => {
+      const scene = createScene({
+        layers: [
+          { id: 'l1', name: 'Locked Layer', order: 1, visible: true, locked: true },
+          { id: 'l2', name: 'Unlocked Layer', order: 2, visible: true, locked: false },
+        ],
+        elements: [
+          {
+            id: 'e1', type: 'shape', layerId: 'l1',
+            transform: { x: 0, y: 0, width: 100, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: '#f00', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            visible: true, locked: false, shapeKind: 'rect',
+          },
+          {
+            id: 'e2', type: 'shape', layerId: 'l2',
+            transform: { x: 0, y: 60, width: 100, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: '#0f0', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            visible: true, locked: false, shapeKind: 'rect',
+          },
+        ],
+      });
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} selectionManager={selectionManager} />
+      );
+      fireEvent.click(container.querySelector('[data-element-id="e1"]')!);
+      fireEvent.click(container.querySelector('[data-element-id="e2"]')!);
+      expect(selectionManager.isSelected('e1')).toBe(false);
+      expect(selectionManager.isSelected('e2')).toBe(true);
+    });
+
     it('should not select locked elements', () => {
       const scene = createScene({
         elements: [
@@ -1070,6 +1102,47 @@ describe('CanvasView', () => {
           },
           {
             id: 'e2', type: 'shape', layerId: 'l1',
+            transform: { x: 200, y: 10, width: 80, height: 60, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: '#0f0', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            visible: true, locked: false, shapeKind: 'rect',
+          },
+        ],
+      });
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} selectionManager={selectionManager} />
+      );
+      const svg = container.querySelector('svg')!;
+      mockSVGBounds(svg);
+
+      act(() => {
+        fireEvent.mouseDown(svg, { button: 0, clientX: 0, clientY: 0 });
+      });
+      act(() => {
+        fireEvent.mouseMove(svg, { clientX: 300, clientY: 100 });
+      });
+      act(() => {
+        fireEvent.mouseUp(svg, { button: 0, clientX: 300, clientY: 100 });
+      });
+
+      expect(selectionManager.isSelected('e1')).toBe(false);
+      expect(selectionManager.isSelected('e2')).toBe(true);
+    });
+
+    it('should not select elements in locked layers via marquee', () => {
+      const scene = createScene({
+        layers: [
+          { id: 'l1', name: 'Locked', order: 1, visible: true, locked: true },
+          { id: 'l2', name: 'Unlocked', order: 2, visible: true, locked: false },
+        ],
+        elements: [
+          {
+            id: 'e1', type: 'shape', layerId: 'l1',
+            transform: { x: 10, y: 10, width: 100, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: '#f00', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            visible: true, locked: false, shapeKind: 'rect',
+          },
+          {
+            id: 'e2', type: 'shape', layerId: 'l2',
             transform: { x: 200, y: 10, width: 80, height: 60, rotation: 0, scaleX: 1, scaleY: 1 },
             style: { fill: '#0f0', stroke: '#000', strokeWidth: 1, opacity: 1 },
             visible: true, locked: false, shapeKind: 'rect',

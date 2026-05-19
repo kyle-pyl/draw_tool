@@ -268,10 +268,23 @@
 | 任务名称      | 实现图层冲突校验器 |
 | 完成时间      | 2026-05-19 21:15 |
 | 作者/智能体   | OpenCode/deepseek-v4-pro |
-| Git Commit    | (待提交) |
+| Git Commit    | 3aa1e90 |
 | 修改记录      | 修改：src/core/validator.ts（新增 validateGeometryRules 函数，集成到 validateScene Stage 6，新增 checkLayerCollisions/CollisionCheckOptions/createGeometryAdapter/SceneElement 导入）；修改：src/tests/unit/validator.test.ts（新增 12 个几何规则测试用例：同层重叠检测、多层独立检测、connector 豁免、maxLayerCount 超限、hidden/locked 元素碰撞策略、错误包含 bboxes 字段；修复 3 个已有测试数据避免新校验引入的重叠冲突、新增 transform 缺失防护） |
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0051（validateScene 修订：新增 Stage 6 几何规则校验）、API-0073（validateGeometryRules） |
+
+### T-04-04 实现图层渲染顺序
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-04-04 |
+| 任务名称      | 实现图层渲染顺序 |
+| 完成时间      | 2026-05-19 21:30 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | f1ee122 |
+| 修改记录      | 修改：src/canvas/CanvasView.tsx（新增 layerMap 按 ID 快速查找图层、隐藏图层改用 visibility:hidden 而非 return null 以保留 DOM 空间、锁定图层元素不响应 onClick 事件、marquee 框选排除锁定图层内元素）；修改：src/tests/unit/canvas-view.test.tsx（更新隐藏图层测试期望 visibility:hidden、新增 locked layer 的 click 选择和 marquee 框选测试各 1 个）；修改：README.md、docs/api-registry.md、docs/task-list.md |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0057（CanvasView：修订 - 隐藏图层标记、锁定图层交互控制） |
 
 ### T-04-01 实现 BBox 计算器
 

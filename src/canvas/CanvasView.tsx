@@ -244,6 +244,7 @@ interface MarqueeState {
 export function CanvasView({ scene, viewport, width, height, className, onViewportChange, selectionManager, onSelectionChange }: CanvasViewProps) {
   const layersSorted = [...scene.layers].sort((a, b) => a.order - b.order);
   const layerElementMap = new Map<string, SceneElement[]>();
+  const layerMap = new Map(scene.layers.map((l) => [l.id, l]));
 
   for (const el of scene.elements) {
     const list = layerElementMap.get(el.layerId);
@@ -419,6 +420,8 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
       const containedIds: string[] = [];
       for (const el of scene.elements) {
         if (!el.visible || el.locked) continue;
+        const elLayer = layerMap.get(el.layerId);
+        if (elLayer?.locked) continue;
         const bbox = getElementBBox(el);
         if (
           bbox.x >= canvasTopLeft.x &&
@@ -465,15 +468,21 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
     >
       <g transform={viewportTransform}>
         {layersSorted.map((layer) => {
-          if (!layer.visible) return null;
           const els = layerElementMap.get(layer.id) ?? [];
+          const isLayerLocked = layer.locked;
+          const isLayerHidden = !layer.visible;
           return (
-            <g key={layer.id} id={`layer-${layer.id}`} data-layer-name={layer.name}>
+            <g
+              key={layer.id}
+              id={`layer-${layer.id}`}
+              data-layer-name={layer.name}
+              style={isLayerHidden ? { visibility: 'hidden' } : undefined}
+            >
               {els.map((el) => (
                 <g
                   key={el.id}
-                  onClick={(e) => handleElementClick(e, el)}
-                  style={{ cursor: el.locked ? 'default' : 'pointer' }}
+                  onClick={isLayerLocked || el.locked ? undefined : (e) => handleElementClick(e, el)}
+                  style={{ cursor: isLayerLocked || el.locked ? 'default' : 'pointer' }}
                   data-element-id={el.id}
                 >
                   {renderElement(el, scene.elements)}
