@@ -167,4 +167,17 @@
 | Git Commit    | 5c3043aef                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | 修改记录      | 新建：src/canvas/selection.ts（SelectionManager 类）、src/tests/unit/selection.test.ts（18 个 SelectionManager 单元测试）；修改：src/canvas/CanvasView.tsx（新增 selectionManager/onSelectionChange props、元素 onClick 包装、选择覆盖层渲染含蓝色包围盒和 8 个控制柄、spaceDownRef 避免平移时误选）、src/canvas/index.ts（新增 SelectionManager 导出）、src/App.tsx（集成 SelectionManager）、src/tests/unit/canvas-view.test.tsx（新增 12 个选择交互测试） |
 | 发现缺陷      | 无                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| 产出接口/函数 | API-0058（SelectionManager）、API-0057（CanvasView：新增 selectionManager/onSelectionChange props 和选择交互）                                                                                                                                                                                                                                                                                                                                               |
+| 产出接口/函数 | API-0058（SelectionManager）、API-0057（CanvasView：新增 selectionManager/onSelectionChange props 和选择交互） |
+
+### T-02-05 实现框选功能
+
+| 字段 | 内容 |
+|---|---|
+| 任务编号 | T-02-05 |
+| 任务名称 | 实现框选功能 |
+| 完成时间 | 2026-05-19 15:30 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| Git Commit | 633622c |
+| 修改记录 | 修改：src/canvas/CanvasView.tsx（新增 marquee 状态管理、handleMouseDown/handleMouseMove/handleMouseUp 扩展、handleMouseLeave 分离、didDragRef 拖拽判断、MarqueeState 接口、框选矩形渲染——半透明蓝色虚线框位于屏幕空间）、src/tests/unit/canvas-view.test.tsx（新增 12 个框选交互测试：完全/部分包含选择、Shift+框选追加、框选矩形渲染、元素上不启动框选、平移时不启动框选、锁定/隐藏元素过滤、缩放视口适配、onSelectionChange 回调、小拖拽视为点击清空） |
+| 发现缺陷 | 无 |
+| 产出接口/函数 | API-0057（CanvasView：新增框选 marquee selection 功能） |

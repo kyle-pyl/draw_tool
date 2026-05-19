@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, fireEvent } from '@testing-library/react';
+import { render, fireEvent, act } from '@testing-library/react';
 import { CanvasView } from '../../canvas/CanvasView';
 import { Viewport } from '../../canvas/viewport';
 import { SelectionManager } from '../../canvas/selection';
@@ -850,6 +850,363 @@ describe('CanvasView', () => {
       const { container } = render(<CanvasView scene={scene} viewport={viewport} />);
       const rectG = container.querySelector('[data-element-id="e1"]')!;
       expect(() => fireEvent.click(rectG)).not.toThrow();
+    });
+  });
+
+  describe('interaction: marquee selection', () => {
+    let selectionManager: SelectionManager;
+
+    beforeEach(() => {
+      selectionManager = new SelectionManager();
+    });
+
+    function sceneWithRects() {
+      return createScene({
+        elements: [
+          {
+            id: 'e1', type: 'shape', layerId: 'l1', name: 'rect1',
+            transform: { x: 10, y: 10, width: 100, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: '#f00', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            visible: true, locked: false, shapeKind: 'rect',
+          },
+          {
+            id: 'e2', type: 'shape', layerId: 'l1', name: 'rect2',
+            transform: { x: 200, y: 10, width: 80, height: 60, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: '#0f0', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            visible: true, locked: false, shapeKind: 'rect',
+          },
+        ],
+      });
+    }
+
+    function mockSVGBounds(svg: Element) {
+      Object.defineProperty(svg, 'getBoundingClientRect', {
+        value: () => ({ left: 0, top: 0, right: 800, bottom: 600, width: 800, height: 600 }),
+        configurable: true,
+      });
+    }
+
+    it('should select elements fully inside marquee', () => {
+      const scene = sceneWithRects();
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} selectionManager={selectionManager} />
+      );
+      const svg = container.querySelector('svg')!;
+      mockSVGBounds(svg);
+
+      act(() => {
+        fireEvent.mouseDown(svg, { button: 0, clientX: 0, clientY: 0 });
+      });
+      act(() => {
+        fireEvent.mouseMove(svg, { clientX: 150, clientY: 100 });
+      });
+      act(() => {
+        fireEvent.mouseUp(svg, { button: 0, clientX: 150, clientY: 100 });
+      });
+
+      expect(selectionManager.isSelected('e1')).toBe(true);
+      expect(selectionManager.isSelected('e2')).toBe(false);
+    });
+
+    it('should select multiple elements inside marquee', () => {
+      const scene = sceneWithRects();
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} selectionManager={selectionManager} />
+      );
+      const svg = container.querySelector('svg')!;
+      mockSVGBounds(svg);
+
+      act(() => {
+        fireEvent.mouseDown(svg, { button: 0, clientX: 0, clientY: 0 });
+      });
+      act(() => {
+        fireEvent.mouseMove(svg, { clientX: 300, clientY: 100 });
+      });
+      act(() => {
+        fireEvent.mouseUp(svg, { button: 0, clientX: 300, clientY: 100 });
+      });
+
+      expect(selectionManager.isSelected('e1')).toBe(true);
+      expect(selectionManager.isSelected('e2')).toBe(true);
+    });
+
+    it('should add to selection on shift+marquee', () => {
+      const scene = sceneWithRects();
+      selectionManager.select('e1');
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} selectionManager={selectionManager} />
+      );
+      const svg = container.querySelector('svg')!;
+      mockSVGBounds(svg);
+
+      act(() => {
+        fireEvent.mouseDown(svg, { button: 0, clientX: 0, clientY: 0, shiftKey: true });
+      });
+      act(() => {
+        fireEvent.mouseMove(svg, { clientX: 300, clientY: 100, shiftKey: true });
+      });
+      act(() => {
+        fireEvent.mouseUp(svg, { button: 0, clientX: 300, clientY: 100, shiftKey: true });
+      });
+
+      expect(selectionManager.count).toBe(2);
+      expect(selectionManager.isSelected('e1')).toBe(true);
+      expect(selectionManager.isSelected('e2')).toBe(true);
+    });
+
+    it('should not select partially outside elements', () => {
+      const scene = createScene({
+        elements: [
+          {
+            id: 'e1', type: 'shape', layerId: 'l1',
+            transform: { x: 50, y: 50, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: '#f00', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            visible: true, locked: false, shapeKind: 'rect',
+          },
+        ],
+      });
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} selectionManager={selectionManager} />
+      );
+      const svg = container.querySelector('svg')!;
+      mockSVGBounds(svg);
+
+      act(() => {
+        fireEvent.mouseDown(svg, { button: 0, clientX: 80, clientY: 80 });
+      });
+      act(() => {
+        fireEvent.mouseMove(svg, { clientX: 120, clientY: 120 });
+      });
+      act(() => {
+        fireEvent.mouseUp(svg, { button: 0, clientX: 120, clientY: 120 });
+      });
+
+      expect(selectionManager.count).toBe(0);
+    });
+
+    it('should render marquee rectangle during drag', () => {
+      const scene = sceneWithRects();
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} selectionManager={selectionManager} />
+      );
+      const svg = container.querySelector('svg')!;
+      mockSVGBounds(svg);
+
+      act(() => {
+        fireEvent.mouseDown(svg, { button: 0, clientX: 10, clientY: 20 });
+      });
+
+      // After mousedown, marquee should be rendered (0-area at start)
+      const marqueeRect = svg.querySelector('rect[stroke="#2196F3"]');
+      // The marquee rect has stroke #2196F3; bounding box rects also have #2196F3 but are inside .selection-overlay
+      // We need to find the marquee not inside .selection-overlay
+      const marqueeEl = Array.from(svg.querySelectorAll('rect[stroke="#2196F3"]')).find(
+        (r) => !r.closest('.selection-overlay')
+      );
+      expect(marqueeEl).toBeInTheDocument();
+      expect(marqueeEl).toHaveAttribute('fill', 'rgba(33, 150, 243, 0.1)');
+      expect(marqueeEl).toHaveAttribute('stroke-dasharray', '4 2');
+    });
+
+    it('should not start marquee on element click', () => {
+      const scene = sceneWithRects();
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} selectionManager={selectionManager} />
+      );
+      const svg = container.querySelector('svg')!;
+      mockSVGBounds(svg);
+
+      const elementWrapper = container.querySelector('[data-element-id="e1"]')!;
+
+      act(() => {
+        fireEvent.mouseDown(elementWrapper, { button: 0, clientX: 50, clientY: 30 });
+      });
+      // mouseMove on element wrapper should not create marquee
+      act(() => {
+        fireEvent.mouseMove(svg, { clientX: 200, clientY: 100 });
+      });
+      act(() => {
+        fireEvent.mouseUp(svg, { button: 0, clientX: 200, clientY: 100 });
+      });
+
+      // Selection should come from element click, not marquee
+      // The marquee should not have been created, so no marquee-based selection
+      // The selectionmanager should have only 'e1' from the click or no selection if click didn't fire
+      expect(selectionManager.isSelected('e1')).toBe(false);
+      expect(selectionManager.isSelected('e2')).toBe(false);
+    });
+
+    it('should not start marquee during panning', () => {
+      const scene = sceneWithRects();
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} selectionManager={selectionManager} />
+      );
+      const svg = container.querySelector('svg')!;
+      mockSVGBounds(svg);
+
+      fireEvent.keyDown(window, { code: 'Space' });
+
+      act(() => {
+        fireEvent.mouseDown(svg, { button: 0, clientX: 10, clientY: 10 });
+      });
+      act(() => {
+        fireEvent.mouseMove(svg, { clientX: 200, clientY: 100 });
+      });
+      act(() => {
+        fireEvent.mouseUp(svg, { button: 0, clientX: 200, clientY: 100 });
+      });
+
+      expect(selectionManager.count).toBe(0);
+    });
+
+    it('should not select locked elements', () => {
+      const scene = createScene({
+        elements: [
+          {
+            id: 'e1', type: 'shape', layerId: 'l1',
+            transform: { x: 10, y: 10, width: 100, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: '#f00', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            visible: true, locked: true, shapeKind: 'rect',
+          },
+          {
+            id: 'e2', type: 'shape', layerId: 'l1',
+            transform: { x: 200, y: 10, width: 80, height: 60, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: '#0f0', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            visible: true, locked: false, shapeKind: 'rect',
+          },
+        ],
+      });
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} selectionManager={selectionManager} />
+      );
+      const svg = container.querySelector('svg')!;
+      mockSVGBounds(svg);
+
+      act(() => {
+        fireEvent.mouseDown(svg, { button: 0, clientX: 0, clientY: 0 });
+      });
+      act(() => {
+        fireEvent.mouseMove(svg, { clientX: 300, clientY: 100 });
+      });
+      act(() => {
+        fireEvent.mouseUp(svg, { button: 0, clientX: 300, clientY: 100 });
+      });
+
+      expect(selectionManager.isSelected('e1')).toBe(false);
+      expect(selectionManager.isSelected('e2')).toBe(true);
+    });
+
+    it('should not select hidden elements', () => {
+      const scene = createScene({
+        elements: [
+          {
+            id: 'e1', type: 'shape', layerId: 'l1',
+            transform: { x: 10, y: 10, width: 100, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: '#f00', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            visible: false, locked: false, shapeKind: 'rect',
+          },
+          {
+            id: 'e2', type: 'shape', layerId: 'l1',
+            transform: { x: 200, y: 10, width: 80, height: 60, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: '#0f0', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            visible: true, locked: false, shapeKind: 'rect',
+          },
+        ],
+      });
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} selectionManager={selectionManager} />
+      );
+      const svg = container.querySelector('svg')!;
+      mockSVGBounds(svg);
+
+      act(() => {
+        fireEvent.mouseDown(svg, { button: 0, clientX: 0, clientY: 0 });
+      });
+      act(() => {
+        fireEvent.mouseMove(svg, { clientX: 300, clientY: 100 });
+      });
+      act(() => {
+        fireEvent.mouseUp(svg, { button: 0, clientX: 300, clientY: 100 });
+      });
+
+      expect(selectionManager.isSelected('e1')).toBe(false);
+      expect(selectionManager.isSelected('e2')).toBe(true);
+    });
+
+    it('should work correctly with zoomed viewport', () => {
+      const vp = new Viewport({ initialZoom: 2, initialOffsetX: 0, initialOffsetY: 0 });
+      const scene = sceneWithRects();
+      const { container } = render(
+        <CanvasView scene={scene} viewport={vp} selectionManager={selectionManager} />
+      );
+      const svg = container.querySelector('svg')!;
+      mockSVGBounds(svg);
+
+      // With zoom=2: screen(20,20) → canvas(10,10)
+      // e1 bbox (10,10)-(110,60) would be screen (20,20)-(220,120)
+      // Marquee from screen(0,0) to screen(150,100) → canvas(0,0) to (75,50)
+      // e1: y=10≥0 ✓, right=110>75 ✗ → NOT CONTAINED
+      // To select e1 at zoom 2: need marquee that covers screen(canvas * 2)
+      // e1 canvas: (10,10)-(110,60). Screen: (20,20)-(220,120).
+      // Marquee screen(0,0) to screen(250,130) → canvas(0,0) to (125,65)
+      // e1: right=110≤125 ✓ → CONTAINED
+      act(() => {
+        fireEvent.mouseDown(svg, { button: 0, clientX: 0, clientY: 0 });
+      });
+      act(() => {
+        fireEvent.mouseMove(svg, { clientX: 250, clientY: 130 });
+      });
+      act(() => {
+        fireEvent.mouseUp(svg, { button: 0, clientX: 250, clientY: 130 });
+      });
+
+      expect(selectionManager.isSelected('e1')).toBe(true);
+      expect(selectionManager.isSelected('e2')).toBe(false);
+    });
+
+    it('should call onSelectionChange after marquee', () => {
+      const scene = sceneWithRects();
+      const onChange = vi.fn();
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} selectionManager={selectionManager} onSelectionChange={onChange} />
+      );
+      const svg = container.querySelector('svg')!;
+      mockSVGBounds(svg);
+
+      act(() => {
+        fireEvent.mouseDown(svg, { button: 0, clientX: 0, clientY: 0 });
+      });
+      act(() => {
+        fireEvent.mouseMove(svg, { clientX: 300, clientY: 100 });
+      });
+      act(() => {
+        fireEvent.mouseUp(svg, { button: 0, clientX: 300, clientY: 100 });
+      });
+
+      expect(onChange).toHaveBeenCalledTimes(1);
+    });
+
+    it('should clear selection on small drag (treated as click)', () => {
+      const scene = sceneWithRects();
+      selectionManager.select('e1');
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} selectionManager={selectionManager} />
+      );
+      const svg = container.querySelector('svg')!;
+      mockSVGBounds(svg);
+
+      act(() => {
+        fireEvent.mouseDown(svg, { button: 0, clientX: 500, clientY: 400 });
+      });
+      act(() => {
+        fireEvent.mouseMove(svg, { clientX: 502, clientY: 401 });
+      });
+      act(() => {
+        fireEvent.mouseUp(svg, { button: 0, clientX: 502, clientY: 401 });
+      });
+      fireEvent.click(svg);
+
+      expect(selectionManager.count).toBe(0);
     });
   });
 

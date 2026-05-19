@@ -234,6 +234,13 @@ function renderElement(el: SceneElement, elements: SceneElement[]): React.ReactE
   }
 }
 
+interface MarqueeState {
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+}
+
 export function CanvasView({ scene, viewport, width, height, className, onViewportChange, selectionManager, onSelectionChange }: CanvasViewProps) {
   const layersSorted = [...scene.layers].sort((a, b) => a.order - b.order);
   const layerElementMap = new Map<string, SceneElement[]>();
@@ -254,6 +261,8 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
   const isPanningRef = useRef(false);
   const spaceDownRef = useRef(false);
   const lastMouseRef = useRef({ x: 0, y: 0 });
+  const [marquee, setMarquee] = useState<MarqueeState | null>(null);
+  const didDragRef = useRef(false);
 
   const selectedElements = selectionManager
     ? selectionManager.getSelectedElements(scene)
@@ -281,9 +290,18 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
 
   const handleBackgroundClick = useCallback(() => {
     if (!selectionManager) return;
+    if (didDragRef.current) return;
     selectionManager.clearSelection();
     onSelectionChange?.();
   }, [selectionManager, onSelectionChange]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (isPanningRef.current) {
+      isPanningRef.current = false;
+      setIsPanning(false);
+    }
+    setMarquee(null);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -337,6 +355,22 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
         isPanningRef.current = true;
         setIsPanning(true);
         lastMouseRef.current = { x: e.clientX, y: e.clientY };
+        return;
+      }
+
+      if (e.button === 0) {
+        const target = e.target as Element;
+        const isOnElement = target.closest('[data-element-id]') !== null;
+        if (!isOnElement) {
+          const rect = e.currentTarget.getBoundingClientRect();
+          setMarquee({
+            startX: e.clientX - rect.left,
+            startY: e.clientY - rect.top,
+            endX: e.clientX - rect.left,
+            endY: e.clientY - rect.top,
+          });
+          didDragRef.current = false;
+        }
       }
     },
     [spacePressed]
@@ -344,22 +378,68 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<SVGSVGElement>) => {
-      if (!isPanningRef.current) return;
-      const dx = e.clientX - lastMouseRef.current.x;
-      const dy = e.clientY - lastMouseRef.current.y;
-      lastMouseRef.current = { x: e.clientX, y: e.clientY };
-      viewport.pan(dx, dy);
-      notifyChange();
+      if (isPanningRef.current) {
+        const dx = e.clientX - lastMouseRef.current.x;
+        const dy = e.clientY - lastMouseRef.current.y;
+        lastMouseRef.current = { x: e.clientX, y: e.clientY };
+        viewport.pan(dx, dy);
+        notifyChange();
+        return;
+      }
+
+      if (marquee) {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        if (Math.abs(mx - marquee.startX) > 3 || Math.abs(my - marquee.startY) > 3) {
+          didDragRef.current = true;
+        }
+        setMarquee(prev => prev ? { ...prev, endX: mx, endY: my } : null);
+      }
     },
-    [viewport, notifyChange]
+    [viewport, notifyChange, marquee]
   );
 
   const handleMouseUp = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     if ((e.button === 1 || e.button === 0) && isPanningRef.current) {
       isPanningRef.current = false;
       setIsPanning(false);
+      return;
     }
-  }, []);
+
+    if (marquee && didDragRef.current && selectionManager) {
+      const minX = Math.min(marquee.startX, marquee.endX);
+      const maxX = Math.max(marquee.startX, marquee.endX);
+      const minY = Math.min(marquee.startY, marquee.endY);
+      const maxY = Math.max(marquee.startY, marquee.endY);
+
+      const canvasTopLeft = viewport.screenToCanvas(minX, minY);
+      const canvasBottomRight = viewport.screenToCanvas(maxX, maxY);
+
+      const containedIds: string[] = [];
+      for (const el of scene.elements) {
+        if (!el.visible || el.locked) continue;
+        const bbox = getElementBBox(el);
+        if (
+          bbox.x >= canvasTopLeft.x &&
+          bbox.y >= canvasTopLeft.y &&
+          bbox.x + bbox.width <= canvasBottomRight.x &&
+          bbox.y + bbox.height <= canvasBottomRight.y
+        ) {
+          containedIds.push(el.id);
+        }
+      }
+
+      if (e.shiftKey) {
+        selectionManager.addToSelection(containedIds);
+      } else {
+        selectionManager.selectByIds(containedIds);
+      }
+      onSelectionChange?.();
+    }
+
+    setMarquee(null);
+  }, [viewport, marquee, selectionManager, scene, onSelectionChange]);
 
   const handleContextMenu = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     if (isPanningRef.current) {
@@ -379,7 +459,7 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
       onContextMenu={handleContextMenu}
       onClick={handleBackgroundClick}
     >
@@ -403,6 +483,19 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
           );
         })}
       </g>
+      {marquee && (
+        <rect
+          x={Math.min(marquee.startX, marquee.endX)}
+          y={Math.min(marquee.startY, marquee.endY)}
+          width={Math.abs(marquee.endX - marquee.startX)}
+          height={Math.abs(marquee.endY - marquee.startY)}
+          fill="rgba(33, 150, 243, 0.1)"
+          stroke="#2196F3"
+          strokeWidth={1}
+          strokeDasharray="4 2"
+          pointerEvents="none"
+        />
+      )}
       {selectedElements.length > 0 && (
         <g pointerEvents="none" className="selection-overlay">
           {selectedElements.map((el) => {
