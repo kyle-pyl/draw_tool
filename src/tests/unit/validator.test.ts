@@ -225,15 +225,15 @@ describe('validateScene – positive cases', () => {
     const scene = makeValidScene({
       elements: [
         { id: 'e_shape', type: 'shape', layerId: 'l1', shapeKind: 'rect', transform: { x: 0, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 }, visible: true, locked: false },
-        { id: 'e_text', type: 'text', layerId: 'l1', text: 'Hello', transform: { x: 0, y: 0, width: 100, height: 20, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#000', stroke: 'none', strokeWidth: 0, opacity: 1 }, visible: true, locked: false },
-        { id: 'e_image', type: 'image', layerId: 'l1', src: 'data:image/png,', originalWidth: 10, originalHeight: 10, transform: { x: 0, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: 'none', stroke: 'none', strokeWidth: 0, opacity: 1 }, visible: true, locked: false },
-        { id: 'e_conn', type: 'connector', layerId: 'l1', source: { x: 0, y: 0 }, target: { x: 100, y: 100 }, route: { type: 'straight', points: [] }, transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: 'none', stroke: '#000', strokeWidth: 1, opacity: 1 }, visible: true, locked: false },
-        { id: 'e_chart', type: 'chart', layerId: 'l1', dataSourceId: 'ds1', chartType: 'line', columnMappings: { x: 'x', y: 'y' }, transform: { x: 0, y: 0, width: 200, height: 200, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 }, visible: true, locked: false },
-        { id: 'e_cont', type: 'container', layerId: 'l1', containerLabel: 'Area', transform: { x: 0, y: 0, width: 200, height: 100, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#f0f0f0', stroke: '#999', strokeWidth: 1, opacity: 1 }, visible: true, locked: false },
-        { id: 'e_rtlm', type: 'rtlModule', layerId: 'l1', moduleName: 'mux', instanceName: 'm1', transform: { x: 0, y: 0, width: 80, height: 60, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#e3f2fd', stroke: '#1565c0', strokeWidth: 2, opacity: 1 }, visible: true, locked: false },
-        { id: 'e_rtlp', type: 'rtlPort', layerId: 'l1', direction: 'output', bitWidth: 1, portName: 'out', transform: { x: 0, y: 0, width: 10, height: 10, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#333', stroke: '#000', strokeWidth: 1, opacity: 1 }, visible: true, locked: false },
-        { id: 'e_mind', type: 'mindNode', layerId: 'l1', text: 'Topic', transform: { x: 0, y: 0, width: 100, height: 30, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#fffbe6', stroke: '#da0', strokeWidth: 2, opacity: 1 }, visible: true, locked: false },
-        { id: 'e_topo', type: 'topologyNode', layerId: 'l1', deviceType: 'server', label: 'Srv', transform: { x: 0, y: 0, width: 60, height: 60, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#e8f5e9', stroke: '#2e7d32', strokeWidth: 2, opacity: 1 }, visible: true, locked: false },
+        { id: 'e_text', type: 'text', layerId: 'l1', text: 'Hello', transform: { x: 60, y: 0, width: 100, height: 20, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#000', stroke: 'none', strokeWidth: 0, opacity: 1 }, visible: true, locked: false },
+        { id: 'e_image', type: 'image', layerId: 'l1', src: 'data:image/png,', originalWidth: 10, originalHeight: 10, transform: { x: 170, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: 'none', stroke: 'none', strokeWidth: 0, opacity: 1 }, visible: true, locked: false },
+        { id: 'e_conn', type: 'connector', layerId: 'l1', source: { x: 0, y: 100 }, target: { x: 100, y: 200 }, route: { type: 'straight', points: [] }, transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: 'none', stroke: '#000', strokeWidth: 1, opacity: 1 }, visible: true, locked: false },
+        { id: 'e_chart', type: 'chart', layerId: 'l1', dataSourceId: 'ds1', chartType: 'line', columnMappings: { x: 'x', y: 'y' }, transform: { x: 230, y: 0, width: 200, height: 200, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 }, visible: true, locked: false },
+        { id: 'e_cont', type: 'container', layerId: 'l1', containerLabel: 'Area', transform: { x: 440, y: 0, width: 200, height: 100, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#f0f0f0', stroke: '#999', strokeWidth: 1, opacity: 1 }, visible: true, locked: false },
+        { id: 'e_rtlm', type: 'rtlModule', layerId: 'l1', moduleName: 'mux', instanceName: 'm1', transform: { x: 650, y: 0, width: 80, height: 60, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#e3f2fd', stroke: '#1565c0', strokeWidth: 2, opacity: 1 }, visible: true, locked: false },
+        { id: 'e_rtlp', type: 'rtlPort', layerId: 'l1', direction: 'output', bitWidth: 1, portName: 'out', transform: { x: 740, y: 0, width: 10, height: 10, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#333', stroke: '#000', strokeWidth: 1, opacity: 1 }, visible: true, locked: false },
+        { id: 'e_mind', type: 'mindNode', layerId: 'l1', text: 'Topic', transform: { x: 760, y: 0, width: 100, height: 30, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#fffbe6', stroke: '#da0', strokeWidth: 2, opacity: 1 }, visible: true, locked: false },
+        { id: 'e_topo', type: 'topologyNode', layerId: 'l1', deviceType: 'server', label: 'Srv', transform: { x: 870, y: 0, width: 60, height: 60, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#e8f5e9', stroke: '#2e7d32', strokeWidth: 2, opacity: 1 }, visible: true, locked: false },
       ],
     });
     expect(validateScene(scene).valid).toBe(true);
@@ -261,7 +261,7 @@ describe('validateScene – positive cases', () => {
       ],
       elements: [
         { id: 'e1', type: 'shape', layerId: 'l1', shapeKind: 'rect', transform: { x: 0, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 }, visible: true, locked: false },
-        { id: 'e2', type: 'shape', layerId: 'l1', shapeKind: 'circle', transform: { x: 0, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 }, visible: true, locked: false },
+        { id: 'e2', type: 'shape', layerId: 'l1', shapeKind: 'circle', transform: { x: 60, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 }, visible: true, locked: false },
       ],
     });
     expect(validateScene(scene).valid).toBe(true);
@@ -683,7 +683,7 @@ describe('validateScene – reference integrity', () => {
       layers: [{ id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false }],
       elements: [
         { id: 'e1', type: 'shape', layerId: 'l1', shapeKind: 'rect', transform: { x: 0, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 }, visible: true, locked: false },
-        { id: 'e2', type: 'text', layerId: 'l1', text: 'Hello', transform: { x: 0, y: 0, width: 100, height: 20, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#000', stroke: 'none', strokeWidth: 0, opacity: 1 }, visible: true, locked: false },
+        { id: 'e2', type: 'text', layerId: 'l1', text: 'Hello', transform: { x: 60, y: 0, width: 100, height: 20, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#000', stroke: 'none', strokeWidth: 0, opacity: 1 }, visible: true, locked: false },
       ],
       groups: [
         { id: 'g1', name: 'Valid', elementIds: ['e1', 'e2'] },
@@ -740,5 +740,282 @@ describe('validateScene – reference integrity', () => {
     // Should have SCHEMA_INVALID_TYPE but NOT REF_LAYER_NOT_FOUND
     expect(result.errors.some((e) => e.code === ErrorCode.SCHEMA_INVALID_TYPE)).toBe(true);
     expect(result.errors.some((e) => e.code === ErrorCode.REF_LAYER_NOT_FOUND)).toBe(false);
+  });
+});
+
+describe('validateScene – geometry rules', () => {
+  it('rejects overlapping elements within the same layer', () => {
+    const scene = makeValidScene({
+      layers: [
+        { id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false },
+      ],
+      elements: [
+        {
+          id: 'e1', type: 'shape', layerId: 'l1', shapeKind: 'rect',
+          transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: false,
+        },
+        {
+          id: 'e2', type: 'shape', layerId: 'l1', shapeKind: 'rect',
+          transform: { x: 50, y: 50, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: false,
+        },
+      ],
+    });
+    const result = validateScene(scene);
+    expect(result.valid).toBe(false);
+    const geoErrors = result.errors.filter((e) => e.code === ErrorCode.GEO_SAME_LAYER_OVERLAP);
+    expect(geoErrors).toHaveLength(1);
+    expect(geoErrors[0].layerIds).toContain('l1');
+    expect(geoErrors[0].elementIds).toContain('e1');
+    expect(geoErrors[0].elementIds).toContain('e2');
+    expect(geoErrors[0].bboxes).toBeDefined();
+    expect(geoErrors[0].bboxes!.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('reports multiple collisions in the same layer as separate errors', () => {
+    const scene = makeValidScene({
+      layers: [
+        { id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false },
+      ],
+      elements: [
+        {
+          id: 'e1', type: 'shape', layerId: 'l1', shapeKind: 'rect',
+          transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: false,
+        },
+        {
+          id: 'e2', type: 'shape', layerId: 'l1', shapeKind: 'rect',
+          transform: { x: 60, y: 0, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: false,
+        },
+        {
+          id: 'e3', type: 'shape', layerId: 'l1', shapeKind: 'rect',
+          transform: { x: 200, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: false,
+        },
+      ],
+    });
+    const result = validateScene(scene);
+    expect(result.valid).toBe(false);
+    const geoErrors = result.errors.filter((e) => e.code === ErrorCode.GEO_SAME_LAYER_OVERLAP);
+    expect(geoErrors).toHaveLength(1); // e1+e2 overlap, e3 is separate
+    expect(geoErrors[0].elementIds).toContain('e1');
+    expect(geoErrors[0].elementIds).toContain('e2');
+  });
+
+  it('collisions only checked within each layer independently', () => {
+    const scene = makeValidScene({
+      layers: [
+        { id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false },
+        { id: 'l2', name: 'Layer 2', order: 2, visible: true, locked: false },
+      ],
+      elements: [
+        {
+          id: 'e1', type: 'shape', layerId: 'l1', shapeKind: 'rect',
+          transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: false,
+        },
+        {
+          id: 'e2', type: 'shape', layerId: 'l2', shapeKind: 'rect',
+          transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: false,
+        },
+      ],
+    });
+    // Same positions but different layers — no collision
+    expect(validateScene(scene).valid).toBe(true);
+  });
+
+  it('connector does not collide with shapes in same layer', () => {
+    const scene = makeValidScene({
+      layers: [{ id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false }],
+      elements: [
+        {
+          id: 'e1', type: 'shape', layerId: 'l1', shapeKind: 'rect',
+          transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: false,
+        },
+        {
+          id: 'conn1', type: 'connector', layerId: 'l1',
+          source: { x: 20, y: 20 },
+          target: { x: 80, y: 80 },
+          route: { type: 'straight', points: [] },
+          transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: 'none', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: false,
+        },
+      ],
+    });
+    expect(validateScene(scene).valid).toBe(true);
+  });
+
+  it('rejects when layer count exceeds rules.maxLayerCount', () => {
+    const scene = makeValidScene({
+      rules: { maxLayerCount: 2, collisionStrategy: 'bbox', hiddenElementsCollide: false, lockedElementsCollide: true, connectorsExempt: true },
+      layers: [
+        { id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false },
+        { id: 'l2', name: 'Layer 2', order: 2, visible: true, locked: false },
+        { id: 'l3', name: 'Layer 3', order: 3, visible: true, locked: false },
+      ],
+    });
+    const result = validateScene(scene);
+    expect(result.valid).toBe(false);
+    const maxLayerError = result.errors.find((e) => e.code === ErrorCode.RULE_MAX_LAYER_EXCEEDED);
+    expect(maxLayerError).toBeDefined();
+    expect(maxLayerError!.message).toContain('3');
+    expect(maxLayerError!.message).toContain('2');
+    expect(maxLayerError!.suggestion).toBeDefined();
+  });
+
+  it('accepts when layer count equals rules.maxLayerCount', () => {
+    const scene = makeValidScene({
+      rules: { maxLayerCount: 3, collisionStrategy: 'bbox', hiddenElementsCollide: false, lockedElementsCollide: true, connectorsExempt: true },
+      layers: [
+        { id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false },
+        { id: 'l2', name: 'Layer 2', order: 2, visible: true, locked: false },
+        { id: 'l3', name: 'Layer 3', order: 3, visible: true, locked: false },
+      ],
+    });
+    expect(validateScene(scene).valid).toBe(true);
+  });
+
+  it('hidden elements trigger collision when hiddenElementsCollide is true', () => {
+    const scene = makeValidScene({
+      rules: { maxLayerCount: 10, collisionStrategy: 'bbox', hiddenElementsCollide: true, lockedElementsCollide: true, connectorsExempt: true },
+      layers: [{ id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false }],
+      elements: [
+        {
+          id: 'e1', type: 'shape', layerId: 'l1', shapeKind: 'rect',
+          transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: false,
+        },
+        {
+          id: 'e2', type: 'shape', layerId: 'l1', shapeKind: 'rect',
+          transform: { x: 50, y: 50, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: false, locked: false,
+        },
+      ],
+    });
+    const result = validateScene(scene);
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((e) => e.code === ErrorCode.GEO_SAME_LAYER_OVERLAP)).toBe(true);
+  });
+
+  it('hidden elements do not trigger collision when hiddenElementsCollide is false', () => {
+    const scene = makeValidScene({
+      rules: { maxLayerCount: 10, collisionStrategy: 'bbox', hiddenElementsCollide: false, lockedElementsCollide: true, connectorsExempt: true },
+      layers: [{ id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false }],
+      elements: [
+        {
+          id: 'e1', type: 'shape', layerId: 'l1', shapeKind: 'rect',
+          transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: false,
+        },
+        {
+          id: 'e2', type: 'shape', layerId: 'l1', shapeKind: 'rect',
+          transform: { x: 50, y: 50, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: false, locked: false,
+        },
+      ],
+    });
+    expect(validateScene(scene).valid).toBe(true);
+  });
+
+  it('locked elements do not trigger collision when lockedElementsCollide is false', () => {
+    const scene = makeValidScene({
+      rules: { maxLayerCount: 10, collisionStrategy: 'bbox', hiddenElementsCollide: false, lockedElementsCollide: false, connectorsExempt: true },
+      layers: [{ id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false }],
+      elements: [
+        {
+          id: 'e1', type: 'shape', layerId: 'l1', shapeKind: 'rect',
+          transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: false,
+        },
+        {
+          id: 'e2', type: 'shape', layerId: 'l1', shapeKind: 'rect',
+          transform: { x: 50, y: 50, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: true,
+        },
+      ],
+    });
+    expect(validateScene(scene).valid).toBe(true);
+  });
+
+  it('accumulates schema, reference, and geometry errors together', () => {
+    const scene = makeValidScene({
+      rules: { maxLayerCount: 1, collisionStrategy: 'bbox', hiddenElementsCollide: false, lockedElementsCollide: true, connectorsExempt: true },
+      layers: [
+        { id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false },
+        { id: 'l2', name: 'Layer 2', order: 2, visible: true, locked: false },
+      ],
+      elements: [
+        {
+          id: 'e1', type: 'shape', layerId: 'l1', shapeKind: 'rect',
+          transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: false,
+        },
+        {
+          id: 'e2', type: 'shape', layerId: 'l1', shapeKind: 'rect',
+          transform: { x: 50, y: 50, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: false,
+        },
+      ],
+    });
+    const result = validateScene(scene);
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((e) => e.code === ErrorCode.RULE_MAX_LAYER_EXCEEDED)).toBe(true);
+    expect(result.errors.some((e) => e.code === ErrorCode.GEO_SAME_LAYER_OVERLAP)).toBe(true);
+  });
+
+  it('collision errors include overlapBBox in bboxes field', () => {
+    const scene = makeValidScene({
+      layers: [{ id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false }],
+      elements: [
+        {
+          id: 'e1', type: 'shape', layerId: 'l1', shapeKind: 'rect',
+          transform: { x: 10, y: 10, width: 80, height: 80, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: false,
+        },
+        {
+          id: 'e2', type: 'shape', layerId: 'l1', shapeKind: 'rect',
+          transform: { x: 50, y: 30, width: 100, height: 60, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: false,
+        },
+      ],
+    });
+    const result = validateScene(scene);
+    expect(result.valid).toBe(false);
+    const geoError = result.errors.find((e) => e.code === ErrorCode.GEO_SAME_LAYER_OVERLAP);
+    expect(geoError).toBeDefined();
+    expect(geoError!.bboxes).toBeDefined();
+    expect(geoError!.bboxes![0]).toEqual({ x: 50, y: 30, width: 40, height: 60 });
+  });
+
+  it('skip geometry checks when elements array is missing', () => {
+    const scene = makeValidScene();
+    delete (scene as Record<string, unknown>).elements;
+    const result = validateScene(scene);
+    expect(result.valid).toBe(false);
+    // Should fail with SCHEMA_MISSING_ID for elements, not geometry errors
+    expect(result.errors.some((e) => e.code === ErrorCode.SCHEMA_MISSING_ID && e.message.includes('elements'))).toBe(true);
   });
 });

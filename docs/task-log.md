@@ -260,6 +260,19 @@
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0069（checkLayerCollisions）、API-0070（CollisionEntry）、API-0071（CollisionResult）、API-0072（CollisionCheckOptions） |
 
+### T-04-03 实现图层冲突校验器
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-04-03 |
+| 任务名称      | 实现图层冲突校验器 |
+| 完成时间      | 2026-05-19 21:15 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | (待提交) |
+| 修改记录      | 修改：src/core/validator.ts（新增 validateGeometryRules 函数，集成到 validateScene Stage 6，新增 checkLayerCollisions/CollisionCheckOptions/createGeometryAdapter/SceneElement 导入）；修改：src/tests/unit/validator.test.ts（新增 12 个几何规则测试用例：同层重叠检测、多层独立检测、connector 豁免、maxLayerCount 超限、hidden/locked 元素碰撞策略、错误包含 bboxes 字段；修复 3 个已有测试数据避免新校验引入的重叠冲突、新增 transform 缺失防护） |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0051（validateScene 修订：新增 Stage 6 几何规则校验）、API-0073（validateGeometryRules） |
+
 ### T-04-01 实现 BBox 计算器
 
 | 字段          | 内容 |

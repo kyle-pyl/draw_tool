@@ -996,11 +996,11 @@
 | 最后修订日期 | 2026-05-19 |
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | 对 unknown 对象执行完整校验：结构校验（schemaVersion、project、canvas、rules、layers、elements、groups）和引用完整性校验（element.layerId 引用存在性、group.elementIds 引用存在性、connector source/target 端点引用存在性） |
+| 功能描述 | 对 unknown 对象执行完整校验：结构校验（schemaVersion、project、canvas、rules、layers、elements、groups）、引用完整性校验（element.layerId 引用存在性、group.elementIds 引用存在性、connector source/target 端点引用存在性）和几何规则校验（图层内元素 BBox 碰撞检测、最大图层数限制） |
 | 输入参数 | data: unknown - 待校验的对象 |
 | 输出参数 | ValidationResult - valid 为 true 且 errors 为空表示通过；valid 为 false 且 errors 为非空表示校验失败 |
 | 典型用例 | `const result = validateScene(json); if (result.valid) { loadScene(json as SceneDocument); } else { showErrors(result.errors); }` |
-| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建；2026-05-19, OpenCode/deepseek-v4-pro, T-01-04 增加引用完整性校验 |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建；2026-05-19, OpenCode/deepseek-v4-pro, T-01-04 增加引用完整性校验；2026-05-19, OpenCode/deepseek-v4-pro, T-04-03 增加几何规则校验（图层冲突检测） |
 
 ### API-0052 validateAndCast
 
@@ -1381,3 +1381,22 @@
 | 输出参数 | Promise\<Blob\> - MIME 类型为 application/zip 的 ZIP 压缩包，可直接触发浏览器下载 |
 | 典型用例 | `const blob = await exportProjectToZip(); const url = URL.createObjectURL(blob);` |
 | 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-03-04）|
+
+### API-0073 validateGeometryRules
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0073 |
+| 名称 | validateGeometryRules |
+| 所属系统 | core |
+| 所属模块 | validator |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 内部校验函数，对已通过结构和引用校验的数据执行几何规则检查：图层数不超过 rules.maxLayerCount（返回 RULE_MAX_LAYER_EXCEEDED）、每层内部非连接线元素的包围盒碰撞检测（返回 GEO_SAME_LAYER_OVERLAP）。碰撞检测使用 checkLayerCollisions，按 SceneRules 的 hiddenElementsCollide 和 lockedElementsCollide 配置决定是否跳过隐藏/锁定元素 |
+| 输入参数 | data: Record<string, unknown> - 已通过结构和引用校验的 scene 对象 |
+| 输出参数 | ValidationError[] - 几何规则错误列表，无错误时为空数组 |
+| 典型用例 | `validateScene` 内部调用 `allErrors.push(...validateGeometryRules(obj))` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-03）|

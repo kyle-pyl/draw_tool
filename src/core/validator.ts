@@ -3,10 +3,13 @@
  * No external dependencies (Zod, Ajv) to keep the Lite bundle small.
  */
 
-import type { SceneDocument } from './types';
+import type { SceneDocument, SceneElement } from './types';
 import { ErrorCode } from './errors';
 import type { ValidationError, ValidationResult } from './errors';
 import { successResult, failureResult } from './errors';
+import { checkLayerCollisions } from './collision';
+import type { CollisionCheckOptions } from './collision';
+import { createGeometryAdapter } from './geometry';
 
 const VALID_ELEMENT_TYPES = new Set([
   'shape',
@@ -443,9 +446,123 @@ function validateReferences(data: Record<string, unknown>): ValidationError[] {
 }
 
 /**
+ * Stage 6: Geometry rules validation.
+ *
+ * Checks:
+ *  - layers.length does not exceed rules.maxLayerCount
+ *  - elements within the same layer do not have overlapping bounding boxes
+ *
+ * Only meaningful structural+reference checks have passed (elements have valid
+ * ids, types and layer references). Connector elements are excluded from per-layer
+ * collision checks by checkLayerCollisions itself.
+ */
+function validateGeometryRules(data: Record<string, unknown>): ValidationError[] {
+  const errors: ValidationError[] = [];
+
+  const layers = data.layers;
+  const elements = data.elements;
+  const rules = data.rules;
+
+  if (!isArray(layers) || !isArray(elements) || !isObject(rules)) {
+    return errors;
+  }
+
+  const rulesObj = rules as Record<string, unknown>;
+
+  // 6a. Max layer count
+  const maxLayerCount = rulesObj.maxLayerCount;
+  if (typeof maxLayerCount === 'number' && layers.length > maxLayerCount) {
+    const layerIds = layers
+      .filter((l): l is Record<string, unknown> => isObject(l))
+      .map((l) => (isString(l.id) ? l.id : undefined))
+      .filter((id): id is string => id !== undefined);
+
+    errors.push(
+      makeError(
+        ErrorCode.RULE_MAX_LAYER_EXCEEDED,
+        `Number of layers (${layers.length}) exceeds the maximum allowed (${maxLayerCount})`,
+        {
+          layerIds: layerIds.length > 0 ? layerIds : undefined,
+          suggestion: `Reduce the number of layers to ${maxLayerCount} or increase rules.maxLayerCount`,
+        },
+      ),
+    );
+  }
+
+  // 6b. Build set of valid layer IDs (only layers that passed structural checks)
+  const validLayerIds = new Set<string>();
+  for (const l of layers) {
+    if (isObject(l) && 'id' in l && isString(l.id)) {
+      validLayerIds.add(l.id);
+    }
+  }
+
+  // 6c. Collect eligible elements for collision checks:
+  //     - must be an object with a valid id, a valid type, and a valid layerId
+  //     - must reference an existing layer (otherwise reference check already flagged it)
+  //     - connectors are excluded later by checkLayerCollisions
+  const eligibleElements: { el: Record<string, unknown>; layerId: string }[] = [];
+
+  for (const el of elements) {
+    if (!isObject(el)) continue;
+    if (!('id' in el) || !isString(el.id)) continue;
+    if (!('type' in el) || !isString(el.type) || !VALID_ELEMENT_TYPES.has(el.type as string)) continue;
+    if (!('layerId' in el) || !isString(el.layerId)) continue;
+    if (!validLayerIds.has(el.layerId)) continue;
+    if (!('transform' in el) || !isObject(el.transform)) continue;
+    eligibleElements.push({ el, layerId: el.layerId });
+  }
+
+  // 6d. Build collision options from SceneRules
+  const collisionOptions: CollisionCheckOptions = {};
+  if (rulesObj.hiddenElementsCollide === false) {
+    collisionOptions.skipHidden = true;
+  }
+  if (rulesObj.lockedElementsCollide === false) {
+    collisionOptions.skipLocked = true;
+  }
+
+  // 6e. Group elements by layer and run collision detection
+  const elementsByLayer = new Map<string, SceneElement[]>();
+
+  for (const { el, layerId } of eligibleElements) {
+    if (!elementsByLayer.has(layerId)) {
+      elementsByLayer.set(layerId, []);
+    }
+    elementsByLayer.get(layerId)!.push(el as unknown as SceneElement);
+  }
+
+  const geometryAdapter = createGeometryAdapter();
+
+  for (const [layerId, layerElements] of elementsByLayer) {
+    const collisionResult = checkLayerCollisions(layerElements, geometryAdapter, collisionOptions);
+
+    if (collisionResult.hasCollision) {
+      for (const collision of collisionResult.collisions) {
+        errors.push(
+          makeError(
+            ErrorCode.GEO_SAME_LAYER_OVERLAP,
+            `Layer "${layerId}" has overlapping elements: "${collision.elementA}" and "${collision.elementB}"`,
+            {
+              layerIds: [layerId],
+              elementIds: [collision.elementA, collision.elementB],
+              bboxes: [collision.overlapBBox],
+              suggestion:
+                'Move one of the elements to a different position or to a different layer to resolve the overlap',
+            },
+          ),
+        );
+      }
+    }
+  }
+
+  return errors;
+}
+
+/**
  * Validate an unknown data object against the SceneDocument schema.
- * Performs structural validation (schema checks) and reference integrity checks.
- * Geometry checks are added in later tasks.
+ * Performs structural validation (schema checks), reference integrity checks,
+ * and geometry rules checks (layer collision detection).
  *
  * @param data - The unknown object to validate
  * @returns ValidationResult with valid flag and error list
@@ -472,6 +589,9 @@ export function validateScene(data: unknown): ValidationResult {
 
   // Stage 5: reference integrity
   allErrors.push(...validateReferences(obj));
+
+  // Stage 6: geometry rules (layer collision detection)
+  allErrors.push(...validateGeometryRules(obj));
 
   if (allErrors.length > 0) {
     return failureResult(...allErrors);
