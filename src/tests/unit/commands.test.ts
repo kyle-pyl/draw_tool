@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CommandExecutor, CreateElementCommand, MoveElementsCommand, UpdateElementCommand, ChangeLayerCommand } from '../../core/commands';
-import type { SceneCommand, CommandHistoryEntry, ElementInput, ElementChanges } from '../../core/commands';
+import { CommandExecutor, CreateElementCommand, MoveElementsCommand, UpdateElementCommand, ChangeLayerCommand, TransformElementsCommand } from '../../core/commands';
+import type { SceneCommand, CommandHistoryEntry, ElementInput, ElementChanges, TransformParams } from '../../core/commands';
 import type { SceneDocument } from '../../core/types';
 import { successResult, failureResult } from '../../core/errors';
 import { useDocumentStore } from '../../core/store';
@@ -958,5 +958,114 @@ describe('ChangeLayerCommand', () => {
 
     executor.redo();
     expect(useDocumentStore.getState().getScene()!.elements[0].layerId).toBe('l2');
+  });
+});
+
+// ─── T-05-06 TransformElementsCommand Tests ─────────────────────────────────
+
+describe('TransformElementsCommand', () => {
+  let executor: CommandExecutor;
+
+  function createShape(name: string, x: number, y: number, w = 50, h = 50) {
+    const input: ElementInput = {
+      type: 'shape', layerId: 'l1', shapeKind: 'rect', name,
+      transform: { x, y, width: w, height: h, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: '#fff', stroke: '#000', strokeWidth: 2, opacity: 1 },
+    };
+    executor.execute(new CreateElementCommand(input));
+    return useDocumentStore.getState().getScene()!.elements.at(-1)!.id;
+  }
+
+  beforeEach(() => {
+    executor = new CommandExecutor();
+    useDocumentStore.getState().loadScene(structuredClone(makeSceneWithLayers()));
+  });
+
+  it('scales an element', () => {
+    const id = createShape('A', 0, 0);
+    const cmd = new TransformElementsCommand([id], { scaleX: 2, scaleY: 2 });
+    const result = executor.execute(cmd);
+
+    expect(result.valid).toBe(true);
+    const el = useDocumentStore.getState().getScene()!.elements[0];
+    expect(el.transform.scaleX).toBe(2);
+    expect(el.transform.scaleY).toBe(2);
+  });
+
+  it('rotates an element', () => {
+    const id = createShape('A', 0, 0);
+    executor.execute(new TransformElementsCommand([id], { rotation: 45 }));
+
+    const el = useDocumentStore.getState().getScene()!.elements[0];
+    expect(el.transform.rotation).toBe(45);
+  });
+
+  it('changes element dimensions', () => {
+    const id = createShape('A', 0, 0);
+    executor.execute(new TransformElementsCommand([id], { width: 100, height: 80 }));
+
+    const el = useDocumentStore.getState().getScene()!.elements[0];
+    expect(el.transform.width).toBe(100);
+    expect(el.transform.height).toBe(80);
+  });
+
+  it('transforms multiple elements at once', () => {
+    const idA = createShape('A', 0, 0);
+    const idB = createShape('B', 100, 0);
+
+    executor.execute(new TransformElementsCommand([idA, idB], { scaleX: 1.5 }));
+
+    const scene = useDocumentStore.getState().getScene()!;
+    expect(scene.elements[0].transform.scaleX).toBe(1.5);
+    expect(scene.elements[1].transform.scaleX).toBe(1.5);
+  });
+
+  it('fails when element does not exist', () => {
+    const result = executor.execute(new TransformElementsCommand(['nonexistent'], { scaleX: 2 }));
+    expect(result.valid).toBe(false);
+  });
+
+  it('fails when element is locked', () => {
+    const id = createShape('A', 0, 0);
+    useDocumentStore.getState().updateScene((s) => ({
+      ...s, elements: s.elements.map((el) => (el.id === id ? { ...el, locked: true } : el)),
+    }));
+
+    const result = executor.execute(new TransformElementsCommand([id], { scaleX: 2 }));
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].code).toBe('RULE_LOCKED_ELEMENT_EDITED');
+  });
+
+  it('fails when transform causes overlap', () => {
+    const idA = createShape('A', 0, 0, 50, 50);
+    createShape('B', 60, 60, 50, 50);
+
+    // Scale A so it would overlap B
+    const result = executor.execute(new TransformElementsCommand([idA], { width: 120, height: 120 }));
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].code).toBe('GEO_MOVE_TARGET_CONFLICT');
+  });
+
+  it('undo restores original transform', () => {
+    const id = createShape('A', 0, 0);
+    executor.execute(new TransformElementsCommand([id], { scaleX: 3, rotation: 30 }));
+    const el = useDocumentStore.getState().getScene()!.elements[0];
+    expect(el.transform.scaleX).toBe(3);
+    expect(el.transform.rotation).toBe(30);
+
+    executor.undo();
+    const restored = useDocumentStore.getState().getScene()!.elements[0];
+    expect(restored.transform.scaleX).toBe(1);
+    expect(restored.transform.rotation).toBe(0);
+  });
+
+  it('redo restores the transformed state', () => {
+    const id = createShape('A', 0, 0);
+    executor.execute(new TransformElementsCommand([id], { scaleX: 3 }));
+    executor.undo();
+    expect(useDocumentStore.getState().getScene()!.elements[0].transform.scaleX).toBe(1);
+
+    executor.redo();
+    expect(useDocumentStore.getState().getScene()!.elements[0].transform.scaleX).toBe(3);
   });
 });

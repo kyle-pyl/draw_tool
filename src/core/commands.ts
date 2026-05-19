@@ -767,3 +767,143 @@ export class ChangeLayerCommand implements SceneCommand {
     return invertCmd;
   }
 }
+
+// ─── TransformElements Command ─────────────────────────────────────────────────
+
+export type TransformParams = {
+  scaleX?: number;
+  scaleY?: number;
+  rotation?: number;
+  width?: number;
+  height?: number;
+  x?: number;
+  y?: number;
+};
+
+export class TransformElementsCommand implements SceneCommand {
+  id: string;
+  label: string;
+  private elementIds: string[];
+  private transformParams: TransformParams;
+  private previousTransforms: Map<string, Transform2D>;
+
+  constructor(elementIds: string[], params: TransformParams, label?: string) {
+    this.id = generateId('transform');
+    this.elementIds = elementIds;
+    this.transformParams = params;
+    this.label = label || `Transform ${elementIds.length} element(s)`;
+    this.previousTransforms = new Map();
+  }
+
+  validate(scene: SceneDocument): ValidationResult {
+    const movedIdSet = new Set(this.elementIds);
+    const geometryAdapter = createGeometryAdapter();
+
+    for (const elementId of this.elementIds) {
+      const element = scene.elements.find((el) => el.id === elementId);
+      if (!element) {
+        return failureResult({
+          code: ErrorCode.REF_GROUP_NOT_FOUND as string,
+          message: `Element "${elementId}" not found`,
+          severity: 'error',
+          elementIds: [elementId],
+          suggestion: 'The element may have been deleted',
+        });
+      }
+
+      if (element.locked) {
+        return failureResult({
+          code: ErrorCode.RULE_LOCKED_ELEMENT_EDITED as string,
+          message: `Element "${element.name || element.id}" is locked and cannot be transformed`,
+          severity: 'error',
+          elementIds: [element.id],
+          suggestion: 'Unlock the element first',
+        });
+      }
+
+      if (element.type === 'connector') continue;
+
+      const prospectiveTransform = {
+        ...element.transform,
+        ...this.transformParams,
+      };
+      const prospectiveElement = { ...element, transform: prospectiveTransform };
+      const prospectiveBBox = geometryAdapter.getBBox(prospectiveElement);
+
+      const layerElements = scene.elements.filter(
+        (el) => el.layerId === element.layerId && el.type !== 'connector' && !movedIdSet.has(el.id),
+      );
+
+      for (const other of layerElements) {
+        const otherBBox = geometryAdapter.getBBox(other);
+        if (bboxesOverlap(prospectiveBBox, otherBBox)) {
+          const overlapX = Math.max(prospectiveBBox.x, otherBBox.x);
+          const overlapY = Math.max(prospectiveBBox.y, otherBBox.y);
+          const overlapW = Math.min(prospectiveBBox.x + prospectiveBBox.width, otherBBox.x + otherBBox.width) - overlapX;
+          const overlapH = Math.min(prospectiveBBox.y + prospectiveBBox.height, otherBBox.y + otherBBox.height) - overlapY;
+
+          return failureResult({
+            code: ErrorCode.GEO_MOVE_TARGET_CONFLICT as string,
+            message: `Transforming "${element.name || element.id}" would cause overlap with "${other.name || other.id}" in layer "${element.layerId}"`,
+            severity: 'error',
+            layerIds: [element.layerId],
+            elementIds: [element.id, other.id],
+            bboxes: [{ x: overlapX, y: overlapY, width: overlapW, height: overlapH }],
+            suggestion: 'Adjust the transform parameters to avoid overlap',
+          });
+        }
+      }
+    }
+
+    return successResult();
+  }
+
+  execute(scene: SceneDocument): SceneDocument {
+    const movedIdSet = new Set(this.elementIds);
+
+    const updatedElements = scene.elements.map((el) => {
+      if (!movedIdSet.has(el.id)) return el;
+
+      this.previousTransforms.set(el.id, { ...el.transform });
+
+      return {
+        ...el,
+        transform: {
+          ...el.transform,
+          ...this.transformParams,
+        },
+      };
+    });
+
+    return { ...scene, elements: updatedElements };
+  }
+
+  invert(_scene: SceneDocument): SceneCommand | null {
+    const reverseParams: TransformParams = {};
+    // Build reverse transform from the first element's original transform
+    // We create individual UpdateElement-like commands for each element
+    const elementIds = this.elementIds.filter((id) => this.previousTransforms.has(id));
+
+    if (elementIds.length === 0) return null;
+
+    const invertCmd: SceneCommand = {
+      id: generateId('transform-undo'),
+      label: `Undo: ${this.label}`,
+      validate: () => successResult(),
+      execute: (scene: SceneDocument) => {
+        const movedSet = new Set(elementIds);
+        return {
+          ...scene,
+          elements: scene.elements.map((el) => {
+            if (!movedSet.has(el.id)) return el;
+            const prevTransform = this.previousTransforms.get(el.id);
+            return prevTransform ? { ...el, transform: prevTransform } : el;
+          }),
+        };
+      },
+      invert: () => null,
+    };
+
+    return invertCmd;
+  }
+}
