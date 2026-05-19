@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CommandExecutor, CreateElementCommand, MoveElementsCommand } from '../../core/commands';
-import type { SceneCommand, CommandHistoryEntry, ElementInput } from '../../core/commands';
+import { CommandExecutor, CreateElementCommand, MoveElementsCommand, UpdateElementCommand } from '../../core/commands';
+import type { SceneCommand, CommandHistoryEntry, ElementInput, ElementChanges } from '../../core/commands';
 import type { SceneDocument } from '../../core/types';
 import { successResult, failureResult } from '../../core/errors';
 import { useDocumentStore } from '../../core/store';
@@ -712,5 +712,140 @@ describe('MoveElementsCommand', () => {
     const connAfter = sceneAfterMove.elements.find((el) => el.type === 'connector')! as any;
     expect(connAfter.source.x).toBe(150);
     expect(connAfter.source.y).toBe(155);
+  });
+});
+
+// ─── T-05-04 UpdateElementCommand Tests ──────────────────────────────────────
+
+describe('UpdateElementCommand', () => {
+  let executor: CommandExecutor;
+
+  function createShape(name = 'Rect') {
+    const input: ElementInput = {
+      type: 'shape', layerId: 'l1', shapeKind: 'rect', name,
+      transform: { x: 0, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: '#fff', stroke: '#000', strokeWidth: 2, opacity: 1 },
+    };
+    const cmd = new CreateElementCommand(input);
+    executor.execute(cmd);
+    return useDocumentStore.getState().getScene()!.elements.at(-1)!.id;
+  }
+
+  function createShapeAt(x: number, y: number, name = 'Rect') {
+    const input: ElementInput = {
+      type: 'shape', layerId: 'l1', shapeKind: 'rect', name,
+      transform: { x, y, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: '#fff', stroke: '#000', strokeWidth: 2, opacity: 1 },
+    };
+    const cmd = new CreateElementCommand(input);
+    executor.execute(cmd);
+    return useDocumentStore.getState().getScene()!.elements.at(-1)!.id;
+  }
+
+  beforeEach(() => {
+    executor = new CommandExecutor();
+    useDocumentStore.getState().loadScene(structuredClone(makeSceneWithLayers()));
+  });
+
+  it('updates element style properties', () => {
+    const id = createShape();
+    const cmd = new UpdateElementCommand(id, {
+      style: { fill: '#ff0000', strokeWidth: 5 },
+    });
+
+    const result = executor.execute(cmd);
+    expect(result.valid).toBe(true);
+    const el = useDocumentStore.getState().getScene()!.elements[0];
+    expect(el.style.fill).toBe('#ff0000');
+    expect(el.style.strokeWidth).toBe(5);
+    expect(el.style.stroke).toBe('#000'); // unchanged
+    expect(el.style.opacity).toBe(1);
+  });
+
+  it('updates element name', () => {
+    const id = createShape();
+    const cmd = new UpdateElementCommand(id, { name: 'NewName' });
+    executor.execute(cmd);
+    expect(useDocumentStore.getState().getScene()!.elements[0].name).toBe('NewName');
+  });
+
+  it('updates element visible and locked', () => {
+    const id = createShape();
+    executor.execute(new UpdateElementCommand(id, { visible: false, locked: true }));
+    const el = useDocumentStore.getState().getScene()!.elements[0];
+    expect(el.visible).toBe(false);
+    expect(el.locked).toBe(true);
+  });
+
+  it('updates text content', () => {
+    const input: ElementInput = {
+      type: 'text', layerId: 'l1', text: 'Hello',
+      transform: { x: 100, y: 100, width: 80, height: 30, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: '#000', stroke: 'none', strokeWidth: 0, opacity: 1 },
+    };
+    executor.execute(new CreateElementCommand(input));
+    const id = useDocumentStore.getState().getScene()!.elements.at(-1)!.id;
+
+    executor.execute(new UpdateElementCommand(id, { text: 'World' }));
+    const el = useDocumentStore.getState().getScene()!.elements.find((e: any) => e.text === 'World');
+    expect(el).toBeDefined();
+  });
+
+  it('fails when element does not exist', () => {
+    const cmd = new UpdateElementCommand('nonexistent', { style: { fill: '#f00' } });
+    const result = executor.execute(cmd);
+    expect(result.valid).toBe(false);
+  });
+
+  it('fails when editing a locked element', () => {
+    const id = createShape();
+    useDocumentStore.getState().updateScene((s) => ({
+      ...s, elements: s.elements.map((el) => (el.id === id ? { ...el, locked: true } : el)),
+    }));
+
+    const result = executor.execute(new UpdateElementCommand(id, { style: { fill: '#f00' } }));
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].code).toBe('RULE_LOCKED_ELEMENT_EDITED');
+  });
+
+  it('fails when size change causes overlap', () => {
+    const idA = createShapeAt(0, 0, 'A');
+    const idB = createShapeAt(60, 0, 'B');
+
+    // Resize A to overlap B
+    const cmd = new UpdateElementCommand(idA, { transform: { width: 80 } });
+    const result = executor.execute(cmd);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].code).toBe('GEO_MOVE_TARGET_CONFLICT');
+  });
+
+  it('allows size change that does not overlap', () => {
+    const idA = createShapeAt(0, 0, 'A');
+    createShapeAt(200, 0, 'B');
+
+    const cmd = new UpdateElementCommand(idA, { transform: { width: 80 } });
+    const result = executor.execute(cmd);
+    expect(result.valid).toBe(true);
+    const el = useDocumentStore.getState().getScene()!.elements[0];
+    expect(el.transform.width).toBe(80);
+  });
+
+  it('undo restores original style', () => {
+    const id = createShape();
+    executor.execute(new UpdateElementCommand(id, { style: { fill: '#00ff00' } }));
+    expect(useDocumentStore.getState().getScene()!.elements[0].style.fill).toBe('#00ff00');
+
+    executor.undo();
+    expect(useDocumentStore.getState().getScene()!.elements[0].style.fill).toBe('#fff');
+  });
+
+  it('redo restores updated style', () => {
+    const id = createShape();
+    executor.execute(new UpdateElementCommand(id, { style: { fill: '#00ff00' } }));
+    executor.undo();
+    expect(useDocumentStore.getState().getScene()!.elements[0].style.fill).toBe('#fff');
+
+    executor.redo();
+    expect(useDocumentStore.getState().getScene()!.elements[0].style.fill).toBe('#00ff00');
   });
 });

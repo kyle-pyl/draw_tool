@@ -445,3 +445,183 @@ export class MoveElementsCommand implements SceneCommand {
     );
   }
 }
+
+// ─── UpdateElement Command ─────────────────────────────────────────────────────
+
+export type ElementChanges = Partial<{
+  style: Partial<ElementStyle>;
+  transform: Partial<Transform2D>;
+  visible: boolean;
+  locked: boolean;
+  name: string;
+  tags: string[];
+  metadata: Record<string, unknown>;
+  text: string;
+  shapeKind: 'rect' | 'circle' | 'ellipse' | 'polygon' | 'path';
+  cornerRadius: [number, number, number, number];
+  points: { x: number; y: number }[];
+  pathCommands: string;
+  src: string;
+  source: Partial<{ elementId: string; anchorId: string; x: number; y: number }>;
+  target: Partial<{ elementId: string; anchorId: string; x: number; y: number }>;
+}>;
+
+export class UpdateElementCommand implements SceneCommand {
+  id: string;
+  label: string;
+  private elementId: string;
+  private changes: ElementChanges;
+  private previousValues: ElementChanges;
+
+  constructor(elementId: string, changes: ElementChanges, label?: string) {
+    this.id = generateId('update');
+    this.elementId = elementId;
+    this.changes = changes;
+    this.label = label || `Update Element`;
+    this.previousValues = {};
+  }
+
+  validate(scene: SceneDocument): ValidationResult {
+    const element = scene.elements.find((el) => el.id === this.elementId);
+    if (!element) {
+      return failureResult({
+        code: ErrorCode.REF_GROUP_NOT_FOUND as string,
+        message: `Element "${this.elementId}" not found`,
+        severity: 'error',
+        elementIds: [this.elementId],
+        suggestion: 'The element may have been deleted',
+      });
+    }
+
+    if (element.locked) {
+      return failureResult({
+        code: ErrorCode.RULE_LOCKED_ELEMENT_EDITED as string,
+        message: `Element "${element.name || element.id}" is locked and cannot be modified`,
+        severity: 'error',
+        elementIds: [element.id],
+        suggestion: 'Unlock the element before editing',
+      });
+    }
+
+    // If transform changes affect position or size, check collision
+    const hasPositionChange =
+      this.changes.transform &&
+      (this.changes.transform.x !== undefined ||
+        this.changes.transform.y !== undefined ||
+        this.changes.transform.width !== undefined ||
+        this.changes.transform.height !== undefined);
+
+    if (hasPositionChange && element.type !== 'connector') {
+      const mergedTransform = {
+        ...element.transform,
+        ...this.changes.transform,
+      };
+      const prospectiveElement = { ...element, transform: mergedTransform };
+      const geometryAdapter = createGeometryAdapter();
+      const prospectiveBBox = geometryAdapter.getBBox(prospectiveElement);
+
+      const layerElements = scene.elements.filter(
+        (el) => el.layerId === element.layerId && el.id !== element.id && el.type !== 'connector',
+      );
+
+      for (const other of layerElements) {
+        const otherBBox = geometryAdapter.getBBox(other);
+        if (bboxesOverlap(prospectiveBBox, otherBBox)) {
+          const overlapX = Math.max(prospectiveBBox.x, otherBBox.x);
+          const overlapY = Math.max(prospectiveBBox.y, otherBBox.y);
+          const overlapW = Math.min(prospectiveBBox.x + prospectiveBBox.width, otherBBox.x + otherBBox.width) - overlapX;
+          const overlapH = Math.min(prospectiveBBox.y + prospectiveBBox.height, otherBBox.y + otherBBox.height) - overlapY;
+
+          return failureResult({
+            code: ErrorCode.GEO_MOVE_TARGET_CONFLICT as string,
+            message: `Updating "${element.name || element.id}" would cause overlap with "${other.name || other.id}" in layer "${element.layerId}"`,
+            severity: 'error',
+            layerIds: [element.layerId],
+            elementIds: [element.id, other.id],
+            bboxes: [{ x: overlapX, y: overlapY, width: overlapW, height: overlapH }],
+            suggestion: 'Adjust the size or position to avoid overlap',
+          });
+        }
+      }
+    }
+
+    return successResult();
+  }
+
+  execute(scene: SceneDocument): SceneDocument {
+    const element = scene.elements.find((el) => el.id === this.elementId)!;
+
+    // Store previous values for potential use in invert
+    const prev: ElementChanges = {};
+    for (const key of Object.keys(this.changes) as (keyof ElementChanges)[]) {
+      if (key in element) {
+        (prev as any)[key] = (element as any)[key];
+      }
+    }
+    this.previousValues = prev;
+
+    const updatedElements = scene.elements.map((el) => {
+      if (el.id !== this.elementId) return el;
+
+      const updated: any = { ...el };
+
+      if (this.changes.style) {
+        updated.style = { ...el.style, ...this.changes.style };
+      }
+      if (this.changes.transform) {
+        updated.transform = { ...el.transform, ...this.changes.transform };
+      }
+      if (this.changes.visible !== undefined) {
+        updated.visible = this.changes.visible;
+      }
+      if (this.changes.locked !== undefined) {
+        updated.locked = this.changes.locked;
+      }
+      if (this.changes.name !== undefined) {
+        updated.name = this.changes.name;
+      }
+      if (this.changes.tags !== undefined) {
+        updated.tags = this.changes.tags;
+      }
+      if (this.changes.metadata !== undefined) {
+        updated.metadata = this.changes.metadata;
+      }
+      if (this.changes.text !== undefined) {
+        updated.text = this.changes.text;
+      }
+      if (this.changes.shapeKind !== undefined) {
+        updated.shapeKind = this.changes.shapeKind;
+      }
+      if (this.changes.cornerRadius !== undefined) {
+        updated.cornerRadius = this.changes.cornerRadius;
+      }
+      if (this.changes.points !== undefined) {
+        updated.points = this.changes.points;
+      }
+      if (this.changes.pathCommands !== undefined) {
+        updated.pathCommands = this.changes.pathCommands;
+      }
+      if (this.changes.src !== undefined) {
+        updated.src = this.changes.src;
+      }
+      if (this.changes.source) {
+        updated.source = { ...el.source, ...this.changes.source };
+      }
+      if (this.changes.target) {
+        updated.target = { ...el.target, ...this.changes.target };
+      }
+
+      return updated as SceneElement;
+    });
+
+    return { ...scene, elements: updatedElements };
+  }
+
+  invert(_scene: SceneDocument): SceneCommand | null {
+    return new UpdateElementCommand(
+      this.elementId,
+      this.previousValues,
+      `Undo: ${this.label}`,
+    );
+  }
+}
