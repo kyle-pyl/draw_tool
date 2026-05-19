@@ -247,6 +247,19 @@
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0066（saveProject） |
 
+### T-04-02 实现同层元素碰撞检测
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-04-02 |
+| 任务名称      | 实现同层元素碰撞检测 |
+| 完成时间      | 2026-05-19 20:55 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | c25d3c9 |
+| 修改记录      | 新建：src/core/collision.ts（checkLayerCollisions 函数、CollisionEntry/CollisionResult/CollisionCheckOptions 接口）、src/tests/unit/collision.test.ts（15 个测试用例）；修改：src/core/index.ts（新增 collision 模块导出） |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0069（checkLayerCollisions）、API-0070（CollisionEntry）、API-0071（CollisionResult）、API-0072（CollisionCheckOptions） |
+
 ### T-04-01 实现 BBox 计算器
 
 | 字段          | 内容 |

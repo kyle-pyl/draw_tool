@@ -1287,6 +1287,82 @@
 | 典型用例 | `const result = await saveProject(); if (result.valid) { /* saved */ } else { showErrors(result.errors); }` |
 | 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-03-05）|
 
+### API-0069 checkLayerCollisions
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0069 |
+| 名称 | checkLayerCollisions |
+| 所属系统 | core |
+| 所属模块 | collision |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 检查指定元素数组中是否存在同层元素包围盒相交的碰撞。自动排除 connector 类型元素（连接线豁免）。隐藏元素和锁定元素默认参与检测，可通过 CollisionCheckOptions 跳过。第一版使用线性扫描（O(n^2)），预留 GeometryAdapter 参数接口供未来空间索引加速替换 |
+| 输入参数 | elements: SceneElement[] - 待检测的图层元素数组；geometryAdapter: GeometryAdapter - 几何适配器（用于获取元素 BBox）；options?: CollisionCheckOptions - 可选配置 { skipHidden?: boolean（跳过隐藏元素，默认 false），skipLocked?: boolean（跳过锁定元素，默认 false）} |
+| 输出参数 | CollisionResult - { hasCollision: boolean, collisions: CollisionEntry[] }，其中 CollisionEntry = { elementA: string, elementB: string, overlapBBox: BBox } |
+| 典型用例 | `const result = checkLayerCollisions(layerElements, geometryAdapter); if (result.hasCollision) { result.collisions.forEach(c => console.log(c.elementA, c.elementB)); }` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-02）|
+
+### API-0070 CollisionEntry
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0070 |
+| 名称 | CollisionEntry |
+| 所属系统 | core |
+| 所属模块 | collision |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 单次碰撞记录，包含两个重叠元素的 ID 和交集包围盒 |
+| 输入参数 | elementA: string, elementB: string, overlapBBox: BBox |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const entry: CollisionEntry = { elementA: 'e1', elementB: 'e2', overlapBBox: { x: 10, y: 10, width: 20, height: 20 } }` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-02）|
+
+### API-0071 CollisionResult
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0071 |
+| 名称 | CollisionResult |
+| 所属系统 | core |
+| 所属模块 | collision |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 碰撞检测结果接口，包含是否有碰撞的标志和碰撞记录数组 |
+| 输入参数 | hasCollision: boolean, collisions: CollisionEntry[] |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const result: CollisionResult = checkLayerCollisions(elements, adapter);` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-02）|
+
+### API-0072 CollisionCheckOptions
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0072 |
+| 名称 | CollisionCheckOptions |
+| 所属系统 | core |
+| 所属模块 | collision |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 碰撞检测的过滤选项，控制是否跳过隐藏或锁定元素的检测 |
+| 输入参数 | skipHidden?: boolean（跳过隐藏元素，默认 false 参与检测），skipLocked?: boolean（跳过锁定元素，默认 false 参与检测） |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `checkLayerCollisions(elements, adapter, { skipHidden: true })` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-02）|
+
 ### API-0065 exportProjectToZip
 
 | 字段 | 内容 |

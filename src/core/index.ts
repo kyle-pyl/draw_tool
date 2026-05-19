@@ -79,3 +79,6 @@ export { useDocumentStore } from './store';
 export type { DocumentStore } from './store';
 
 export { getBBox, createGeometryAdapter } from './geometry';
+
+export { checkLayerCollisions } from './collision';
+export type { CollisionEntry, CollisionResult, CollisionCheckOptions } from './collision';
