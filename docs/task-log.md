@@ -99,7 +99,7 @@
 | 任务名称 | 创建示例项目文件 |
 | 完成时间 | 2026-05-19 10:32 |
 | 作者/智能体 | OpenCode/deepseek-v4-pro |
-| Git Commit | 0738a58 |
+| Git Commit | d5f8c24 |
 | 修改记录 | 新建：examples/basic/scene.json、examples/basic/data/sample.csv、examples/basic/assets/.gitkeep、src/tests/unit/example-scene.test.ts；修改：tsconfig.app.json（增加 resolveJsonModule）|
 | 发现缺陷 | 无 |
 | 产出接口/函数 | 无（本任务仅创建示例文件，无新增 API）|
