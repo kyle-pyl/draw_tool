@@ -1,0 +1,150 @@
+{
+  "schemaVersion": "1.0.0",
+  "project": {
+    "name": "Basic Example Project",
+    "author": "OpenCode",
+    "description": "A minimal example scene demonstrating layers, shapes, text, connectors and groups."
+  },
+  "canvas": {
+    "units": "px",
+    "background": "#ffffff",
+    "defaultFont": "Arial",
+    "gridSize": 0,
+    "snapToGrid": false
+  },
+  "rules": {
+    "maxLayerCount": 10,
+    "collisionStrategy": "bbox",
+    "hiddenElementsCollide": true,
+    "lockedElementsCollide": true,
+    "connectorsExempt": true
+  },
+  "layers": [
+    {
+      "id": "l1",
+      "name": "Shapes",
+      "order": 1,
+      "visible": true,
+      "locked": false,
+      "defaultStyle": {
+        "fill": "#4A90D9",
+        "stroke": "#333333",
+        "strokeWidth": 2,
+        "opacity": 1
+      }
+    },
+    {
+      "id": "l2",
+      "name": "Text",
+      "order": 2,
+      "visible": true,
+      "locked": false,
+      "defaultStyle": {
+        "fill": "none",
+        "stroke": "#333333",
+        "strokeWidth": 1,
+        "opacity": 1,
+        "fontSize": 16,
+        "fontFamily": "Arial"
+      }
+    },
+    {
+      "id": "l3",
+      "name": "Connectors",
+      "order": 3,
+      "visible": true,
+      "locked": false
+    }
+  ],
+  "elements": [
+    {
+      "id": "e1",
+      "type": "shape",
+      "layerId": "l1",
+      "name": "Blue Rectangle",
+      "transform": { "x": 50, "y": 50, "width": 120, "height": 80, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#4A90D9", "stroke": "#2C5F8A", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "shapeKind": "rect",
+      "cornerRadius": [4, 4, 4, 4]
+    },
+    {
+      "id": "e2",
+      "type": "shape",
+      "layerId": "l1",
+      "name": "Green Circle",
+      "transform": { "x": 220, "y": 40, "width": 80, "height": 80, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#50C878", "stroke": "#2E8B57", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "shapeKind": "circle"
+    },
+    {
+      "id": "e3",
+      "type": "shape",
+      "layerId": "l1",
+      "name": "Red Polygon",
+      "transform": { "x": 350, "y": 40, "width": 120, "height": 100, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#FF6B6B", "stroke": "#CC4444", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "shapeKind": "polygon",
+      "points": [
+        { "x": 60, "y": 0 },
+        { "x": 120, "y": 50 },
+        { "x": 100, "y": 100 },
+        { "x": 20, "y": 100 },
+        { "x": 0, "y": 50 }
+      ]
+    },
+    {
+      "id": "e4",
+      "type": "text",
+      "layerId": "l2",
+      "name": "Title Text",
+      "transform": { "x": 50, "y": 200, "width": 200, "height": 30, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#333333", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 20, "fontFamily": "Arial", "fontWeight": "bold" },
+      "visible": true,
+      "locked": false,
+      "text": "Hello, Drawing Tool!"
+    },
+    {
+      "id": "e5",
+      "type": "text",
+      "layerId": "l2",
+      "name": "Subtitle Text",
+      "transform": { "x": 50, "y": 240, "width": 300, "height": 24, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#666666", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 14, "fontFamily": "Arial", "fontStyle": "italic" },
+      "visible": true,
+      "locked": false,
+      "text": "This is a sample scene with layers, shapes, and connectors."
+    },
+    {
+      "id": "e6",
+      "type": "connector",
+      "layerId": "l3",
+      "name": "Shape-to-Text Connector",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#999999", "strokeWidth": 2, "opacity": 1, "strokeDasharray": "6,3" },
+      "visible": true,
+      "locked": false,
+      "source": { "elementId": "e1", "anchorId": "right", "x": 170, "y": 90 },
+      "target": { "elementId": "e4", "x": 50, "y": 215 },
+      "route": { "type": "polyline", "points": [{ "x": 170, "y": 90 }, { "x": 110, "y": 160 }, { "x": 50, "y": 215 }] },
+      "arrowEnd": { "type": "triangle", "size": 1.2 },
+      "semanticKind": "flow"
+    }
+  ],
+  "groups": [
+    {
+      "id": "g1",
+      "name": "Shape Pair",
+      "elementIds": ["e1", "e2"]
+    }
+  ],
+  "dataSources": [],
+  "charts": [],
+  "templates": [],
+  "exportPresets": []
+}

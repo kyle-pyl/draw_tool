@@ -90,3 +90,16 @@
 | 修改记录 | 修改：src/core/validator.ts（新增 validateReferences 函数及其在 validateScene 中的集成）、src/tests/unit/validator.test.ts（新增 15 个引用完整性测试用例）；更新：docs/api-registry.md（更新 API-0051、新增 API-0053） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0053（新增 validateReferences）、API-0051（修订）|
+
+### T-01-05 创建示例项目文件
+
+| 字段 | 内容 |
+|---|---|
+| 任务编号 | T-01-05 |
+| 任务名称 | 创建示例项目文件 |
+| 完成时间 | 2026-05-19 10:32 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| Git Commit | 0738a58 |
+| 修改记录 | 新建：examples/basic/scene.json、examples/basic/data/sample.csv、examples/basic/assets/.gitkeep、src/tests/unit/example-scene.test.ts；修改：tsconfig.app.json（增加 resolveJsonModule）|
+| 发现缺陷 | 无 |
+| 产出接口/函数 | 无（本任务仅创建示例文件，无新增 API）|
