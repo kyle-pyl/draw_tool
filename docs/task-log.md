@@ -103,3 +103,16 @@
 | 修改记录 | 新建：examples/basic/scene.json、examples/basic/data/sample.csv、examples/basic/assets/.gitkeep、src/tests/unit/example-scene.test.ts；修改：tsconfig.app.json（增加 resolveJsonModule）|
 | 发现缺陷 | 无 |
 | 产出接口/函数 | 无（本任务仅创建示例文件，无新增 API）|
+
+### T-01-06 实现 ID 生成工具函数
+
+| 字段 | 内容 |
+|---|---|
+| 任务编号 | T-01-06 |
+| 任务名称 | 实现 ID 生成工具函数 |
+| 完成时间 | 2026-05-19 11:01 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| Git Commit | e51a3c8 |
+| 修改记录 | 新建：src/core/utils.ts、src/tests/unit/utils.test.ts；修改：src/core/index.ts（新增 generateId 导出）|
+| 发现缺陷 | 无 |
+| 产出接口/函数 | API-0054（generateId）|

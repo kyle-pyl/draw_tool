@@ -72,3 +72,5 @@ export {
   successResult,
   failureResult,
 } from './errors';
+
+export { generateId } from './utils';

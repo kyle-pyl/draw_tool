@@ -1039,3 +1039,22 @@
 | 输出参数 | ValidationError[] - 引用完整性错误列表，无错误时为空数组 |
 | 典型用例 | `validateScene` 内部调用 `allErrors.push(...validateReferences(obj))` |
 | 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-01-04）|
+
+### API-0054 generateId
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0054 |
+| 名称 | generateId |
+| 所属系统 | core |
+| 所属模块 | utils |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 使用 crypto.getRandomValues 生成唯一标识符字符串（含 Math.random 回退保证跨环境兼容）。支持可选前缀用于按类型命名 ID。 |
+| 输入参数 | prefix?: string - 可选前缀，以 `_` 与随机部分分隔。无前缀或空字符串时返回纯 12 字符 nanoid |
+| 输出参数 | string - 格式为 `{prefix}_{12随机字符}` 或纯 12 随机字符（URL 安全字符集 A-Za-z0-9_-） |
+| 典型用例 | `const id = generateId('shape') // → "shape_aB3dEfGhIjKl"` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-01-06）|
