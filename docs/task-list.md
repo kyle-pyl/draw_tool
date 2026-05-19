@@ -311,7 +311,7 @@
 | 任务编号 | T-02-04 |
 | 任务名称 | 实现元素单选和多选 |
 | 前置任务 | T-02-02 |
-| 状态 | 待执行 |
+| 状态 | 已完成 |
 
 **任务说明：** 在 src/canvas/selection.ts 中实现 SelectionManager，管理当前选中元素集合。在 CanvasView 中添加点击选择和 Shift+点击多选。
 

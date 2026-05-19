@@ -1081,7 +1081,7 @@
 ### API-0057 CanvasView
 
 | 字段 | 内容 |
-|---|---|
+|---|--|
 | 序号 | API-0057 |
 | 名称 | CanvasView |
 | 所属系统 | canvas |
@@ -1091,27 +1091,27 @@
 | 最后修订日期 | 2026-05-19 |
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | React SVG 画布渲染组件。接收 SceneDocument 和 Viewport 作为 props，按图层 order 升序渲染所有元素到 SVG。支持渲染 shape（rect、circle、ellipse、polygon、path）、text（含对齐和样式）、image（img 引用）、connector（polyline 占位）。支持滚轮缩放（以鼠标位置为中心）、空格+拖拽平移、中键拖拽平移交互，光标样式自动切换（default/grab/grabbing），通过 onViewportChange 回调通知父组件重渲染。 |
-| 输入参数 | props: { scene: SceneDocument, viewport: Viewport, width?: number | string, height?: number | string, className?: string, onViewportChange?: () => void } |
-| 输出参数 | ReactElement - SVG 元素，包含按图层组织的 `<g>` 元素树 |
-| 典型用例 | `<CanvasView scene={scene} viewport={new Viewport()} />` |
-| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-02-02）；2026-05-19, OpenCode/deepseek-v4-pro, T-02-03 新增 onViewportChange prop、滚轮缩放、空格/中键拖拽平移和光标样式切换 |
+| 功能描述 | React SVG 画布渲染组件。接收 SceneDocument 和 Viewport 作为 props，按图层 order 升序渲染所有元素到 SVG。支持渲染 shape（rect、circle、ellipse、polygon、path）、text（含对齐和样式）、image（img 引用）、connector（polyline 占位）。支持滚轮缩放（以鼠标位置为中心）、空格+拖拽平移、中键拖拽平移交互，光标样式自动切换（default/grab/grabbing），通过 onViewportChange 回调通知父组件重渲染。支持元素单选（点击）、多选（Shift+点击）、空白区域取消选中、锁定元素不可选中，通过 selectionManager prop 管理选择状态。选中元素在屏幕空间渲染蓝色包围盒和 8 个控制柄。 |
+| 输入参数 | props: { scene: SceneDocument, viewport: Viewport, width?: number | string, height?: number | string, className?: string, onViewportChange?: () => void, selectionManager?: SelectionManager, onSelectionChange?: () => void } |
+| 输出参数 | ReactElement - SVG 元素，包含按图层组织的 `<g>` 元素树和选择覆盖层 |
+| 典型用例 | `<CanvasView scene={scene} viewport={viewport} selectionManager={selectionMgr} onViewportChange={update} onSelectionChange={update} />` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-02-02）；2026-05-19, OpenCode/deepseek-v4-pro, T-02-03 新增 onViewportChange prop、滚轮缩放、空格/中键拖拽平移和光标样式切换；2026-05-19, OpenCode/deepseek-v4-pro, T-02-04 新增 selectionManager/onSelectionChange props、元素点击选择和多选交互、选择覆盖层渲染 |
 
-### API-0056 Viewport
+### API-0058 SelectionManager
 
 | 字段 | 内容 |
 |---|---|
-| 序号 | API-0056 |
-| 名称 | Viewport |
+| 序号 | API-0058 |
+| 名称 | SelectionManager |
 | 所属系统 | canvas |
-| 所属模块 | viewport |
+| 所属模块 | selection |
 | 状态 | 活跃 |
 | 创建日期 | 2026-05-19 |
 | 最后修订日期 | 2026-05-19 |
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | 视口变换管理器类，管理画布的缩放（zoom）和平移（offset）状态，提供屏幕坐标与画布坐标的双向转换、以指定点为中心的定点缩放、步进缩放（zoomIn/zoomOut）、适应区域（fitToRect）、重置和 SVG transform 矩阵生成等功能 |
-| 输入参数 | constructor(config?: Partial<ViewportConfig>) |
-| 输出参数 | screenToCanvas(sx, sy): { x, y }; canvasToScreen(cx, cy): { x, y }; pan(dx, dy): void; zoomTo(zoom, cx?, cy?): void; zoomIn(cx?, cy?): void; zoomOut(cx?, cy?): void; fitToRect(bbox, containerW, containerH, padding?): void; reset(): void; getTransformMatrix(): string |
-| 典型用例 | `const vp = new Viewport(); const canvasCoords = vp.screenToCanvas(300, 200); vp.zoomIn(300, 200); const matrix = vp.getTransformMatrix();` |
-| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-02-01）|
+| 功能描述 | 选择管理器类，维护当前选中元素的 ID 集合。提供单选（select，清空其他选择）、切换选择（toggleSelect，用于 Shift+点击多选）、清空选择（clearSelection）、全选可见未锁定元素（selectAll）、批量选择（selectByIds/addToSelection/removeFromSelection）、选中状态查询（isSelected）、选中元素获取（getSelectedElements）和选中计数（count）等功能 |
+| 输入参数 | constructor() - 无参数，初始状态为空 |
+| 输出参数 | select(id): void; toggleSelect(id): void; clearSelection(): void; selectAll(scene): void; selectByIds(ids): void; addToSelection(ids): void; removeFromSelection(ids): void; isSelected(id): boolean; getSelectedElements(scene): SceneElement[]; count: number; selectedIds: ReadonlySet<string> |
+| 典型用例 | `const sm = new SelectionManager(); sm.select('e1'); sm.toggleSelect('e2'); const els = sm.getSelectedElements(scene);` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-02-04）|

@@ -5,3 +5,4 @@
 export { Viewport } from './viewport';
 export type { ViewportConfig } from './viewport';
 export { CanvasView } from './CanvasView';
+export { SelectionManager } from './selection';

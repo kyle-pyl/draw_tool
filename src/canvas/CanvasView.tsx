@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
-import type { SceneDocument, SceneElement, ShapeElement, TextElement, ImageElement, ConnectorElement, ConnectorEndpoint, ElementStyle } from '../core/types';
+import type { SceneDocument, SceneElement, ShapeElement, TextElement, ImageElement, ConnectorElement, ConnectorEndpoint, ElementStyle, BBox } from '../core/types';
 import type { Viewport } from './viewport';
+import type { SelectionManager } from './selection';
 
 interface CanvasViewProps {
   scene: SceneDocument;
@@ -9,6 +10,30 @@ interface CanvasViewProps {
   height?: number | string;
   className?: string;
   onViewportChange?: () => void;
+  selectionManager?: SelectionManager;
+  onSelectionChange?: () => void;
+}
+
+function getElementBBox(el: SceneElement): BBox {
+  const { x, y, width, height } = el.transform;
+  return { x, y, width, height };
+}
+
+function renderHandles(sx: number, sy: number, sw: number, sh: number, hs: number = 8) {
+  const halfHs = hs / 2;
+  const positions: [number, number][] = [
+    [sx - halfHs, sy - halfHs],
+    [sx + sw - halfHs, sy - halfHs],
+    [sx - halfHs, sy + sh - halfHs],
+    [sx + sw - halfHs, sy + sh - halfHs],
+    [sx + sw / 2 - halfHs, sy - halfHs],
+    [sx + sw - halfHs, sy + sh / 2 - halfHs],
+    [sx + sw / 2 - halfHs, sy + sh - halfHs],
+    [sx - halfHs, sy + sh / 2 - halfHs],
+  ];
+  return positions.map(([hx, hy], i) => (
+    <rect key={i} x={hx} y={hy} width={hs} height={hs} fill="#fff" stroke="#2196F3" strokeWidth={1} />
+  ));
 }
 
 function getElementTransform(el: SceneElement): string {
@@ -209,7 +234,7 @@ function renderElement(el: SceneElement, elements: SceneElement[]): React.ReactE
   }
 }
 
-export function CanvasView({ scene, viewport, width, height, className, onViewportChange }: CanvasViewProps) {
+export function CanvasView({ scene, viewport, width, height, className, onViewportChange, selectionManager, onSelectionChange }: CanvasViewProps) {
   const layersSorted = [...scene.layers].sort((a, b) => a.order - b.order);
   const layerElementMap = new Map<string, SceneElement[]>();
 
@@ -227,11 +252,38 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
   const [spacePressed, setSpacePressed] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
   const isPanningRef = useRef(false);
+  const spaceDownRef = useRef(false);
   const lastMouseRef = useRef({ x: 0, y: 0 });
+
+  const selectedElements = selectionManager
+    ? selectionManager.getSelectedElements(scene)
+    : [];
 
   const notifyChange = useCallback(() => {
     onViewportChange?.();
   }, [onViewportChange]);
+
+  const handleElementClick = useCallback(
+    (e: React.MouseEvent, el: SceneElement) => {
+      e.stopPropagation();
+      if (!selectionManager) return;
+      if (spaceDownRef.current) return;
+      if (el.locked) return;
+      if (e.shiftKey) {
+        selectionManager.toggleSelect(el.id);
+      } else {
+        selectionManager.select(el.id);
+      }
+      onSelectionChange?.();
+    },
+    [selectionManager, onSelectionChange]
+  );
+
+  const handleBackgroundClick = useCallback(() => {
+    if (!selectionManager) return;
+    selectionManager.clearSelection();
+    onSelectionChange?.();
+  }, [selectionManager, onSelectionChange]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -239,11 +291,13 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
         const target = e.target as HTMLElement;
         if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
         e.preventDefault();
+        spaceDownRef.current = true;
         setSpacePressed(true);
       }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
+        spaceDownRef.current = false;
         setSpacePressed(false);
         if (isPanningRef.current) {
           isPanningRef.current = false;
@@ -327,6 +381,7 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
       onContextMenu={handleContextMenu}
+      onClick={handleBackgroundClick}
     >
       <g transform={viewportTransform}>
         {layersSorted.map((layer) => {
@@ -334,11 +389,46 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
           const els = layerElementMap.get(layer.id) ?? [];
           return (
             <g key={layer.id} id={`layer-${layer.id}`} data-layer-name={layer.name}>
-              {els.map((el) => renderElement(el, scene.elements))}
+              {els.map((el) => (
+                <g
+                  key={el.id}
+                  onClick={(e) => handleElementClick(e, el)}
+                  style={{ cursor: el.locked ? 'default' : 'pointer' }}
+                  data-element-id={el.id}
+                >
+                  {renderElement(el, scene.elements)}
+                </g>
+              ))}
             </g>
           );
         })}
       </g>
+      {selectedElements.length > 0 && (
+        <g pointerEvents="none" className="selection-overlay">
+          {selectedElements.map((el) => {
+            const bbox = getElementBBox(el);
+            const sx = viewport.zoom * bbox.x + viewport.offsetX;
+            const sy = viewport.zoom * bbox.y + viewport.offsetY;
+            const sw = viewport.zoom * bbox.width;
+            const sh = viewport.zoom * bbox.height;
+
+            return (
+              <g key={`sel-${el.id}`}>
+                <rect
+                  x={sx}
+                  y={sy}
+                  width={sw}
+                  height={sh}
+                  fill="none"
+                  stroke="#2196F3"
+                  strokeWidth={1}
+                />
+                {renderHandles(sx, sy, sw, sh)}
+              </g>
+            );
+          })}
+        </g>
+      )}
     </svg>
   );
 }

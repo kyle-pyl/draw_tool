@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { CanvasView } from '../../canvas/CanvasView';
 import { Viewport } from '../../canvas/viewport';
+import { SelectionManager } from '../../canvas/selection';
 import type { SceneDocument } from '../../core/types';
 
 function createScene(overrides: Partial<SceneDocument> = {}): SceneDocument {
@@ -672,6 +673,183 @@ describe('CanvasView', () => {
 
       fireEvent.mouseDown(svg, { button: 1, clientX: 100, clientY: 100 });
       expect(svg.style.cursor).toBe('grabbing');
+    });
+  });
+
+  describe('interaction: element selection', () => {
+    let selectionManager: SelectionManager;
+
+    beforeEach(() => {
+      selectionManager = new SelectionManager();
+    });
+
+    function sceneWithRect() {
+      return createScene({
+        elements: [
+          {
+            id: 'e1', type: 'shape', layerId: 'l1', name: 'rect1',
+            transform: { x: 10, y: 20, width: 100, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: '#ff0000', stroke: '#000', strokeWidth: 2, opacity: 1 },
+            visible: true, locked: false, shapeKind: 'rect',
+          },
+        ],
+      });
+    }
+
+    function sceneWithTwoRects() {
+      return createScene({
+        elements: [
+          {
+            id: 'e1', type: 'shape', layerId: 'l1', name: 'rect1',
+            transform: { x: 10, y: 20, width: 100, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: '#ff0000', stroke: '#000', strokeWidth: 2, opacity: 1 },
+            visible: true, locked: false, shapeKind: 'rect',
+          },
+          {
+            id: 'e2', type: 'shape', layerId: 'l1', name: 'rect2',
+            transform: { x: 150, y: 20, width: 80, height: 60, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: '#00ff00', stroke: '#000', strokeWidth: 2, opacity: 1 },
+            visible: true, locked: false, shapeKind: 'rect',
+          },
+        ],
+      });
+    }
+
+    it('should select an element on click', () => {
+      const scene = sceneWithRect();
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} selectionManager={selectionManager} />
+      );
+      const rectG = container.querySelector('[data-element-id="e1"]')!;
+      fireEvent.click(rectG);
+      expect(selectionManager.isSelected('e1')).toBe(true);
+    });
+
+    it('should clear previous selection when clicking a different element', () => {
+      const scene = sceneWithTwoRects();
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} selectionManager={selectionManager} />
+      );
+      fireEvent.click(container.querySelector('[data-element-id="e1"]')!);
+      expect(selectionManager.isSelected('e1')).toBe(true);
+      fireEvent.click(container.querySelector('[data-element-id="e2"]')!);
+      expect(selectionManager.isSelected('e1')).toBe(false);
+      expect(selectionManager.isSelected('e2')).toBe(true);
+    });
+
+    it('should toggle selection on shift+click', () => {
+      const scene = sceneWithTwoRects();
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} selectionManager={selectionManager} />
+      );
+      fireEvent.click(container.querySelector('[data-element-id="e1"]')!);
+      fireEvent.click(container.querySelector('[data-element-id="e2"]')!, { shiftKey: true });
+      expect(selectionManager.isSelected('e1')).toBe(true);
+      expect(selectionManager.isSelected('e2')).toBe(true);
+      expect(selectionManager.count).toBe(2);
+    });
+
+    it('should remove from selection on shift+click already selected element', () => {
+      const scene = sceneWithTwoRects();
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} selectionManager={selectionManager} />
+      );
+      fireEvent.click(container.querySelector('[data-element-id="e1"]')!);
+      fireEvent.click(container.querySelector('[data-element-id="e2"]')!, { shiftKey: true });
+      fireEvent.click(container.querySelector('[data-element-id="e1"]')!, { shiftKey: true });
+      expect(selectionManager.isSelected('e1')).toBe(false);
+      expect(selectionManager.isSelected('e2')).toBe(true);
+      expect(selectionManager.count).toBe(1);
+    });
+
+    it('should clear selection on SVG background click', () => {
+      const scene = sceneWithRect();
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} selectionManager={selectionManager} />
+      );
+      fireEvent.click(container.querySelector('[data-element-id="e1"]')!);
+      expect(selectionManager.isSelected('e1')).toBe(true);
+      const svg = container.querySelector('svg')!;
+      fireEvent.click(svg);
+      expect(selectionManager.count).toBe(0);
+    });
+
+    it('should render selection bounding box for selected element', () => {
+      selectionManager.select('e1');
+      const scene = sceneWithRect();
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} selectionManager={selectionManager} />
+      );
+      const overlay = container.querySelector('.selection-overlay');
+      expect(overlay).toBeInTheDocument();
+      const bboxRect = overlay!.querySelector('rect');
+      expect(bboxRect).toBeInTheDocument();
+      expect(bboxRect).toHaveAttribute('stroke', '#2196F3');
+    });
+
+    it('should not render selection overlay when nothing selected', () => {
+      const scene = sceneWithRect();
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} selectionManager={selectionManager} />
+      );
+      expect(container.querySelector('.selection-overlay')).toBeNull();
+    });
+
+    it('should call onSelectionChange on element click', () => {
+      const scene = sceneWithRect();
+      const onChange = vi.fn();
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} selectionManager={selectionManager} onSelectionChange={onChange} />
+      );
+      fireEvent.click(container.querySelector('[data-element-id="e1"]')!);
+      expect(onChange).toHaveBeenCalledTimes(1);
+    });
+
+    it('should call onSelectionChange on background click', () => {
+      const scene = sceneWithRect();
+      const onChange = vi.fn();
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} selectionManager={selectionManager} onSelectionChange={onChange} />
+      );
+      const svg = container.querySelector('svg')!;
+      fireEvent.click(svg);
+      expect(onChange).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not select locked elements', () => {
+      const scene = createScene({
+        elements: [
+          {
+            id: 'e1', type: 'shape', layerId: 'l1',
+            transform: { x: 0, y: 0, width: 100, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: '#f00', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            visible: true, locked: true, shapeKind: 'rect',
+          },
+        ],
+      });
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} selectionManager={selectionManager} />
+      );
+      fireEvent.click(container.querySelector('[data-element-id="e1"]')!);
+      expect(selectionManager.isSelected('e1')).toBe(false);
+    });
+
+    it('should render 8 handles for selected element', () => {
+      selectionManager.select('e1');
+      const scene = sceneWithRect();
+      const { container } = render(
+        <CanvasView scene={scene} viewport={viewport} selectionManager={selectionManager} />
+      );
+      const overlay = container.querySelector('.selection-overlay')!;
+      const handleRects = overlay.querySelectorAll('rect');
+      expect(handleRects.length).toBe(9);
+    });
+
+    it('should not throw when selectionManager is not provided', () => {
+      const scene = sceneWithRect();
+      const { container } = render(<CanvasView scene={scene} viewport={viewport} />);
+      const rectG = container.querySelector('[data-element-id="e1"]')!;
+      expect(() => fireEvent.click(rectG)).not.toThrow();
     });
   });
 
