@@ -307,7 +307,7 @@
 | 任务名称      | 实现冲突高亮显示 |
 | 完成时间      | 2026-05-19 21:50 |
 | 作者/智能体   | OpenCode/deepseek-v4-pro |
-| Git Commit    | (待提交) |
+| Git Commit    | ee49ef6 |
 | 修改记录      | 新建：src/canvas/conflict.ts（ConflictHighlighter 类、ConflictInfo 接口）、src/ui/ConflictPanel.tsx（ConflictPanel 组件）、src/tests/unit/conflict.test.ts（13 个 ConflictHighlighter 测试用例）、src/tests/unit/conflict-panel.test.tsx（10 个 ConflictPanel 测试用例）；修改：src/canvas/CanvasView.tsx（新增 conflictHighlighter prop、冲突叠层渲染红色虚线包围盒和重叠区域）、src/canvas/index.ts（新增 ConflictHighlighter 和 ConflictInfo 导出）、src/ui/index.ts（新增 ConflictPanel 和 ConflictPanelProps 导出）、src/App.tsx（集成 ConflictHighlighter、冲突检测逻辑和 ConflictPanel）、src/tests/unit/canvas-view.test.tsx（新增 8 个冲突叠层测试用例） |
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0074（ConflictHighlighter）、API-0075（ConflictInfo）、API-0076（ConflictPanel）、API-0077（ConflictPanelProps） |
