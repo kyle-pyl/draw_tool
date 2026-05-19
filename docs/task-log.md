@@ -234,3 +234,16 @@
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0064（importProjectFromZip）、API-0065（exportProjectToZip） |
 
+### T-03-05 实现项目保存功能
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-03-05 |
+| 任务名称      | 实现项目保存功能 |
+| 完成时间      | 2026-05-19 18:54 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | 3252b72 |
+| 修改记录      | 修改：src/io/exporters.ts（新增 saveProject、triggerDownload 函数，新增 validateScene/failureResult/successResult/ValidationResult 导入）、src/io/index.ts（新增 saveProject 导出）、src/tests/unit/zip-io.test.ts（新增 6 个 saveProject 测试用例）、docs/（task-log.md、api-registry.md、task-list.md）、README.md |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0066（saveProject） |
+

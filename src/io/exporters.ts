@@ -5,7 +5,10 @@
 import { zipSync, strToU8 } from 'fflate';
 import type { Zippable } from 'fflate';
 import { useDocumentStore } from '../core/store';
+import { validateScene } from '../core/validator';
+import { successResult, failureResult } from '../core/errors';
 import type { SceneDocument } from '../core/types';
+import type { ValidationResult } from '../core/errors';
 
 function extFromMimeType(mimeType: string): string {
   const map: Record<string, string> = {
@@ -90,4 +93,97 @@ export async function exportProjectToZip(): Promise<Blob> {
 
   const zipData = zipSync(zipEntries);
   return new Blob([zipData], { type: 'application/zip' });
+}
+
+/**
+ * Trigger a browser download for a Blob.
+ */
+function triggerDownload(blob: Blob, fileName: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  // Revoke after a short delay to ensure the download starts
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/**
+ * Save the currently loaded project.
+ *
+ * Behaviour depends on how the project was opened:
+ *  - If a File System Access API directory handle is available (project opened
+ *    via `loadProjectFromDirectory`), the scene.json is written back to the
+ *    directory root using `createWritable`. Data and asset files already in
+ *    the directory are left untouched.
+ *  - If no directory handle is available, the project is exported as a ZIP
+ *    and a download is triggered in the browser.
+ *
+ * Before saving, the current scene is validated with `validateScene`. If
+ * validation fails the save is blocked and the ValidationResult with errors
+ * is returned.
+ *
+ * After a successful save `store.markClean()` is called so that `isDirty`
+ * resets to `false`.
+ *
+ * @returns ValidationResult — valid: true when saved successfully;
+ *          valid: false when validation blocks the save.
+ */
+export async function saveProject(): Promise<ValidationResult> {
+  const store = useDocumentStore.getState();
+  const scene = store.getScene();
+
+  if (!scene) {
+    return failureResult({
+      code: 'IO_ERROR',
+      message: 'No scene is currently loaded. Open or create a project first.',
+      severity: 'error',
+    });
+  }
+
+  // Pre-save validation
+  const validation = validateScene(scene);
+  if (!validation.valid) {
+    return validation;
+  }
+
+  const dirHandle = store.directoryHandle;
+
+  if (dirHandle) {
+    // ── Save directly to the project directory ──────────────────────────
+    try {
+      const sceneJson = JSON.stringify(scene, null, 2);
+
+      // Write scene.json
+      const fileHandle = await dirHandle.getFileHandle('scene.json', { create: true });
+      const writable = await fileHandle.createWritable();
+      await writable.write(sceneJson);
+      await writable.close();
+    } catch (err) {
+      return failureResult({
+        code: 'IO_ERROR',
+        message: `Failed to write to project directory: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        severity: 'error',
+      });
+    }
+  } else {
+    // ── Export as ZIP and trigger download ──────────────────────────────
+    try {
+      const zipBlob = await exportProjectToZip();
+      const projectName = scene.project?.name ?? 'project';
+      triggerDownload(zipBlob, `${projectName}.zip`);
+    } catch (err) {
+      return failureResult({
+        code: 'IO_ERROR',
+        message: `Failed to export project: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        severity: 'error',
+      });
+    }
+  }
+
+  store.markClean();
+  return successResult();
 }

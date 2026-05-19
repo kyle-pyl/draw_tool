@@ -3,4 +3,4 @@
  */
 
 export { loadSceneFromFile, loadSceneFromFileObject, loadProjectFromDirectory, importProjectFromZip } from './importers';
-export { exportProjectToZip } from './exporters';
+export { exportProjectToZip, saveProject } from './exporters';

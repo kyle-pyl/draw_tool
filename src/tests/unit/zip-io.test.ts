@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { zipSync, strToU8 } from 'fflate';
 import { importProjectFromZip } from '../../io/importers';
-import { exportProjectToZip } from '../../io/exporters';
+import { exportProjectToZip, saveProject } from '../../io/exporters';
 import { useDocumentStore } from '../../core/store';
 
 function makeValidSceneJson(): string {
@@ -425,5 +425,182 @@ describe('exportProjectToZip', () => {
 
     expect(result.valid).toBe(true);
     expect(result.errors).toEqual([]);
+  });
+});
+
+// ─── saveProject ─────────────────────────────────────────────────────────────
+
+describe('saveProject', () => {
+  beforeEach(() => {
+    useDocumentStore.setState({
+      scene: null,
+      zoom: 1,
+      offsetX: 0,
+      offsetY: 0,
+      selectedIds: [],
+      isDirty: false,
+      directoryHandle: null,
+    });
+    vi.stubGlobal('URL', {
+      ...globalThis.URL,
+      createObjectURL: vi.fn().mockReturnValue('blob:mock-save'),
+      revokeObjectURL: vi.fn(),
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('returns IO_ERROR when no scene is loaded', async () => {
+    const result = await saveProject();
+
+    expect(result.valid).toBe(false);
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0].code).toBe('IO_ERROR');
+    expect(result.errors[0].message).toContain('No scene is currently loaded');
+  });
+
+  it('returns validation errors when scene is invalid and blocks save', async () => {
+    const sceneData = JSON.parse(makeValidSceneJson());
+    useDocumentStore.getState().loadScene(sceneData);
+    useDocumentStore.setState({ isDirty: true });
+
+    // Mutate the scene to make it invalid (remove schemaVersion)
+    const state = useDocumentStore.getState();
+    state.updateScene((s) => {
+      const modified = JSON.parse(JSON.stringify(s));
+      delete (modified as Record<string, unknown>).schemaVersion;
+      return modified;
+    });
+
+    const result = await saveProject();
+
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThan(0);
+    // isDirty should still be true since save was blocked
+    expect(useDocumentStore.getState().isDirty).toBe(true);
+  });
+
+  it('saves to directory handle and marks clean', async () => {
+    const sceneData = JSON.parse(makeValidSceneJson());
+    useDocumentStore.getState().loadScene(sceneData);
+    useDocumentStore.setState({ isDirty: true });
+
+    // Create a mock directory handle with createWritable support
+    const writtenChunks: string[] = [];
+    const mockWritable = {
+      write: vi.fn().mockImplementation((chunk: string) => {
+        writtenChunks.push(chunk);
+        return Promise.resolve();
+      }),
+      close: vi.fn().mockResolvedValue(undefined),
+    };
+    const mockFileHandle = {
+      kind: 'file' as const,
+      name: 'scene.json',
+      createWritable: vi.fn().mockResolvedValue(mockWritable),
+    };
+    const mockDirHandle = {
+      kind: 'directory' as const,
+      name: 'project',
+      getFileHandle: vi.fn().mockResolvedValue(mockFileHandle),
+    } as unknown as FileSystemDirectoryHandle;
+
+    useDocumentStore.setState({ directoryHandle: mockDirHandle });
+
+    const result = await saveProject();
+
+    expect(result.valid).toBe(true);
+    expect(result.errors).toEqual([]);
+
+    // Verify directory write was called
+    expect(mockDirHandle.getFileHandle).toHaveBeenCalledWith('scene.json', { create: true });
+    expect(mockFileHandle.createWritable).toHaveBeenCalled();
+    expect(mockWritable.write).toHaveBeenCalled();
+    expect(mockWritable.close).toHaveBeenCalled();
+
+    // Verify written content is valid JSON with the current scene
+    const writtenJson = JSON.parse(writtenChunks[0]);
+    expect(writtenJson.schemaVersion).toBe('1.0.0');
+    expect(writtenJson.project.name).toBe('Test Project');
+
+    // isDirty should be false after successful save
+    expect(useDocumentStore.getState().isDirty).toBe(false);
+  });
+
+  it('saves via ZIP download when no directory handle', async () => {
+    const sceneData = JSON.parse(makeValidSceneJson());
+    useDocumentStore.getState().loadScene(sceneData);
+    useDocumentStore.setState({ isDirty: true, directoryHandle: null });
+
+    // Spy on createElement only for the anchor, allow all other elements through
+    const origCreateElement = document.createElement.bind(document);
+    const anchor = origCreateElement('a');
+    const clickSpy = vi.spyOn(anchor, 'click').mockImplementation(() => {});
+    const createElSpy = vi.spyOn(document, 'createElement').mockImplementation((tag, opts) => {
+      if (tag === 'a') return anchor;
+      return origCreateElement(tag, opts);
+    });
+    const appendSpy = vi.spyOn(document.body, 'appendChild').mockReturnValue(anchor);
+    const removeSpy = vi.spyOn(document.body, 'removeChild').mockReturnValue(anchor);
+
+    const result = await saveProject();
+
+    expect(result.valid).toBe(true);
+    expect(result.errors).toEqual([]);
+    expect(clickSpy).toHaveBeenCalled();
+    expect(anchor.download).toBe('Test Project.zip');
+    expect(useDocumentStore.getState().isDirty).toBe(false);
+
+    createElSpy.mockRestore();
+    appendSpy.mockRestore();
+    removeSpy.mockRestore();
+  });
+
+  it('returns IO_ERROR when directory write fails', async () => {
+    const sceneData = JSON.parse(makeValidSceneJson());
+    useDocumentStore.getState().loadScene(sceneData);
+    useDocumentStore.setState({ isDirty: true });
+
+    const mockDirHandle = {
+      kind: 'directory' as const,
+      name: 'project',
+      getFileHandle: vi.fn().mockRejectedValue(new Error('Permission denied')),
+    } as unknown as FileSystemDirectoryHandle;
+
+    useDocumentStore.setState({ directoryHandle: mockDirHandle });
+
+    const result = await saveProject();
+
+    expect(result.valid).toBe(false);
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0].code).toBe('IO_ERROR');
+    expect(result.errors[0].message).toContain('Permission denied');
+
+    // isDirty should still be true since save failed
+    expect(useDocumentStore.getState().isDirty).toBe(true);
+  });
+
+  it('isDirty is set to false after successful save', async () => {
+    const sceneData = JSON.parse(makeValidSceneJson());
+    useDocumentStore.getState().loadScene(sceneData);
+    useDocumentStore.setState({ isDirty: true, directoryHandle: null });
+
+    // Mock document.createElement('a') to suppress jsdom navigation
+    const origCreateElement = document.createElement.bind(document);
+    const anchor = origCreateElement('a');
+    vi.spyOn(anchor, 'click').mockImplementation(() => {});
+    vi.spyOn(document, 'createElement').mockImplementation((tag, opts) => {
+      if (tag === 'a') return anchor;
+      return origCreateElement(tag, opts);
+    });
+    vi.spyOn(document.body, 'appendChild').mockReturnValue(anchor);
+    vi.spyOn(document.body, 'removeChild').mockReturnValue(anchor);
+
+    const result = await saveProject();
+
+    expect(result.valid).toBe(true);
+    expect(useDocumentStore.getState().isDirty).toBe(false);
   });
 });

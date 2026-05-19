@@ -8,8 +8,8 @@ Agent 友好的论文与技术图表绘制工具。纯 Web 应用，本地优先
 |---|---|
 | 阶段 | 阶段 3：项目打开保存 |
 | 版本 | 0.3.0 |
-| 可用功能 | 核心类型已定义（scene.json 结构、元素模型、图层、连接线、图表等），错误码和校验结果类型已定义，scene.json Schema 结构校验器已实现（含引用完整性校验），示例项目 examples/basic/ 已创建并通过校验，ID 生成工具已实现（generateId），视口变换管理器（Viewport）已实现，SVG 画布渲染组件已实现（CanvasView：支持 shape、text、image、connector 渲染，支持滚轮缩放和拖拽平移交互，支持元素单选、多选和框选（marquee selection），显示蓝色选择包围盒和 8 个控制柄），Document Store 已实现（useDocumentStore：管理 scene、视口、选择集和脏标志，支持 loadScene/updateScene/getScene/markClean），JSON 项目文件加载已实现（loadSceneFromFile：浏览器文件选择器，支持 File System Access API 和 input[type=file] 回退，自动校验并加载到 Store） |
-| 构建状态 | 可安装、可启动、可构建、可运行测试（291 个测试通过） |
+| 可用功能 | 核心类型已定义（scene.json 结构、元素模型、图层、连接线、图表等），错误码和校验结果类型已定义，scene.json Schema 结构校验器已实现（含引用完整性校验），示例项目 examples/basic/ 已创建并通过校验，ID 生成工具已实现（generateId），视口变换管理器（Viewport）已实现，SVG 画布渲染组件已实现（CanvasView：支持 shape、text、image、connector 渲染，支持滚轮缩放和拖拽平移交互，支持元素单选、多选和框选（marquee selection），显示蓝色选择包围盒和 8 个控制柄），Document Store 已实现（useDocumentStore：管理 scene、视口、选择集和脏标志，支持 loadScene/updateScene/getScene/markClean），JSON 项目文件加载已实现（loadSceneFromFile），File System Access API 项目目录打开已实现（loadProjectFromDirectory），ZIP 项目导入导出已实现（importProjectFromZip/exportProjectToZip），项目保存功能已实现（saveProject：目录写入或 ZIP 下载，保存前校验） |
+| 构建状态 | 可安装、可启动、可构建、可运行测试（330 个测试通过） |
 
 ## 功能目标
 
