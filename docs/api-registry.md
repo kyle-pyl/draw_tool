@@ -996,11 +996,11 @@
 | 最后修订日期 | 2026-05-19 |
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | 对 unknown 对象执行 SceneDocument schema 结构校验，检查根字段（schemaVersion、project、canvas、rules）、layers 数组（id、order）、elements 数组（id、type、layerId 及 type 合法性）、groups 数组（id、elementIds） |
+| 功能描述 | 对 unknown 对象执行完整校验：结构校验（schemaVersion、project、canvas、rules、layers、elements、groups）和引用完整性校验（element.layerId 引用存在性、group.elementIds 引用存在性、connector source/target 端点引用存在性） |
 | 输入参数 | data: unknown - 待校验的对象 |
 | 输出参数 | ValidationResult - valid 为 true 且 errors 为空表示通过；valid 为 false 且 errors 为非空表示校验失败 |
 | 典型用例 | `const result = validateScene(json); if (result.valid) { loadScene(json as SceneDocument); } else { showErrors(result.errors); }` |
-| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建 |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建；2026-05-19, OpenCode/deepseek-v4-pro, T-01-04 增加引用完整性校验 |
 
 ### API-0052 validateAndCast
 
@@ -1020,3 +1020,22 @@
 | 输出参数 | SceneDocument | ValidationResult - 校验通过返回类型缩窄后的文档，失败返回校验结果 |
 | 典型用例 | `const doc = validateAndCast(json); if ('valid' in doc) { handleErrors(doc); } else { render(doc); }` |
 | 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0053 validateReferences
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0053 |
+| 名称 | validateReferences |
+| 所属系统 | core |
+| 所属模块 | validator |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 内部校验函数，对已通过结构校验的数据执行引用完整性检查：每个 element 的 layerId 是否存在、每个 group 的 elementIds 是否存在、每个 connector 的 source/target elementId（若存在）是否有效。返回 REF_LAYER_NOT_FOUND、REF_GROUP_NOT_FOUND、REF_CONNECTOR_ENDPOINT_NOT_FOUND 等错误 |
+| 输入参数 | data: Record<string, unknown> - 已通过结构校验的 scene 对象 |
+| 输出参数 | ValidationError[] - 引用完整性错误列表，无错误时为空数组 |
+| 典型用例 | `validateScene` 内部调用 `allErrors.push(...validateReferences(obj))` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-01-04）|

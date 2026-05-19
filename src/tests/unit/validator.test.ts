@@ -503,3 +503,242 @@ describe('validateScene – negative cases', () => {
     expect(result.errors.length).toBeGreaterThanOrEqual(3);
   });
 });
+
+describe('validateScene – reference integrity', () => {
+  it('rejects element with non-existent layerId', () => {
+    const scene = makeValidScene({
+      layers: [{ id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false }],
+      elements: [{
+        id: 'e1', type: 'shape', layerId: 'nonexistent_layer',
+        shapeKind: 'rect',
+        transform: { x: 0, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+        visible: true, locked: false,
+      }],
+    });
+    const result = validateScene(scene);
+    expect(result.valid).toBe(false);
+    const refError = result.errors.find((e) => e.code === ErrorCode.REF_LAYER_NOT_FOUND);
+    expect(refError).toBeDefined();
+    expect(refError!.elementIds).toContain('e1');
+    expect(refError!.message).toContain('nonexistent_layer');
+  });
+
+  it('rejects multiple elements with non-existent layerIds', () => {
+    const scene = makeValidScene({
+      layers: [{ id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false }],
+      elements: [
+        { id: 'e1', type: 'shape', layerId: 'l_bad', shapeKind: 'rect', transform: { x: 0, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 }, visible: true, locked: false },
+        { id: 'e2', type: 'text', layerId: 'l_also_bad', text: 'hi', transform: { x: 0, y: 0, width: 100, height: 20, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#000', stroke: 'none', strokeWidth: 0, opacity: 1 }, visible: true, locked: false },
+      ],
+    });
+    const result = validateScene(scene);
+    expect(result.valid).toBe(false);
+    const refErrors = result.errors.filter((e) => e.code === ErrorCode.REF_LAYER_NOT_FOUND);
+    expect(refErrors).toHaveLength(2);
+  });
+
+  it('rejects group referencing non-existent element', () => {
+    const scene = makeValidScene({
+      layers: [{ id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false }],
+      elements: [{
+        id: 'e1', type: 'shape', layerId: 'l1', shapeKind: 'rect',
+        transform: { x: 0, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+        visible: true, locked: false,
+      }],
+      groups: [
+        { id: 'g1', name: 'Bad Group', elementIds: ['e999'] },
+      ],
+    });
+    const result = validateScene(scene);
+    expect(result.valid).toBe(false);
+    const refError = result.errors.find((e) => e.code === ErrorCode.REF_GROUP_NOT_FOUND);
+    expect(refError).toBeDefined();
+    expect(refError!.elementIds).toContain('e999');
+    expect(refError!.message).toContain('e999');
+  });
+
+  it('rejects group with mixed valid and invalid element references', () => {
+    const scene = makeValidScene({
+      layers: [{ id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false }],
+      elements: [{
+        id: 'e1', type: 'shape', layerId: 'l1', shapeKind: 'rect',
+        transform: { x: 0, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+        visible: true, locked: false,
+      }],
+      groups: [
+        { id: 'g1', name: 'Mixed', elementIds: ['e1', 'e_nonexistent', 'e_ghost'] },
+      ],
+    });
+    const result = validateScene(scene);
+    expect(result.valid).toBe(false);
+    const refErrors = result.errors.filter((e) => e.code === ErrorCode.REF_GROUP_NOT_FOUND);
+    expect(refErrors).toHaveLength(2);
+  });
+
+  it('rejects connector source referencing non-existent element', () => {
+    const scene = makeValidScene({
+      layers: [{ id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false }],
+      elements: [
+        {
+          id: 'conn1', type: 'connector', layerId: 'l1',
+          source: { elementId: 'e_nonexistent', anchorId: 'right', x: 50, y: 25 },
+          target: { x: 200, y: 25 },
+          route: { type: 'straight', points: [] },
+          transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: 'none', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: false,
+        },
+      ],
+    });
+    const result = validateScene(scene);
+    expect(result.valid).toBe(false);
+    const refError = result.errors.find((e) => e.code === ErrorCode.REF_CONNECTOR_ENDPOINT_NOT_FOUND);
+    expect(refError).toBeDefined();
+    expect(refError!.message).toContain('source');
+    expect(refError!.message).toContain('e_nonexistent');
+  });
+
+  it('rejects connector target referencing non-existent element', () => {
+    const scene = makeValidScene({
+      layers: [{ id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false }],
+      elements: [
+        {
+          id: 'e1', type: 'shape', layerId: 'l1', shapeKind: 'rect',
+          transform: { x: 0, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: false,
+        },
+        {
+          id: 'conn1', type: 'connector', layerId: 'l1',
+          source: { elementId: 'e1', anchorId: 'right', x: 50, y: 25 },
+          target: { elementId: 'e_fake', x: 200, y: 25 },
+          route: { type: 'straight', points: [] },
+          transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: 'none', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: false,
+        },
+      ],
+    });
+    const result = validateScene(scene);
+    expect(result.valid).toBe(false);
+    const refError = result.errors.find((e) => e.code === ErrorCode.REF_CONNECTOR_ENDPOINT_NOT_FOUND && e.message.includes('target'));
+    expect(refError).toBeDefined();
+    expect(refError!.message).toContain('e_fake');
+  });
+
+  it('accepts free-point connector endpoints (no elementId)', () => {
+    const scene = makeValidScene({
+      layers: [{ id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false }],
+      elements: [{
+        id: 'conn1', type: 'connector', layerId: 'l1',
+        source: { x: 0, y: 0 },
+        target: { x: 100, y: 100 },
+        route: { type: 'straight', points: [] },
+        transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { fill: 'none', stroke: '#000', strokeWidth: 1, opacity: 1 },
+        visible: true, locked: false,
+      }],
+    });
+    expect(validateScene(scene).valid).toBe(true);
+  });
+
+  it('accepts connector with valid element references', () => {
+    const scene = makeValidScene({
+      layers: [{ id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false }],
+      elements: [
+        {
+          id: 'e1', type: 'shape', layerId: 'l1', shapeKind: 'rect',
+          transform: { x: 0, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: false,
+        },
+        {
+          id: 'e2', type: 'shape', layerId: 'l1', shapeKind: 'circle',
+          transform: { x: 200, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: false,
+        },
+        {
+          id: 'conn1', type: 'connector', layerId: 'l1',
+          source: { elementId: 'e1', anchorId: 'right', x: 50, y: 25 },
+          target: { elementId: 'e2', anchorId: 'left', x: 200, y: 25 },
+          route: { type: 'straight', points: [] },
+          transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: 'none', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: false,
+        },
+      ],
+      groups: [
+        { id: 'g1', name: 'Group', elementIds: ['e1', 'e2'] },
+      ],
+    });
+    expect(validateScene(scene).valid).toBe(true);
+  });
+
+  it('accepts group referencing only existing elements', () => {
+    const scene = makeValidScene({
+      layers: [{ id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false }],
+      elements: [
+        { id: 'e1', type: 'shape', layerId: 'l1', shapeKind: 'rect', transform: { x: 0, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 }, visible: true, locked: false },
+        { id: 'e2', type: 'text', layerId: 'l1', text: 'Hello', transform: { x: 0, y: 0, width: 100, height: 20, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#000', stroke: 'none', strokeWidth: 0, opacity: 1 }, visible: true, locked: false },
+      ],
+      groups: [
+        { id: 'g1', name: 'Valid', elementIds: ['e1', 'e2'] },
+      ],
+    });
+    expect(validateScene(scene).valid).toBe(true);
+  });
+
+  it('rejects both connector and group ref errors together', () => {
+    const scene = makeValidScene({
+      layers: [{ id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false }],
+      elements: [
+        {
+          id: 'e1', type: 'shape', layerId: 'l1', shapeKind: 'rect',
+          transform: { x: 0, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: false,
+        },
+        {
+          id: 'conn1', type: 'connector', layerId: 'l1',
+          source: { elementId: 'e_missing', x: 0, y: 0 },
+          target: { x: 100, y: 100 },
+          route: { type: 'straight', points: [] },
+          transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { fill: 'none', stroke: '#000', strokeWidth: 1, opacity: 1 },
+          visible: true, locked: false,
+        },
+      ],
+      groups: [
+        { id: 'g1', name: 'Bad', elementIds: ['e_ghost'] },
+      ],
+    });
+    const result = validateScene(scene);
+    expect(result.valid).toBe(false);
+    const connErrors = result.errors.filter((e) => e.code === ErrorCode.REF_CONNECTOR_ENDPOINT_NOT_FOUND);
+    const groupErrors = result.errors.filter((e) => e.code === ErrorCode.REF_GROUP_NOT_FOUND);
+    expect(connErrors).toHaveLength(1);
+    expect(groupErrors).toHaveLength(1);
+  });
+
+  it('skips reference checks on elements with invalid type', () => {
+    const scene = makeValidScene({
+      layers: [{ id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false }],
+      elements: [{
+        id: 'e1', type: 'garbage', layerId: 'nonexistent',
+        shapeKind: 'rect',
+        transform: { x: 0, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+        visible: true, locked: false,
+      }],
+    });
+    const result = validateScene(scene);
+    expect(result.valid).toBe(false);
+    // Should have SCHEMA_INVALID_TYPE but NOT REF_LAYER_NOT_FOUND
+    expect(result.errors.some((e) => e.code === ErrorCode.SCHEMA_INVALID_TYPE)).toBe(true);
+    expect(result.errors.some((e) => e.code === ErrorCode.REF_LAYER_NOT_FOUND)).toBe(false);
+  });
+});

@@ -77,3 +77,16 @@
 | 修改记录 | 新建：src/core/validator.ts、src/tests/unit/validator.test.ts；修改：src/core/index.ts、README.md、docs/api-registry.md、docs/task-list.md |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0051 ～ API-0052（共 2 项）|
+
+### T-01-04 实现引用完整性校验
+
+| 字段 | 内容 |
+|---|---|
+| 任务编号 | T-01-04 |
+| 任务名称 | 实现引用完整性校验 |
+| 完成时间 | 2026-05-19 10:01 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| Git Commit | (待提交后补填) |
+| 修改记录 | 修改：src/core/validator.ts（新增 validateReferences 函数及其在 validateScene 中的集成）、src/tests/unit/validator.test.ts（新增 15 个引用完整性测试用例）；更新：docs/api-registry.md（更新 API-0051、新增 API-0053） |
+| 发现缺陷 | 无 |
+| 产出接口/函数 | API-0053（新增 validateReferences）、API-0051（修订）|

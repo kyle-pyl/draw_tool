@@ -291,9 +291,161 @@ function validateGroups(data: Record<string, unknown>): ValidationError[] {
 }
 
 /**
+ * Stage 5: Reference integrity checks.
+ *
+ * Verifies that:
+ *  - every element's layerId references an existing layer
+ *  - every group's elementIds reference existing elements
+ *  - every connector's source/target elementId (when present, i.e. not a free point)
+ *    references an existing element
+ *
+ * This function only runs after structural validation has passed (i.e. layers and
+ * elements arrays are guaranteed to exist and be arrays, and elements with valid
+ * ids/types are collectable).
+ */
+function validateReferences(data: Record<string, unknown>): ValidationError[] {
+  const errors: ValidationError[] = [];
+
+  const layers = data.layers;
+  const elements = data.elements;
+  const groups = data.groups;
+
+  if (!isArray(layers) || !isArray(elements)) {
+    return errors;
+  }
+
+  // Build set of valid layer IDs (skip layers with missing/invalid ids
+  // since structural validation already reported those)
+  const layerIds = new Set<string>();
+  for (const layer of layers) {
+    if (isObject(layer) && 'id' in layer && isString(layer.id)) {
+      layerIds.add(layer.id);
+    }
+  }
+
+  // Build set of valid element IDs (skip elements with missing/invalid ids)
+  const elementIds = new Set<string>();
+  for (const el of elements) {
+    if (isObject(el) && 'id' in el && isString(el.id)) {
+      elementIds.add(el.id);
+    }
+  }
+
+  // 5a. Check element.layerId references
+  for (let i = 0; i < elements.length; i++) {
+    const el = elements[i];
+    if (!isObject(el)) continue;
+
+    const id = 'id' in el && isString(el.id) ? el.id : `(unknown at index ${i})`;
+
+    // Only check references for elements that have a valid string type and layerId
+    if (!('type' in el) || !isString(el.type) || !VALID_ELEMENT_TYPES.has(el.type as string)) {
+      continue;
+    }
+    if (!('layerId' in el) || !isString(el.layerId)) {
+      continue;
+    }
+
+    const layerId = el.layerId as string;
+    if (!layerIds.has(layerId)) {
+      errors.push(
+        makeError(
+          ErrorCode.REF_LAYER_NOT_FOUND,
+          `Element "${id}" references non-existent layer "${layerId}"`,
+          {
+            elementIds: isString(el.id) ? [el.id] : undefined,
+            suggestion: `Create a layer with id "${layerId}" or update the element's layerId to an existing layer`,
+          },
+        ),
+      );
+    }
+  }
+
+  // 5b. Check group.elementIds references
+  if (isArray(groups)) {
+    for (let i = 0; i < groups.length; i++) {
+      const group = groups[i];
+      if (!isObject(group)) continue;
+
+      const groupId = 'id' in group && isString(group.id) ? group.id : `(group at index ${i})`;
+
+      if (!('elementIds' in group) || !isArray(group.elementIds)) continue;
+
+      const refs = group.elementIds as unknown[];
+      for (let j = 0; j < refs.length; j++) {
+        const refId = refs[j];
+        if (isString(refId) && !elementIds.has(refId)) {
+          errors.push(
+            makeError(
+              ErrorCode.REF_GROUP_NOT_FOUND,
+              `Group "${groupId}" references non-existent element "${refId}" at position ${j}`,
+              {
+                elementIds: [refId],
+                suggestion: `Remove "${refId}" from the group's elementIds or ensure the element exists`,
+              },
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  // 5c. Check connector source/target elementId references
+  for (let i = 0; i < elements.length; i++) {
+    const el = elements[i];
+    if (!isObject(el)) continue;
+
+    // Only check elements that claim to be connectors
+    if (!('type' in el) || !isString(el.type) || el.type !== 'connector') continue;
+
+    const id = 'id' in el && isString(el.id) ? el.id : `(connector at index ${i})`;
+
+    // Check source endpoint
+    if ('source' in el && isObject(el.source)) {
+      const source = el.source as Record<string, unknown>;
+      if ('elementId' in source && isString(source.elementId) && source.elementId.length > 0) {
+        if (!elementIds.has(source.elementId)) {
+          errors.push(
+            makeError(
+              ErrorCode.REF_CONNECTOR_ENDPOINT_NOT_FOUND,
+              `Connector "${id}" source references non-existent element "${source.elementId}"`,
+              {
+                elementIds: isString(el.id) ? [el.id] : undefined,
+                suggestion: `Update the source.elementId to an existing element or set it to a free point`,
+              },
+            ),
+          );
+        }
+      }
+    }
+
+    // Check target endpoint
+    if ('target' in el && isObject(el.target)) {
+      const target = el.target as Record<string, unknown>;
+      if ('elementId' in target && isString(target.elementId) && target.elementId.length > 0) {
+        if (!elementIds.has(target.elementId)) {
+          errors.push(
+            makeError(
+              ErrorCode.REF_CONNECTOR_ENDPOINT_NOT_FOUND,
+              `Connector "${id}" target references non-existent element "${target.elementId}"`,
+              {
+                elementIds: isString(el.id) ? [el.id] : undefined,
+                suggestion: `Update the target.elementId to an existing element or set it to a free point`,
+              },
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  return errors;
+}
+
+/**
  * Validate an unknown data object against the SceneDocument schema.
- * Performs structural validation only (schema checks).
- * Reference integrity and geometry checks are added in later tasks.
+ * Performs structural validation (schema checks) and reference integrity checks.
+ * Geometry checks are added in later tasks.
  *
  * @param data - The unknown object to validate
  * @returns ValidationResult with valid flag and error list
@@ -317,6 +469,9 @@ export function validateScene(data: unknown): ValidationResult {
 
   // Stage 4: groups
   allErrors.push(...validateGroups(obj));
+
+  // Stage 5: reference integrity
+  allErrors.push(...validateReferences(obj));
 
   if (allErrors.length > 0) {
     return failureResult(...allErrors);

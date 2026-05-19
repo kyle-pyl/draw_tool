@@ -146,7 +146,7 @@
 | 任务编号 | T-01-04 |
 | 任务名称 | 实现引用完整性校验 |
 | 前置任务 | T-01-03 |
-| 状态 | 待执行 |
+| 状态 | 已完成 |
 
 **任务说明：** 在 src/core/validator.ts 中扩展 validateScene，增加引用完整性检查：元素的 layerId 必须存在于 layers 中，group 引用的 elementId 必须存在，connector 的 source/target 引用的 elementId 必须存在。
 
