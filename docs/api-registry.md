@@ -2641,3 +2641,39 @@
 | 输出参数 | TemplateDefinition[]（9 个基础几何模板定义） |
 | 典型用例 | import { geometricTemplateDefinitions } from './modules/geometric-templates'; const rectTpl = geometricTemplateDefinitions.find(t => t.id === 'geom-rect'); |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+### API-0140 registerFlowchartTemplates
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0140 |
+| 名称 | registerFlowchartTemplates |
+| 所属系统 | modules |
+| 所属模块 | flowchart-templates |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 注册全部 7 个流程图专用模板到全局模板注册表（开始/结束（圆角矩形）、处理（矩形）、判断（菱形，含 是/否 标注锚点）、输入输出（平行四边形）、子流程（双边框矩形）、泳道（容器）、注释（文本，虚线边框）），全部分类为'流程图'。判断节点的 bottom_yes/left_no/right_no 锚点通过 metadata.anchors 自定义实现，可安全重复调用 |
+| 输入参数 | 无 |
+| 输出参数 | void |
+| 典型用例 | import { registerFlowchartTemplates } from './modules/flowchart-templates'; registerFlowchartTemplates(); |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+### API-0141 flowchartTemplateDefinitions
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0141 |
+| 名称 | flowchartTemplateDefinitions |
+| 所属系统 | modules |
+| 所属模块 | flowchart-templates |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 流程图模板定义数组，包含 7 个 TemplateDefinition 对象（fc-terminator/fc-process/fc-decision/fc-io/fc-subprocess/fc-swimlane/fc-annotation），供模块外引用模板定义数据 |
+| 输入参数 | 无（常量导出） |
+| 输出参数 | TemplateDefinition[]（7 个流程图模板定义） |
+| 典型用例 | import { flowchartTemplateDefinitions } from './modules/flowchart-templates'; const decisionTpl = flowchartTemplateDefinitions.find(t => t.id === 'fc-decision'); |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |

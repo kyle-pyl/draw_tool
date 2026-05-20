@@ -3,3 +3,4 @@
  */
 
 export { registerGeometricTemplates, geometricTemplateDefinitions } from './geometric-templates';
+export { registerFlowchartTemplates, flowchartTemplateDefinitions } from './flowchart-templates';

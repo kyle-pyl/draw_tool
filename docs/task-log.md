@@ -584,3 +584,16 @@
 | 修改记录 | 新建：src/modules/geometric-templates.ts（registerGeometricTemplates 函数 + 9 个基础几何模板定义：矩形/圆/椭圆/三角形/菱形/五角星/箭头/双向箭头/线条，全部归类为'基础几何'）；修改：src/modules/index.ts（导出 registerGeometricTemplates 和 geometricTemplateDefinitions）；新建：src/tests/unit/geometric-templates.test.ts（37 个测试用例，覆盖模板数量/唯一性/分类/形状类型/多边形顶点数/实例化/位置偏移/ID生成/图层分配） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0138（registerGeometricTemplates）、API-0139（geometricTemplateDefinitions） |
+
+### T-08-03 实现流程图模板
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号 | T-08-03 |
+| 任务名称 | 实现流程图模板 |
+| 完成时间 | 2026-05-20 17:25 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| Git Commit | 待填写 |
+| 修改记录 | 新建：src/modules/flowchart-templates.ts（registerFlowchartTemplates 函数 + 7 个流程图专用模板定义：开始/结束（圆角矩形 fc-terminator）、处理（矩形 fc-process）、判断（菱形 fc-decision，含 是/否 标注锚点）、输入输出（平行四边形 fc-io）、子流程（双边框矩形 fc-subprocess，外框+内框两元素）、泳道（容器 fc-swimlane）、注释（文本 fc-annotation，虚线边框））；修改：src/modules/index.ts（新增 registerFlowchartTemplates 和 flowchartTemplateDefinitions 导出）；修改：src/tests/unit/templates.test.ts（新增 27 个流程图模板测试用例：覆盖 7 模板数量/ID/分类验证、各模板实例化、判断节点是/否锚点、子流程双元素偏移、容器/文本属性、注册函数幂等性） |
+| 发现缺陷 | 无 |
+| 产出接口/函数 | API-0140（registerFlowchartTemplates）、API-0141（flowchartTemplateDefinitions） |

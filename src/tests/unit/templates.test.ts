@@ -10,6 +10,8 @@ import {
   createTemplateInstance,
 } from '../../core/templates';
 import type { TemplateDefinition } from '../../core/templates';
+import { registerFlowchartTemplates, flowchartTemplateDefinitions } from '../../modules/flowchart-templates';
+import { getAnchors } from '../../core/anchors';
 
 const DEFAULT_STYLE = {
   fill: '#ffffff',
@@ -497,5 +499,196 @@ describe('createTemplateInstance', () => {
   it('should omit params when not provided', () => {
     const record = createTemplateInstance('tpl-1', { x: 0, y: 0 }, 'l1', ['e1']);
     expect(record.params).toBeUndefined();
+  });
+});
+
+// ─── Flowchart Templates ──────────────────────────────────────────────────────
+
+describe('flowchart templates', () => {
+  beforeEach(() => {
+    clearTemplates();
+    registerFlowchartTemplates();
+  });
+
+  it('should register 7 flowchart templates', () => {
+    const all = getTemplatesByCategory('流程图');
+    expect(all.length).toBe(7);
+  });
+
+  it('should have expected template ids', () => {
+    const ids = getTemplatesByCategory('流程图').map((t) => t.id).sort();
+    expect(ids).toEqual([
+      'fc-annotation',
+      'fc-decision',
+      'fc-io',
+      'fc-process',
+      'fc-subprocess',
+      'fc-swimlane',
+      'fc-terminator',
+    ]);
+  });
+
+  describe('terminator (开始/结束)', () => {
+    it('should instantiate a rounded rectangle shape', () => {
+      const els = instantiateTemplate('fc-terminator', { x: 0, y: 0 }, 'l1');
+      expect(els.length).toBe(1);
+      expect(els[0].type).toBe('shape');
+      if (els[0].type !== 'shape') throw new Error('Expected shape');
+      expect(els[0].shapeKind).toBe('rect');
+      expect(els[0].cornerRadius).toEqual([20, 20, 20, 20]);
+      expect(els[0].transform.width).toBe(100);
+      expect(els[0].transform.height).toBe(40);
+    });
+  });
+
+  describe('process (处理)', () => {
+    it('should instantiate a rectangle shape', () => {
+      const els = instantiateTemplate('fc-process', { x: 10, y: 20 }, 'l1');
+      expect(els.length).toBe(1);
+      expect(els[0].type).toBe('shape');
+      if (els[0].type !== 'shape') throw new Error('Expected shape');
+      expect(els[0].shapeKind).toBe('rect');
+      expect(els[0].transform.x).toBe(10);
+      expect(els[0].transform.y).toBe(20);
+      expect(els[0].transform.width).toBe(100);
+      expect(els[0].transform.height).toBe(50);
+    });
+  });
+
+  describe('decision (判断)', () => {
+    it('should instantiate a diamond shape', () => {
+      const els = instantiateTemplate('fc-decision', { x: 0, y: 0 }, 'l1');
+      expect(els.length).toBe(1);
+      expect(els[0].type).toBe('shape');
+      if (els[0].type !== 'shape') throw new Error('Expected shape');
+      expect(els[0].shapeKind).toBe('polygon');
+      expect(els[0].points?.length).toBe(4);
+    });
+
+    it('should have 是/否 anchors via custom metadata', () => {
+      const els = instantiateTemplate('fc-decision', { x: 0, y: 0 }, 'l1');
+      const anchors = getAnchors(els[0]);
+      expect(anchors.length).toBe(9);
+      expect(anchors.find((a) => a.id === 'bottom_yes')).toBeDefined();
+      expect(anchors.find((a) => a.id === 'left_no')).toBeDefined();
+      expect(anchors.find((a) => a.id === 'right_no')).toBeDefined();
+    });
+
+    it('should have corners at correct relative positions for diamond BBox', () => {
+      const els = instantiateTemplate('fc-decision', { x: 0, y: 0 }, 'l1');
+      const anchors = getAnchors(els[0]);
+      const top = anchors.find((a) => a.id === 'top');
+      const bottom = anchors.find((a) => a.id === 'bottom_yes');
+      expect(top?.position).toEqual({ x: 0.5, y: 0 });
+      expect(bottom?.position).toEqual({ x: 0.5, y: 1 });
+    });
+  });
+
+  describe('io (输入输出)', () => {
+    it('should instantiate a parallelogram shape', () => {
+      const els = instantiateTemplate('fc-io', { x: 0, y: 0 }, 'l1');
+      expect(els.length).toBe(1);
+      expect(els[0].type).toBe('shape');
+      if (els[0].type !== 'shape') throw new Error('Expected shape');
+      expect(els[0].shapeKind).toBe('polygon');
+      expect(els[0].points?.length).toBe(4);
+      expect(els[0].transform.width).toBe(100);
+      expect(els[0].transform.height).toBe(50);
+    });
+
+    it('should have slanted left and right edges', () => {
+      const els = instantiateTemplate('fc-io', { x: 0, y: 0 }, 'l1');
+      if (els[0].type !== 'shape') throw new Error('Expected shape');
+      const pts = els[0].points!;
+      // Left side should be slanted: top-left is (18,0), bottom-left is (0,50)
+      expect(pts[0].x).toBe(18); // top-left inset
+      expect(pts[3].x).toBe(0);  // bottom-left at edge
+      expect(pts[1].x).toBe(100); // top-right at edge
+      expect(pts[2].x).toBe(82); // bottom-right inset
+    });
+  });
+
+  describe('subprocess (子流程)', () => {
+    it('should instantiate two rectangle shapes (double border)', () => {
+      const els = instantiateTemplate('fc-subprocess', { x: 100, y: 200 }, 'l1');
+      expect(els.length).toBe(2);
+      expect(els[0].type).toBe('shape');
+      expect(els[1].type).toBe('shape');
+
+      if (els[0].type !== 'shape' || els[1].type !== 'shape') throw new Error('Expected shapes');
+
+      // Outer rect
+      expect(els[0].transform.x).toBe(100);
+      expect(els[0].transform.y).toBe(200);
+      expect(els[0].transform.width).toBe(100);
+      expect(els[0].transform.height).toBe(50);
+
+      // Inner rect (offset by 3,3 and smaller)
+      expect(els[1].transform.x).toBe(103);
+      expect(els[1].transform.y).toBe(203);
+      expect(els[1].transform.width).toBe(94);
+      expect(els[1].transform.height).toBe(44);
+    });
+
+    it('should generate unique IDs for outer and inner rects', () => {
+      const els = instantiateTemplate('fc-subprocess', { x: 0, y: 0 }, 'l1');
+      expect(els[0].id).not.toBe(els[1].id);
+    });
+  });
+
+  describe('swimlane (泳道)', () => {
+    it('should instantiate a container element', () => {
+      const els = instantiateTemplate('fc-swimlane', { x: 50, y: 100 }, 'l1');
+      expect(els.length).toBe(1);
+      expect(els[0].type).toBe('container');
+      if (els[0].type !== 'container') throw new Error('Expected container');
+      expect(els[0].containerLabel).toBe('泳道');
+      expect(els[0].transform.width).toBe(600);
+      expect(els[0].transform.height).toBe(200);
+    });
+  });
+
+  describe('annotation (注释)', () => {
+    it('should instantiate a text element', () => {
+      const els = instantiateTemplate('fc-annotation', { x: 0, y: 0 }, 'l1');
+      expect(els.length).toBe(1);
+      expect(els[0].type).toBe('text');
+      if (els[0].type !== 'text') throw new Error('Expected text');
+      expect(els[0].text).toBe('注释');
+      expect(els[0].transform.width).toBe(120);
+      expect(els[0].transform.height).toBe(40);
+    });
+
+    it('should have dashed border style', () => {
+      const els = instantiateTemplate('fc-annotation', { x: 0, y: 0 }, 'l1');
+      expect(els[0].style.strokeDasharray).toBe('4,2');
+      expect(els[0].style.fill).toBe('#555555');
+    });
+  });
+
+  describe('registration function', () => {
+    it('registerFlowchartTemplates should make all 7 available', () => {
+      clearTemplates();
+      registerFlowchartTemplates();
+      expect(getAllTemplates().length).toBe(7);
+    });
+
+    it('registerFlowchartTemplates is idempotent', () => {
+      registerFlowchartTemplates();
+      registerFlowchartTemplates();
+      expect(getAllTemplates().length).toBe(7);
+    });
+  });
+
+  describe('flowchartTemplateDefinitions export', () => {
+    it('should contain exactly 7 definitions', () => {
+      expect(flowchartTemplateDefinitions.length).toBe(7);
+    });
+
+    it('should have definitions with the flowchart category', () => {
+      for (const tpl of flowchartTemplateDefinitions) {
+        expect(tpl.category).toBe('流程图');
+      }
+    });
   });
 });
