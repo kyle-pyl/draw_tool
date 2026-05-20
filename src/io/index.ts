@@ -4,3 +4,5 @@
 
 export { loadSceneFromFile, loadSceneFromFileObject, loadProjectFromDirectory, importProjectFromZip } from './importers';
 export { exportProjectToZip, saveProject } from './exporters';
+export { sanitizeSvg, sanitizeSvgToBlob } from './svg-sanitizer';
+export { isSupportedImageFile, importImageFromFile } from './image-utils';

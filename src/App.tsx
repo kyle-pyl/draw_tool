@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { CanvasView, Viewport, SelectionManager, ConflictHighlighter } from './canvas';
 import type { DrawingToolType } from './canvas';
-import { ShapeToolbar, ConflictPanel, TextEditor } from './ui';
+import { ShapeToolbar, ConflictPanel, TextEditor, ImageImportButton } from './ui';
 import { createGeometryAdapter } from './core/geometry';
 import { checkLayerCollisions } from './core/collision';
 import { useDocumentStore } from './core/store';
@@ -10,6 +10,7 @@ import type { ElementInput } from './core/commands';
 import type { ElementStyle } from './core/types';
 import exampleScene from '../examples/basic/scene.json';
 import type { SceneDocument, TextElement } from './core/types';
+import { isSupportedImageFile, importImageFromFile } from './io/image-utils';
 
 function findActiveLayerId(scene: SceneDocument): string {
   const visibleUnlocked = [...scene.layers]
@@ -96,6 +97,66 @@ function App() {
     forceUpdate();
   }, [forceUpdate]);
 
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const handleImageImport = useCallback(
+    (input: ElementInput) => {
+      const cmd = new CreateElementCommand(input);
+      const result = executorRef.current.execute(cmd);
+      if (!result.valid) {
+        const errs = result.errors.map((e) => e.message).join('\n');
+        console.warn('Image import failed:', errs);
+        forceUpdate();
+        return;
+      }
+      forceUpdate();
+    },
+    [forceUpdate],
+  );
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDragOver(true);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const { clientX, clientY } = e;
+    if (clientX <= rect.left || clientX >= rect.right || clientY <= rect.top || clientY >= rect.bottom) {
+      setIsDragOver(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback(
+    async (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
+
+      const files = e.dataTransfer.files;
+      if (!files || files.length === 0) return;
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (!isSupportedImageFile(file)) continue;
+        try {
+          const input = await importImageFromFile(file, drawingLayerId);
+          const cmd = new CreateElementCommand(input);
+          executorRef.current.execute(cmd);
+        } catch (err) {
+          console.warn('Drag-drop image import failed:', err);
+        }
+      }
+      forceUpdate();
+    },
+    [drawingLayerId, forceUpdate],
+  );
+
   const handleToolChange = useCallback((tool: DrawingToolType) => {
     setActiveTool(tool);
     setEditingTextId(null);
@@ -129,7 +190,12 @@ function App() {
   }, [checkConflicts]);
 
   return (
-    <div className="app-container">
+    <div className="app-container" onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
+      {isDragOver && (
+        <div className="drop-overlay">
+          <div className="drop-message">Drop images here to import</div>
+        </div>
+      )}
       <CanvasView
         scene={currentScene}
         viewport={viewport}
@@ -143,6 +209,7 @@ function App() {
         onTextEditRequest={handleTextEditRequest}
       />
       <ShapeToolbar activeTool={activeTool} onToolChange={handleToolChange} />
+      <ImageImportButton layerId={drawingLayerId} onImport={handleImageImport} />
       <ConflictPanel conflictHighlighter={conflictHighlighter} />
       {editingElement && (
         <TextEditor

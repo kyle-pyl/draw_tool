@@ -1836,3 +1836,117 @@
 | 输出参数 | 无（接口类型） |
 | 典型用例 | `const props: TextEditorProps = { element: textEl, viewport: vp, onCommit: handleSave, onCancel: handleCancel }` |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-08）|
+
+### API-0096 sanitizeSvg
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0096 |
+| 名称 | sanitizeSvg |
+| 所属系统 | io |
+| 所属模块 | svg-sanitizer |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | SVG 安全清洗函数。解析 SVG 字符串，移除危险元素（script、foreignObject、use）和事件处理器属性（on*），清除 javascript: 协议链接。清洗后通过 XMLSerializer 序列化返回安全 SVG 字符串。若 SVG 解析失败则抛出错误 |
+| 输入参数 | svgText: string - 原始 SVG 文本内容 |
+| 输出参数 | string - 清洗后的安全 SVG 字符串 |
+| 典型用例 | `const safe = sanitizeSvg(dangerousSvgString); const blob = new Blob([safe], { type: 'image/svg+xml' });` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-09）|
+
+### API-0097 sanitizeSvgToBlob
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0097 |
+| 名称 | sanitizeSvgToBlob |
+| 所属系统 | io |
+| 所属模块 | svg-sanitizer |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | SVG 安全清洗便捷封装。调用 sanitizeSvg 清洗 SVG 文本后封装为 Blob 对象，MIME 类型为 image/svg+xml，可直接用于创建 blob URL |
+| 输入参数 | svgText: string - 原始 SVG 文本内容 |
+| 输出参数 | Blob - 清洗后的 SVG Blob，type 为 'image/svg+xml' |
+| 典型用例 | `const blob = sanitizeSvgToBlob(svgString); const url = URL.createObjectURL(blob);` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-09）|
+
+### API-0098 isSupportedImageFile
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0098 |
+| 名称 | isSupportedImageFile |
+| 所属系统 | io |
+| 所属模块 | image-utils |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 检查 File 对象是否为支持的图片格式。通过文件扩展名（png/jpg/jpeg/svg/gif/webp）和 MIME 类型双重判断 |
+| 输入参数 | file: File - 浏览器 File 对象 |
+| 输出参数 | boolean - 是支持的图片格式返回 true |
+| 典型用例 | `if (isSupportedImageFile(file)) { const input = await importImageFromFile(file, layerId); }` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-09）|
+
+### API-0099 importImageFromFile
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0099 |
+| 名称 | importImageFromFile |
+| 所属系统 | io |
+| 所属模块 | image-utils |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 从浏览器 File 对象导入图片并生成 ElementInput。SVG 文件先执行 sanitizeSvg 安全清洗；所有图片创建 blob URL 存储。自动解析图片原始尺寸（SVG 从 viewBox/width/height 解析，光栅图片通过 Image 元素加载获取）。大图片自动缩放到最大 600px 初始展示尺寸。返回的 ElementInput 可直接传入 CreateElementCommand 创建 ImageElement |
+| 输入参数 | file: File - 图片文件对象；layerId: string - 目标图层 ID |
+| 输出参数 | Promise<ElementInput> - type 为 'image' 的元素输入，包含 blob src、原始尺寸、变换和样式 |
+| 典型用例 | `const input = await importImageFromFile(imageFile, 'l1'); const cmd = new CreateElementCommand(input); executor.execute(cmd);` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-09）|
+
+### API-0100 ImageImportButton
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0100 |
+| 名称 | ImageImportButton |
+| 所属系统 | ui |
+| 所属模块 | ImageImportButton |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 图片导入按钮 React 组件。渲染一个浮动按钮（带图片图标），点击触发隐藏的 `<input type="file">` 文件选择器。选定文件后调用 importImageFromFile 处理，通过 onImport 回调返回生成的 ElementInput。导入失败时通过 onError 回调报告错误 |
+| 输入参数 | props: { layerId: string, onImport: (input: ElementInput) => void, onError?: (message: string) => void } |
+| 输出参数 | ReactElement - 包含隐藏文件 input 和可见 SVG 图标按钮 |
+| 典型用例 | `<ImageImportButton layerId={drawingLayerId} onImport={handleImageImport} />` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-09）|
+
+### API-0101 ImageImportButtonProps
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0101 |
+| 名称 | ImageImportButtonProps |
+| 所属系统 | ui |
+| 所属模块 | ImageImportButton |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | ImageImportButton 组件的 Props 类型接口 |
+| 输入参数 | layerId: string, onImport: (input: ElementInput) => void, onError?: (message: string) => void |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const props: ImageImportButtonProps = { layerId: 'l1', onImport: handleImport, onError: handleError }` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-09）|

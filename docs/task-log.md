@@ -416,3 +416,16 @@
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0094（TextEditor）、API-0095（TextEditorProps）、API-0018（TextElement 修订：新增 backgroundColor/borderColor/borderWidth）、API-0057（CanvasView 修订：新增 onTextEditRequest prop / 文本编辑和渲染）、API-0082（CreateElementCommand 修订：新增 getElementId）、API-0089（DrawingToolType 修订：新增 'text'）、API-0090（ShapeToolbar 修订：新增 Text 按钮）、API-0092（drawStateToInput 修订：导出 + 新增 text case）、API-0093（renderDrawPreview 修订：导出 + 新增 text preview） |
 
+### T-05-09 实现图片导入工具
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-05-09 |
+| 任务名称      | 实现图片导入工具 |
+| 完成时间      | 2026-05-20 10:05 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | f1c3304 |
+| 修改记录      | 新建：src/io/svg-sanitizer.ts（SVG 安全清洗：移除 script/foreignObject/use 标签、事件处理器属性和 javascript: 链接）、src/io/image-utils.ts（图片导入工具：PNG/JPG/SVG 文件导入、SVG 清洗集成、尺寸解析、缩放适配）、src/ui/ImageImportButton.tsx（导入图片按钮组件：文件选择器触发、导入回调）、src/tests/unit/svg-sanitizer.test.ts（13 个测试用例）、src/tests/unit/image-utils.test.ts（18 个测试用例）、src/tests/unit/image-import-button.test.tsx（6 个测试用例）；修改：src/io/index.ts（新增 sanitizeSvg/sanitizeSvgToBlob/isSupportedImageFile/importImageFromFile 导出）、src/ui/index.ts（新增 ImageImportButton/ImageImportButtonProps 导出）、src/App.tsx（集成 ImageImportButton、拖放导入支持含 drop-overlay、handleImageImport/handleDragOver/handleDragLeave/handleDrop 回调）、src/App.css（新增 drop-overlay 和 image-import-btn 样式） |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0096（sanitizeSvg）、API-0097（sanitizeSvgToBlob）、API-0098（isSupportedImageFile）、API-0099（importImageFromFile）、API-0100（ImageImportButton）、API-0101（ImageImportButtonProps） |
+
