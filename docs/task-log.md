@@ -658,7 +658,7 @@
 | 任务名称 | 实现数据面板 UI |
 | 完成时间 | 2026-05-20 |
 | 作者/智能体 | OpenCode/deepseek-v4-pro |
-| Git Commit |  |
+| Git Commit | a9f63b3 |
 | 修改记录 | 新建：src/ui/DataPanel.tsx（DataPanel 组件 + ChartConfig 接口，支持数据源列表、列信息表含类型徽章/缺失率/样例值预览、6 种图表类型选择器、列到轴/分组/颜色映射配置、可折叠分区、可关闭面板）、src/tests/unit/data-panel.test.tsx（24 个测试用例覆盖渲染、数据源列表交互、加载/错误状态、列信息/样例值显示、图表类型选择、列映射、生成按钮启用/禁用、面板关闭/重开、空值/空列处理）；修改：src/ui/index.ts（新增 DataPanel 和 ChartConfig 导出） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0153（DataPanel）、API-0154（ChartConfig） |
