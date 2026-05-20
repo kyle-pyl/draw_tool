@@ -463,7 +463,7 @@
 | 任务名称      | 实现分布命令 |
 | 完成时间      | 2026-05-20 11:40 |
 | 作者/智能体   | OpenCode/deepseek-v4-pro |
-| Git Commit    | （待补填） |
+| Git Commit    | ac6bedc |
 | 修改记录      | 修改：src/core/commands.ts（新增 DistributeType 类型、CircularDistributeOptions 接口、DistributeElementsCommand 类：支持 horizontal/vertical/circular 三种分布方式，水平分布按中心点等距排列、垂直分布按中心点等距排列、环形分布按等角弧度在圆上排列，移动后检查图层冲突，连接线端点跟随）；修改：src/core/index.ts（新增 DistributeElementsCommand、DistributeType、CircularDistributeOptions 导出）；修改：src/tests/unit/commands.test.ts（新增 18 个分布命令测试用例） |
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0110（DistributeType）、API-0111（CircularDistributeOptions）、API-0112（DistributeElementsCommand） |
