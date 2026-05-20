@@ -401,5 +401,18 @@
 | Git Commit    | ec797b0 |
 | 修改记录      | 新建：src/ui/ShapeToolbar.tsx、src/tests/unit/shape-toolbar.test.tsx（7 个测试用例）、src/tests/unit/drawing.test.tsx（23 个测试用例）；修改：src/canvas/CanvasView.tsx（新增 activeTool/drawingLayerId/onDrawComplete props、DrawState 内部状态、绘制预览渲染 renderDrawPreview、拖拽绘制交互、多边形逐点绘制交互、drawStateToInput 转换函数、crosshair 光标）、src/canvas/index.ts（新增 DrawingToolType 导出）、src/core/index.ts（新增 ElementInput/CreateElementCommand 导出）、src/ui/index.ts（新增 ShapeToolbar/ShapeToolbarProps 导出）、src/App.tsx（集成 Zustand store 和 CommandExecutor、activeTool 状态、ShapeToolbar、findActiveLayerId 辅助函数） |
 | 发现缺陷      | 无 |
-| 产出接口/函数 | API-0057（CanvasView 修订：新增 drawing props）、API-0089（DrawingToolType）、API-0090（ShapeToolbar）、API-0091（ShapeToolbarProps）、API-0092（drawStateToInput）、API-0093（renderDrawPreview） |
+| 产出接口/函数 | API-0057（CanvasView 修订：新增 drawing props）、API-0089（DrawingToolType）、API-0090（ShapeToolbar）、API-0091（ShapeToolbarProps）、API-0092（drawStateToInput：导出 + 新增 text case）、API-0093（renderDrawPreview：导出 + 新增 text case） |
+
+### T-05-08 实现文本工具
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-05-08 |
+| 任务名称      | 实现文本工具 |
+| 完成时间      | 2026-05-20 09:22 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | e0b6c2a |
+| 修改记录      | 新建：src/ui/TextEditor.tsx（覆盖层文本编辑器含样式工具栏）、src/tests/unit/text-editor.test.tsx（14 个测试用例）、src/tests/unit/text-tool.test.tsx（9 个测试用例）；修改：src/core/types.ts（TextElement 新增 backgroundColor/borderColor/borderWidth 字段）、src/core/commands.ts（CreateElementCommand 新增 getElementId 方法）、src/canvas/CanvasView.tsx（DrawingToolType 新增 'text'、导出 drawStateToInput/renderDrawPreview、新增 onTextEditRequest prop、drawStateToInput 新增 text case、renderDrawPreview 新增 text preview、renderTextElement 支持背景色/边框渲染、handleMouseDown 支持 text tool 在元素上点击创建文本、handleDoubleClick 支持文本元素双击编辑、SVG onDoubleClick 始终激活）、src/canvas/index.ts（导出 drawStateToInput/renderDrawPreview）、src/ui/ShapeToolbar.tsx（新增 Text 工具按钮和图标）、src/ui/index.ts（新增 TextEditor 和 TextEditorProps 导出）、src/App.tsx（集成 TextEditor 编辑器、editingTextId 状态、handleDrawComplete 支持 text 自动进入编辑、handleTextEditRequest/handleTextCommit/handleTextCancel 回调、handleToolChange 切换工具时退出编辑模式） |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0094（TextEditor）、API-0095（TextEditorProps）、API-0018（TextElement 修订：新增 backgroundColor/borderColor/borderWidth）、API-0057（CanvasView 修订：新增 onTextEditRequest prop / 文本编辑和渲染）、API-0082（CreateElementCommand 修订：新增 getElementId）、API-0089（DrawingToolType 修订：新增 'text'）、API-0090（ShapeToolbar 修订：新增 Text 按钮）、API-0092（drawStateToInput 修订：导出 + 新增 text case）、API-0093（renderDrawPreview 修订：导出 + 新增 text preview） |
 

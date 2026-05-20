@@ -10,7 +10,7 @@ describe('ShapeToolbar', () => {
       <ShapeToolbar activeTool="select" onToolChange={onToolChange} />,
     );
     const buttons = getAllByRole('button');
-    expect(buttons.length).toBe(6);
+    expect(buttons.length).toBe(7);
   });
 
   it('renders tool buttons with correct titles', () => {

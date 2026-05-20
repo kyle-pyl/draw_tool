@@ -5,7 +5,7 @@ import type { Viewport } from './viewport';
 import type { SelectionManager } from './selection';
 import type { ConflictHighlighter } from './conflict';
 
-export type DrawingToolType = 'select' | 'rect' | 'circle' | 'ellipse' | 'line' | 'polygon';
+export type DrawingToolType = 'select' | 'rect' | 'circle' | 'ellipse' | 'line' | 'polygon' | 'text';
 
 interface DrawState {
   x1: number;
@@ -28,6 +28,7 @@ interface CanvasViewProps {
   activeTool?: DrawingToolType;
   drawingLayerId?: string;
   onDrawComplete?: (input: ElementInput) => void;
+  onTextEditRequest?: (elementId: string) => void;
 }
 
 function getElementBBox(el: SceneElement): BBox {
@@ -158,30 +159,45 @@ function renderShapeElement(el: ShapeElement) {
 }
 
 function renderTextElement(el: TextElement) {
-  const { x, y, width } = el.transform;
+  const { x, y, width, height } = el.transform;
   const { fill, fontSize, fontFamily, fontWeight, fontStyle, textAlign, textDecoration, opacity } = el.style;
   const t = getElementTransform(el);
 
   const textAnchor = textAlign === 'center' ? 'middle' : textAlign === 'right' ? 'end' : 'start';
   const displayY = y + (fontSize ?? 16);
 
+  const hasBackground = el.backgroundColor && el.backgroundColor !== 'transparent';
+  const hasBorder = el.borderColor && el.borderColor !== 'transparent' && (el.borderWidth ?? 1) > 0;
+
   return (
-    <text
-      key={el.id}
-      x={textAnchor === 'middle' ? x + width / 2 : textAnchor === 'end' ? x + width : x}
-      y={displayY}
-      fill={fill}
-      fontSize={fontSize}
-      fontFamily={fontFamily}
-      fontWeight={fontWeight}
-      fontStyle={fontStyle}
-      textDecoration={textDecoration}
-      opacity={opacity !== 1 ? opacity : undefined}
-      textAnchor={textAnchor}
-      transform={t || undefined}
-    >
-      {el.text}
-    </text>
+    <g key={el.id}>
+      {(hasBackground || hasBorder) && (
+        <rect
+          x={x}
+          y={y}
+          width={width}
+          height={height || (fontSize ?? 16) * 1.4}
+          fill={hasBackground ? el.backgroundColor : 'none'}
+          stroke={hasBorder ? el.borderColor : 'none'}
+          strokeWidth={hasBorder ? (el.borderWidth ?? 1) : 0}
+        />
+      )}
+      <text
+        x={textAnchor === 'middle' ? x + width / 2 : textAnchor === 'end' ? x + width : x}
+        y={displayY}
+        fill={fill}
+        fontSize={fontSize}
+        fontFamily={fontFamily}
+        fontWeight={fontWeight}
+        fontStyle={fontStyle}
+        textDecoration={textDecoration}
+        opacity={opacity !== 1 ? opacity : undefined}
+        textAnchor={textAnchor}
+        transform={t || undefined}
+      >
+        {el.text}
+      </text>
+    </g>
   );
 }
 
@@ -264,7 +280,7 @@ const DEFAULT_STYLE: ElementStyle = {
   opacity: 1,
 };
 
-function drawStateToInput(tool: DrawingToolType, state: DrawState, layerId: string): ElementInput {
+export function drawStateToInput(tool: DrawingToolType, state: DrawState, layerId: string): ElementInput {
   const { x1, y1, x2, y2, points } = state;
 
   switch (tool) {
@@ -354,6 +370,27 @@ function drawStateToInput(tool: DrawingToolType, state: DrawState, layerId: stri
         style: { ...DEFAULT_STYLE },
       };
     }
+    case 'text': {
+      const x = x1;
+      const y = y1;
+      return {
+        type: 'text',
+        layerId,
+        text: '',
+        transform: { x, y, width: 200, height: 30, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: {
+          fill: '#000000',
+          fontSize: 16,
+          fontFamily: 'Arial',
+          fontWeight: 'normal',
+          fontStyle: 'normal',
+          textAlign: 'left',
+          opacity: 1,
+          stroke: 'none',
+          strokeWidth: 0,
+        },
+      };
+    }
     default:
       return {
         type: 'shape',
@@ -365,7 +402,7 @@ function drawStateToInput(tool: DrawingToolType, state: DrawState, layerId: stri
   }
 }
 
-function renderDrawPreview(tool: DrawingToolType, state: DrawState): React.ReactNode {
+export function renderDrawPreview(tool: DrawingToolType, state: DrawState): React.ReactNode {
   const { x1, y1, x2, y2, points } = state;
   const previewStroke = '#4285F4';
   const previewFill = 'rgba(66, 133, 244, 0.12)';
@@ -469,12 +506,27 @@ function renderDrawPreview(tool: DrawingToolType, state: DrawState): React.React
         </g>
       );
     }
+    case 'text': {
+      return (
+        <text
+          x={x1}
+          y={y1}
+          fill="#4285F4"
+          fontSize={14}
+          fontStyle="italic"
+          opacity={0.6}
+          pointerEvents="none"
+        >
+          Click to type...
+        </text>
+      );
+    }
     default:
       return null;
   }
 }
 
-export function CanvasView({ scene, viewport, width, height, className, onViewportChange, selectionManager, onSelectionChange, conflictHighlighter, activeTool, drawingLayerId, onDrawComplete }: CanvasViewProps) {
+export function CanvasView({ scene, viewport, width, height, className, onViewportChange, selectionManager, onSelectionChange, conflictHighlighter, activeTool, drawingLayerId, onDrawComplete, onTextEditRequest }: CanvasViewProps) {
   const layersSorted = [...scene.layers].sort((a, b) => a.order - b.order);
   const layerElementMap = new Map<string, SceneElement[]>();
   const layerMap = new Map(scene.layers.map((l) => [l.id, l]));
@@ -568,7 +620,6 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
     (e: React.MouseEvent<SVGSVGElement>) => {
       const target = e.target as Element;
       const isOnElement = target.closest('[data-element-id]') !== null;
-      if (isOnElement) return;
 
       if (drawStateRef.current && activeTool === 'polygon' && drawStateRef.current.points.length >= 2) {
         e.preventDefault();
@@ -576,9 +627,24 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
         drawStateRef.current = null;
         setDrawState(null);
         drawHandledRef.current = true;
+        return;
+      }
+
+      if (isOnElement && onTextEditRequest) {
+        const elementGroup = target.closest('[data-element-id]');
+        if (elementGroup) {
+          const elementId = elementGroup.getAttribute('data-element-id');
+          if (elementId) {
+            const el = scene.elements.find((e2) => e2.id === elementId);
+            if (el && el.type === 'text') {
+              e.preventDefault();
+              onTextEditRequest(elementId);
+            }
+          }
+        }
       }
     },
-    [activeTool, completePolygonDraw],
+    [activeTool, completePolygonDraw, scene.elements, onTextEditRequest],
   );
 
   const handleMouseLeave = useCallback(() => {
@@ -669,7 +735,7 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
           return;
         }
 
-        if (!isOnElement) {
+        if (activeTool === 'text' || !isOnElement) {
           const rect = e.currentTarget.getBoundingClientRect();
           const canvasPt = screenToCanvas(e.clientX - rect.left, e.clientY - rect.top);
           const newState: DrawState = {
@@ -816,7 +882,7 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
-      onDoubleClick={isDrawing ? handleDoubleClick : undefined}
+      onDoubleClick={handleDoubleClick}
       onContextMenu={handleContextMenu}
       onClick={handleBackgroundClick}
     >

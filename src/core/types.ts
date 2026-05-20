@@ -153,6 +153,12 @@ export interface TextElement extends BaseElement {
   type: 'text';
   /** The text content */
   text: string;
+  /** Background color of the text box */
+  backgroundColor?: string;
+  /** Border color of the text box */
+  borderColor?: string;
+  /** Border width of the text box */
+  borderWidth?: number;
 }
 
 // ─── Image Element ────────────────────────────────────────────────────────────

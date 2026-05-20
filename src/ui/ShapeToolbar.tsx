@@ -15,6 +15,7 @@ const TOOL_ITEMS: { type: DrawingToolType; label: string }[] = [
   { type: 'ellipse', label: 'Ellipse' },
   { type: 'line', label: 'Line' },
   { type: 'polygon', label: 'Polygon' },
+  { type: 'text', label: 'Text' },
 ];
 
 function ToolIcon({ type }: { type: DrawingToolType }) {
@@ -56,6 +57,12 @@ function ToolIcon({ type }: { type: DrawingToolType }) {
       return (
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
           <polygon points={`${size / 2},${pad} ${size - pad},${size - pad - 2} ${pad},${size - pad - 2}`} fill="none" stroke="currentColor" strokeWidth={1.5} />
+        </svg>
+      );
+    case 'text':
+      return (
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          <text x={size / 2} y={size / 2 + 4} textAnchor="middle" fontSize={11} fontWeight="bold" fill="currentColor">T</text>
         </svg>
       );
   }

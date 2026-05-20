@@ -263,6 +263,10 @@ export class CreateElementCommand implements SceneCommand {
     this.label = label || `Create ${input.type}`;
   }
 
+  getElementId(): string {
+    return this.generatedId;
+  }
+
   validate(scene: SceneDocument): ValidationResult {
     const layerExists = scene.layers.some((l) => l.id === this.input.layerId);
     if (!layerExists) {

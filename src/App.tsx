@@ -1,14 +1,15 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { CanvasView, Viewport, SelectionManager, ConflictHighlighter } from './canvas';
 import type { DrawingToolType } from './canvas';
-import { ShapeToolbar, ConflictPanel } from './ui';
+import { ShapeToolbar, ConflictPanel, TextEditor } from './ui';
 import { createGeometryAdapter } from './core/geometry';
 import { checkLayerCollisions } from './core/collision';
 import { useDocumentStore } from './core/store';
-import { CommandExecutor, CreateElementCommand } from './core/commands';
+import { CommandExecutor, CreateElementCommand, UpdateElementCommand } from './core/commands';
 import type { ElementInput } from './core/commands';
+import type { ElementStyle } from './core/types';
 import exampleScene from '../examples/basic/scene.json';
-import type { SceneDocument } from './core/types';
+import type { SceneDocument, TextElement } from './core/types';
 
 function findActiveLayerId(scene: SceneDocument): string {
   const visibleUnlocked = [...scene.layers]
@@ -27,6 +28,7 @@ function App() {
   const executorRef = useRef(new CommandExecutor());
 
   const [activeTool, setActiveTool] = useState<DrawingToolType>('select');
+  const [editingTextId, setEditingTextId] = useState<string | null>(null);
 
   useEffect(() => {
     useDocumentStore.getState().loadScene(scene);
@@ -40,6 +42,13 @@ function App() {
     [currentScene],
   );
 
+  const editingElement = useMemo(() => {
+    if (!editingTextId) return null;
+    const el = currentScene.elements.find((e) => e.id === editingTextId);
+    if (el && el.type === 'text') return el as TextElement;
+    return null;
+  }, [editingTextId, currentScene]);
+
   const handleDrawComplete = useCallback(
     (input: ElementInput) => {
       const cmd = new CreateElementCommand(input);
@@ -47,14 +56,49 @@ function App() {
       if (!result.valid) {
         const errs = result.errors.map((e) => e.message).join('\n');
         console.warn('Draw failed:', errs);
+        forceUpdate();
+        return;
       }
+      forceUpdate();
+
+      if (input.type === 'text') {
+        setEditingTextId(cmd.getElementId());
+      }
+    },
+    [forceUpdate],
+  );
+
+  const handleTextEditRequest = useCallback((elementId: string) => {
+    setActiveTool('select');
+    selectionManager.select(elementId);
+    setEditingTextId(elementId);
+    forceUpdate();
+  }, [selectionManager, forceUpdate]);
+
+  const handleTextCommit = useCallback(
+    (elementId: string, changes: {
+      text: string;
+      style?: Partial<ElementStyle>;
+      backgroundColor?: string;
+      borderColor?: string;
+      borderWidth?: number;
+    }) => {
+      const cmd = new UpdateElementCommand(elementId, changes);
+      executorRef.current.execute(cmd);
+      setEditingTextId(null);
       forceUpdate();
     },
     [forceUpdate],
   );
 
+  const handleTextCancel = useCallback(() => {
+    setEditingTextId(null);
+    forceUpdate();
+  }, [forceUpdate]);
+
   const handleToolChange = useCallback((tool: DrawingToolType) => {
     setActiveTool(tool);
+    setEditingTextId(null);
     selectionManager.clearSelection();
     forceUpdate();
   }, [selectionManager, forceUpdate]);
@@ -96,9 +140,18 @@ function App() {
         activeTool={activeTool}
         drawingLayerId={drawingLayerId}
         onDrawComplete={handleDrawComplete}
+        onTextEditRequest={handleTextEditRequest}
       />
       <ShapeToolbar activeTool={activeTool} onToolChange={handleToolChange} />
       <ConflictPanel conflictHighlighter={conflictHighlighter} />
+      {editingElement && (
+        <TextEditor
+          element={editingElement}
+          viewport={viewport}
+          onCommit={handleTextCommit}
+          onCancel={handleTextCancel}
+        />
+      )}
     </div>
   );
 }

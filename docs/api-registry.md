@@ -371,10 +371,10 @@
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
 | 功能描述 | 文本元素，用于标签、注释、面板标题等，继承 BaseElement |
-| 输入参数 | 继承 BaseElement; type: 'text', text: string |
+| 输入参数 | 继承 BaseElement; type: 'text', text: string, backgroundColor?: string, borderColor?: string, borderWidth?: number |
 | 输出参数 | 无（接口类型） |
-| 典型用例 | `const t: TextElement = { ...base, type: 'text', text: 'Hello' }` |
-| 修订历史 | 2026-05-18, OpenCode/deepseek-v4-pro, 初始创建 |
+| 典型用例 | `const t: TextElement = { ...base, type: 'text', text: 'Hello', backgroundColor: '#ffff00', borderColor: '#000', borderWidth: 1 }` |
+| 修订历史 | 2026-05-18, OpenCode/deepseek-v4-pro, 初始创建；2026-05-20, OpenCode/deepseek-v4-pro, T-05-08 新增 backgroundColor/borderColor/borderWidth 字段以支持文本框底色和边框 |
 
 ### API-0019 ImageElement
 
@@ -1111,11 +1111,11 @@
 | 最后修订日期 | 2026-05-19 |
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | React SVG 画布渲染组件。接收 SceneDocument 和 Viewport 作为 props，按图层 order 升序渲染所有元素到 SVG。支持渲染 shape（rect、circle、ellipse、polygon、path）、text（含对齐和样式）、image（img 引用）、connector（polyline 占位）。支持滚轮缩放（以鼠标位置为中心）、空格+拖拽平移、中键拖拽平移交互，光标样式自动切换（default/grab/grabbing），通过 onViewportChange 回调通知父组件重渲染。支持元素单选（点击）、多选（Shift+点击）、空白区域取消选中、锁定元素和锁定图层内元素不可选中，通过 selectionManager prop 管理选择状态。选中元素在屏幕空间渲染蓝色包围盒和 8 个控制柄。支持框选（marquee selection）：在空白区域拖拽绘制半透明蓝色矩形框，释放时选中完全包含在选区内的所有可见未锁定元素，排除锁定图层内元素，Shift+框选追加到现有选中，小拖拽（<4px）视为点击清空选中。隐藏图层使用 visibility: hidden 渲染以保留 DOM 空间。 |
-| 输入参数 | props: { scene: SceneDocument, viewport: Viewport, width?: number | string, height?: number | string, className?: string, onViewportChange?: () => void, selectionManager?: SelectionManager, onSelectionChange?: () => void, activeTool?: DrawingToolType, drawingLayerId?: string, onDrawComplete?: (input: ElementInput) => void } |
+| 功能描述 | React SVG 画布渲染组件。接收 SceneDocument 和 Viewport 作为 props，按图层 order 升序渲染所有元素到 SVG。支持渲染 shape（rect、circle、ellipse、polygon、path）、text（含文本样式、背景色、边框渲染）、image（img 引用）、connector（polyline 占位）。支持滚轮缩放（以鼠标位置为中心）、空格+拖拽平移、中键拖拽平移交互，光标样式自动切换。支持元素单选（点击）、多选（Shift+点击）、空白区域取消选中、锁定元素不可选中、框选（marquee selection）。支持绘制工具（rect/circle/ellipse/line/polygon/text），text 工具点击即创建文本无需拖拽。支持文本元素双击编辑（onTextEditRequest 回调） |
+| 输入参数 | props: { scene: SceneDocument, viewport: Viewport, width?: number | string, height?: number | string, className?: string, onViewportChange?: () => void, selectionManager?: SelectionManager, onSelectionChange?: () => void, conflictHighlighter?: ConflictHighlighter, activeTool?: DrawingToolType, drawingLayerId?: string, onDrawComplete?: (input: ElementInput) => void, onTextEditRequest?: (elementId: string) => void } |
 | 输出参数 | ReactElement - SVG 元素，包含按图层组织的 `<g>` 元素树、框选矩形和选择覆盖层 |
 | 典型用例 | `<CanvasView scene={scene} viewport={viewport} selectionManager={selectionMgr} onViewportChange={update} onSelectionChange={update} />` |
-| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-02-02）；2026-05-19, OpenCode/deepseek-v4-pro, T-02-03 新增 onViewportChange prop、滚轮缩放、空格/中键拖拽平移和光标样式切换；2026-05-19, OpenCode/deepseek-v4-pro, T-02-04 新增 selectionManager/onSelectionChange props、元素点击选择和多选交互、选择覆盖层渲染；2026-05-19, OpenCode/deepseek-v4-pro, T-02-05 新增框选（marquee selection）功能：空白区域拖拽选区、Shift+框选追加、视口变换适配、锁定/隐藏元素过滤；2026-05-19, OpenCode/deepseek-v4-pro, T-04-04 隐藏图层改为 visibility:hidden（保留 DOM 空间）、锁定图层（layer.locked）元素不响应点击和框选交互、marquee 框选排除锁定图层内元素；2026-05-20, OpenCode/deepseek-v4-pro, T-05-07 新增 activeTool/drawingLayerId/onDrawComplete props、拖拽绘制（rect/circle/ellipse/line）、多边形逐点绘制、实时预览渲染、crosshair 光标 |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-02-02）；2026-05-19, OpenCode/deepseek-v4-pro, T-02-03 新增 onViewportChange prop、滚轮缩放、空格/中键拖拽平移和光标样式切换；2026-05-19, OpenCode/deepseek-v4-pro, T-02-04 新增 selectionManager/onSelectionChange props、元素点击选择和多选交互、选择覆盖层渲染；2026-05-19, OpenCode/deepseek-v4-pro, T-02-05 新增框选（marquee selection）功能：空白区域拖拽选区、Shift+框选追加、视口变换适配、锁定/隐藏元素过滤；2026-05-19, OpenCode/deepseek-v4-pro, T-04-04 隐藏图层改为 visibility:hidden（保留 DOM 空间）、锁定图层（layer.locked）元素不响应点击和框选交互、marquee 框选排除锁定图层内元素；2026-05-20, OpenCode/deepseek-v4-pro, T-05-07 新增 activeTool/drawingLayerId/onDrawComplete props、拖拽绘制（rect/circle/ellipse/line）、多边形逐点绘制、实时预览渲染、crosshair 光标；2026-05-20, OpenCode/deepseek-v4-pro, T-05-08 新增 onTextEditRequest prop（文本双击编辑）、text 工具（点击创建文本）、renderTextElement 支持背景色/边框渲染 |
 
 ### API-0058 SelectionManager
 
@@ -1584,11 +1584,11 @@
 | 最后修订日期 | 2026-05-19 |
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | 在指定图层创建新元素的命令。validate 检查目标图层存在且新元素不与同层其他元素重叠（connector 豁免）。execute 将元素添加到 scene.elements 数组。invert 生成删除元素的逆命令。支持创建 shape、text、image 类型元素 |
+| 功能描述 | 在指定图层创建新元素的命令。validate 检查目标图层存在且新元素不与同层其他元素重叠（connector 豁免）。execute 将元素添加到 scene.elements 数组。invert 生成删除元素的逆命令。支持创建 shape、text、image 类型元素。getElementId() 返回自动生成的元素 ID |
 | 输入参数 | constructor(input: ElementInput, label?: string) - elementId 由内部 generateId 自动生成 |
-| 输出参数 | implements SceneCommand - scenes 可通过 CommandExecutor 执行、撤销和重做 |
-| 典型用例 | `const cmd = new CreateElementCommand({ type: 'shape', layerId: 'l1', shapeKind: 'rect', transform, style }); executor.execute(cmd);` |
-| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-02）|
+| 输出参数 | implements SceneCommand - scenes 可通过 CommandExecutor 执行、撤销和重做；getElementId(): string - 返回自动生成的元素 ID |
+| 典型用例 | `const cmd = new CreateElementCommand({ type: 'shape', layerId: 'l1', shapeKind: 'rect', transform, style }); executor.execute(cmd); const newId = cmd.getElementId();` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-02）；2026-05-20, OpenCode/deepseek-v4-pro, T-05-08 新增 getElementId 方法 |
 
 ### API-0083 MoveElementsCommand
 
@@ -1719,9 +1719,9 @@
 | 最后修订者 | OpenCode/deepseek-v4-pro |
 | 功能描述 | 画布绘制工具类型字面量联合类型，定义用户可在工具栏中选择的绘制模式 |
 | 输入参数 | 无（类型别名） |
-| 输出参数 | 'select' \| 'rect' \| 'circle' \| 'ellipse' \| 'line' \| 'polygon' |
+| 输出参数 | 'select' \| 'rect' \| 'circle' \| 'ellipse' \| 'line' \| 'polygon' \| 'text' |
 | 典型用例 | `const tool: DrawingToolType = 'rect'` |
-| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-07）|
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-07）；2026-05-20, OpenCode/deepseek-v4-pro, T-05-08 新增 'text' 类型 |
 
 ### API-0090 ShapeToolbar
 
@@ -1736,11 +1736,11 @@
 | 最后修订日期 | 2026-05-20 |
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | 浮动形状绘制工具栏 React 组件。显示矩形、圆、椭圆、线条、多边形的工具按钮（含 SVG 图标），高亮当前激活工具，点击切换工具。固定排列在画布左侧垂直工具栏中 |
+| 功能描述 | 浮动形状绘制工具栏 React 组件。显示矩形、圆、椭圆、线条、多边形、文本的工具按钮（含 SVG 图标），高亮当前激活工具，点击切换工具。固定排列在画布左侧垂直工具栏中 |
 | 输入参数 | props: { activeTool: DrawingToolType, onToolChange: (tool: DrawingToolType) => void } |
-| 输出参数 | ReactElement - 包含 6 个工具按钮的浮动 div |
+| 输出参数 | ReactElement - 包含 7 个工具按钮的浮动 div |
 | 典型用例 | `<ShapeToolbar activeTool={activeTool} onToolChange={setActiveTool} />` |
-| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-07）|
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-07）；2026-05-20, OpenCode/deepseek-v4-pro, T-05-08 新增 Text 工具按钮 |
 
 ### API-0091 ShapeToolbarProps
 
@@ -1774,11 +1774,11 @@
 | 最后修订日期 | 2026-05-20 |
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | 内部辅助函数，将画布上的绘制状态（工具类型、起始/当前坐标、多边形顶点）转换为 CreateElementCommand 所需的 ElementInput |
+| 功能描述 | 辅助函数，将画布上的绘制状态（工具类型、起始/当前坐标、多边形顶点）转换为 CreateElementCommand 所需的 ElementInput。支持所有 DrawingToolType（select/rect/circle/ellipse/line/polygon/text）。text 工具创建默认 200x30 的文本框，字体 16px Arial 黑色 |
 | 输入参数 | tool: DrawingToolType, state: DrawState, layerId: string |
 | 输出参数 | ElementInput - 可直接传入 CreateElementCommand 的元素创建参数 |
 | 典型用例 | `const input = drawStateToInput('rect', { x1: 0, y1: 0, x2: 100, y2: 100, points: [] }, 'l1')` |
-| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-07）|
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-07）；2026-05-20, OpenCode/deepseek-v4-pro, T-05-08 导出函数 + 新增 text case |
 
 ### API-0093 renderDrawPreview
 
@@ -1793,8 +1793,46 @@
 | 最后修订日期 | 2026-05-20 |
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | 内部渲染函数，根据当前绘制状态渲染各形状类型的实时预览轮廓。矩形/圆/椭圆/线条使用虚线描边半透明填充预览，多边形使用顶点圆圈和虚线连线预览 |
+| 功能描述 | 渲染函数，根据当前绘制状态渲染各形状类型的实时预览轮廓。矩形/圆/椭圆/线条使用虚线描边半透明填充预览，多边形使用顶点圆圈和虚线连线预览，text 工具返回 null（文本工具点击即创建无需拖拽预览） |
 | 输入参数 | tool: DrawingToolType, state: DrawState |
 | 输出参数 | React.ReactNode - SVG 预览元素组 |
 | 典型用例 | 在 CanvasView 内部调用：`renderDrawPreview(activeTool, drawState)` 渲染到 SVG 中 |
-| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-07）|
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-07）；2026-05-20, OpenCode/deepseek-v4-pro, T-05-08 导出函数 + 新增 text case |
+
+### API-0094 TextEditor
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0094 |
+| 名称 | TextEditor |
+| 所属系统 | ui |
+| 所属模块 | TextEditor |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 浮动文本编辑器 React 组件。在最上层渲染覆盖层（z-index 200），包含可编辑 textarea 和样式工具栏。工具栏支持：字体选择（Arial/Helvetica/Times New Roman 等）、字号选择（8-48px）、加粗/斜体切换、文字颜色选择器、背景颜色选择器、边框颜色选择器和边框宽度选择。Enter 保存、Escape 取消、blur 自动保存。通过 onCommit 回调提交文本内容、样式变更和背景/边框变更 |
+| 输入参数 | props: { element: TextElement, viewport: Viewport, onCommit: (elementId: string, changes: { text: string; style?: Partial<ElementStyle>; backgroundColor?: string; borderColor?: string; borderWidth?: number }) => void, onCancel: () => void } |
+| 输出参数 | ReactElement - 绝对定位的浮动编辑器窗口 |
+| 典型用例 | `<TextEditor element={textEl} viewport={vp} onCommit={handleSave} onCancel={handleClose} />` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-08）|
+
+### API-0095 TextEditorProps
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0095 |
+| 名称 | TextEditorProps |
+| 所属系统 | ui |
+| 所属模块 | TextEditor |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | TextEditor 组件的 Props 类型接口，包含待编辑的 TextElement、Viewport 实例、提交回调和取消回调 |
+| 输入参数 | element: TextElement, viewport: Viewport, onCommit: (elementId: string, changes: { text: string, style?: Partial<ElementStyle>, backgroundColor?: string, borderColor?: string, borderWidth?: number }) => void, onCancel: () => void |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const props: TextEditorProps = { element: textEl, viewport: vp, onCommit: handleSave, onCancel: handleCancel }` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-08）|
