@@ -398,7 +398,7 @@
 | 任务名称      | 实现图形绘制工具 |
 | 完成时间      | 2026-05-20 08:40 |
 | 作者/智能体   | OpenCode/deepseek-v4-pro |
-| Git Commit    | （待提交后补填） |
+| Git Commit    | ec797b0 |
 | 修改记录      | 新建：src/ui/ShapeToolbar.tsx、src/tests/unit/shape-toolbar.test.tsx（7 个测试用例）、src/tests/unit/drawing.test.tsx（23 个测试用例）；修改：src/canvas/CanvasView.tsx（新增 activeTool/drawingLayerId/onDrawComplete props、DrawState 内部状态、绘制预览渲染 renderDrawPreview、拖拽绘制交互、多边形逐点绘制交互、drawStateToInput 转换函数、crosshair 光标）、src/canvas/index.ts（新增 DrawingToolType 导出）、src/core/index.ts（新增 ElementInput/CreateElementCommand 导出）、src/ui/index.ts（新增 ShapeToolbar/ShapeToolbarProps 导出）、src/App.tsx（集成 Zustand store 和 CommandExecutor、activeTool 状态、ShapeToolbar、findActiveLayerId 辅助函数） |
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0057（CanvasView 修订：新增 drawing props）、API-0089（DrawingToolType）、API-0090（ShapeToolbar）、API-0091（ShapeToolbarProps）、API-0092（drawStateToInput）、API-0093（renderDrawPreview） |
