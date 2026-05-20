@@ -2083,3 +2083,60 @@
 | 输出参数 | implements SceneCommand - 可通过 CommandExecutor 执行、撤销和重做 |
 | 典型用例 | `executor.execute(new AlignElementsCommand(['e1', 'e2', 'e3'], 'centerHorizontal'));` |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-06-02）|
+
+### API-0110 DistributeType
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0110 |
+| 名称 | DistributeType |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 分布类型字面量联合类型。定义三种分布方式：horizontal（水平均匀分布）、vertical（垂直均匀分布）、circular（环形等距排列） |
+| 输入参数 | 无（类型别名） |
+| 输出参数 | 'horizontal' \| 'vertical' \| 'circular' |
+| 典型用例 | `const distType: DistributeType = 'horizontal'` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-06-03）|
+
+### API-0111 CircularDistributeOptions
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0111 |
+| 名称 | CircularDistributeOptions |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 环形分布配置接口。定义环形分布所需的圆心坐标和半径参数。centerX/centerY 为圆心在画布中的绝对坐标，radius 为分布圆的半径（必须为正数） |
+| 输入参数 | centerX: number - 圆心 X 坐标；centerY: number - 圆心 Y 坐标；radius: number - 分布圆半径 |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const opts: CircularDistributeOptions = { centerX: 200, centerY: 200, radius: 100 }` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-06-03）|
+
+### API-0112 DistributeElementsCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0112 |
+| 名称 | DistributeElementsCommand |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 元素分布命令。接收 elementIds 和 distributeType，按分布类型排列元素位置。水平分布：按中心点 X 坐标排序，最左最右元素保持原位，中间元素等距分布。垂直分布：按中心点 Y 坐标排序，最上最下元素保持原位，中间元素等距分布。环形分布：接收圆心和半径，将元素按等角弧度排列在圆周上（从顶部 -PI/2 开始）。支持跨图层分布（元素保持各自所属图层）。validate 检查至少 3 个非 connector 元素存在且未锁定，circular 模式须提供有效的 centerX/centerY/radius（radius > 0），移动后不与同层非分布元素重叠。execute 更新元素 transform 位置。连接线端点跟随其锚定元素自动位移。invert 生成逆命令恢复原始位置 |
+| 输入参数 | constructor(elementIds: string[], distributeType: DistributeType, options?: CircularDistributeOptions, label?: string) |
+| 输出参数 | implements SceneCommand - 可通过 CommandExecutor 执行、撤销和重做 |
+| 典型用例 | `executor.execute(new DistributeElementsCommand(['e1', 'e2', 'e3'], 'horizontal'));` / `executor.execute(new DistributeElementsCommand(['e1', 'e2', 'e3', 'e4'], 'circular', { centerX: 200, centerY: 200, radius: 120 }));` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-06-03）|

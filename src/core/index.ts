@@ -91,5 +91,6 @@ export {
   AddToGroupCommand,
   RemoveFromGroupCommand,
   AlignElementsCommand,
+  DistributeElementsCommand,
 } from './commands';
-export type { SceneCommand, CommandHistoryEntry, ElementInput, AlignType } from './commands';
+export type { SceneCommand, CommandHistoryEntry, ElementInput, AlignType, DistributeType, CircularDistributeOptions } from './commands';

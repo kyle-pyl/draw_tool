@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CommandExecutor, CreateElementCommand, MoveElementsCommand, UpdateElementCommand, ChangeLayerCommand, TransformElementsCommand, GroupElementsCommand, UngroupCommand, AddToGroupCommand, RemoveFromGroupCommand, AlignElementsCommand } from '../../core/commands';
-import type { SceneCommand, CommandHistoryEntry, ElementInput, ElementChanges, TransformParams, AlignType } from '../../core/commands';
+import { CommandExecutor, CreateElementCommand, MoveElementsCommand, UpdateElementCommand, ChangeLayerCommand, TransformElementsCommand, GroupElementsCommand, UngroupCommand, AddToGroupCommand, RemoveFromGroupCommand, AlignElementsCommand, DistributeElementsCommand } from '../../core/commands';
+import type { SceneCommand, CommandHistoryEntry, ElementInput, ElementChanges, TransformParams, AlignType, DistributeType, CircularDistributeOptions } from '../../core/commands';
 import type { SceneDocument } from '../../core/types';
 import { successResult, failureResult } from '../../core/errors';
 import { useDocumentStore } from '../../core/store';
@@ -1810,6 +1810,408 @@ describe('AlignElementsCommand', () => {
       expect(el2.transform.x).toBe(0);
       expect(el1.layerId).toBe('l1');
       expect(el2.layerId).toBe('l2');
+    });
+  });
+});
+
+// ─── DistributeElements Command ─────────────────────────────────────────────────
+
+describe('DistributeElementsCommand', () => {
+  let executor: CommandExecutor;
+
+  function makeScene(): SceneDocument {
+    return {
+      schemaVersion: '1.0.0',
+      project: { name: 'Test' },
+      canvas: { units: 'px', background: '#fff', defaultFont: 'Arial', gridSize: 0, snapToGrid: false },
+      rules: { maxLayerCount: 10, collisionStrategy: 'bbox', hiddenElementsCollide: false, lockedElementsCollide: false, connectorsExempt: true },
+      layers: [{ id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false }],
+      elements: [],
+      groups: [],
+      dataSources: [],
+      charts: [],
+      templates: [],
+      exportPresets: [],
+    };
+  }
+
+  function createShape(name: string, x: number, y: number, w = 50, h = 50) {
+    const input: ElementInput = {
+      type: 'shape', layerId: 'l1', shapeKind: 'rect', name,
+      transform: { x, y, width: w, height: h, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: '#fff', stroke: '#000', strokeWidth: 2, opacity: 1 },
+    };
+    const cmd = new CreateElementCommand(input);
+    executor.execute(cmd);
+    return useDocumentStore.getState().getScene()!.elements.at(-1)!.id;
+  }
+
+  beforeEach(() => {
+    executor = new CommandExecutor();
+    useDocumentStore.getState().loadScene(structuredClone(makeScene()));
+  });
+
+  describe('validation', () => {
+    it('fails when fewer than 3 elements', () => {
+      createShape('A', 0, 0);
+      createShape('B', 100, 0);
+      const allIds = useDocumentStore.getState().getScene()!.elements.map((e) => e.id);
+      const cmd = new DistributeElementsCommand(allIds, 'horizontal');
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].message).toContain('At least 3');
+    });
+
+    it('fails when element does not exist', () => {
+      createShape('A', 0, 0);
+      createShape('B', 100, 0);
+      createShape('C', 200, 0);
+      const cmd = new DistributeElementsCommand(['nonexistent', 'also_nonexistent', 'nope'], 'horizontal');
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe('REF_GROUP_NOT_FOUND');
+    });
+
+    it('fails when element is locked', () => {
+      const id1 = createShape('A', 0, 0);
+      const id2 = createShape('B', 100, 0);
+      const id3 = createShape('C', 200, 0);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      useDocumentStore.getState().updateScene(() => ({
+        ...scene,
+        elements: scene.elements.map((el) => (el.id === id1 ? { ...el, locked: true } : el)),
+      }));
+
+      const cmd = new DistributeElementsCommand([id1, id2, id3], 'horizontal');
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe('RULE_LOCKED_ELEMENT_EDITED');
+    });
+
+    it('fails when only connectors are selected', () => {
+      const scene = useDocumentStore.getState().getScene()!;
+      useDocumentStore.getState().updateScene(() => ({
+        ...scene,
+        elements: [
+          {
+            id: 'c1', type: 'connector', layerId: 'l1', name: 'C1',
+            transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: 'none', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            source: { x: 0, y: 0 }, target: { x: 100, y: 100 },
+            route: { type: 'straight', points: [] },
+            visible: true, locked: false,
+          },
+          {
+            id: 'c2', type: 'connector', layerId: 'l1', name: 'C2',
+            transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: 'none', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            source: { x: 0, y: 0 }, target: { x: 100, y: 100 },
+            route: { type: 'straight', points: [] },
+            visible: true, locked: false,
+          },
+          {
+            id: 'c3', type: 'connector', layerId: 'l1', name: 'C3',
+            transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: 'none', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            source: { x: 0, y: 0 }, target: { x: 100, y: 100 },
+            route: { type: 'straight', points: [] },
+            visible: true, locked: false,
+          },
+        ],
+      }));
+
+      const cmd = new DistributeElementsCommand(['c1', 'c2', 'c3'], 'horizontal');
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].message).toContain('non-connector');
+    });
+
+    it('fails when distribution would cause collision', () => {
+      createShape('A', 0, 100, 50, 50);
+      createShape('B', 100, 100, 50, 50);
+      createShape('C', 400, 100, 50, 50);
+      
+      const allIds = useDocumentStore.getState().getScene()!.elements.map((e) => e.id);
+      
+      // Place a large obstacle where B would need to move to
+      // B initial center = 125, target center = 225 (evenly spaced between 25 and 425)
+      // B target left edge = 200, so obstacle at x=200,y=50,w=100,h=150 will collide
+      const obstacle: ElementInput = {
+        type: 'shape', layerId: 'l1', shapeKind: 'rect', name: 'Obstacle',
+        transform: { x: 200, y: 50, width: 100, height: 150, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { fill: '#ccc', stroke: '#000', strokeWidth: 1, opacity: 1 },
+      };
+      executor.execute(new CreateElementCommand(obstacle));
+
+      const cmd = new DistributeElementsCommand(allIds, 'horizontal');
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe('GEO_MOVE_TARGET_CONFLICT');
+    });
+
+    it('fails when circular options are missing', () => {
+      createShape('A', 0, 0);
+      createShape('B', 100, 0);
+      createShape('C', 200, 0);
+      const allIds = useDocumentStore.getState().getScene()!.elements.map((e) => e.id);
+      const cmd = new DistributeElementsCommand(allIds, 'circular');
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].message).toContain('centerX');
+    });
+
+    it('fails when circular radius is zero or negative', () => {
+      createShape('A', 0, 0);
+      createShape('B', 100, 0);
+      createShape('C', 200, 0);
+      const allIds = useDocumentStore.getState().getScene()!.elements.map((e) => e.id);
+      const cmd = new DistributeElementsCommand(allIds, 'circular', { centerX: 100, centerY: 100, radius: 0 });
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].message).toContain('positive');
+    });
+  });
+
+  describe('horizontal distribution', () => {
+    it('evenly spaces elements between leftmost and rightmost', () => {
+      const id1 = createShape('A', 0, 50, 50, 50);
+      const id2 = createShape('B', 60, 50, 50, 50);
+      const id3 = createShape('C', 400, 50, 50, 50);
+
+      const cmd = new DistributeElementsCommand([id1, id2, id3], 'horizontal');
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const el1 = scene.elements.find((e) => e.id === id1)!;
+      const el2 = scene.elements.find((e) => e.id === id2)!;
+      const el3 = scene.elements.find((e) => e.id === id3)!;
+
+      // Centers should be evenly spaced
+      const c1 = el1.transform.x + 25; // center of 50-wide rect
+      const c2 = el2.transform.x + 25;
+      const c3 = el3.transform.x + 25;
+
+      expect(c1).toBeCloseTo(25, 1);
+      expect(c3).toBeCloseTo(425, 1);
+      // step = (425 - 25) / 2 = 200, so c2 should be 225
+      expect(c2).toBeCloseTo(225, 1);
+      // y unchanged
+      expect(el1.transform.y).toBe(50);
+      expect(el2.transform.y).toBe(50);
+      expect(el3.transform.y).toBe(50);
+    });
+
+    it('works with 4 elements', () => {
+      const id1 = createShape('A', 0, 50, 50, 50);
+      const id2 = createShape('B', 50, 50, 50, 50);
+      const id3 = createShape('C', 150, 50, 50, 50);
+      const id4 = createShape('D', 300, 50, 50, 50);
+
+      const cmd = new DistributeElementsCommand([id1, id2, id3, id4], 'horizontal');
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const els = [id1, id2, id3, id4].map((id) => scene.elements.find((e) => e.id === id)!);
+      const centers = els.map((el) => el.transform.x + 25);
+
+      expect(centers[0]).toBeCloseTo(25, 1);
+      expect(centers[3]).toBeCloseTo(325, 1);
+      // step = (325 - 25) / 3 = 100
+      expect(centers[1]).toBeCloseTo(125, 1);
+      expect(centers[2]).toBeCloseTo(225, 1);
+    });
+  });
+
+  describe('vertical distribution', () => {
+    it('evenly spaces elements between topmost and bottommost', () => {
+      const id1 = createShape('A', 50, 0, 50, 50);
+      const id2 = createShape('B', 50, 60, 50, 50);
+      const id3 = createShape('C', 50, 400, 50, 50);
+
+      const cmd = new DistributeElementsCommand([id1, id2, id3], 'vertical');
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const el1 = scene.elements.find((e) => e.id === id1)!;
+      const el2 = scene.elements.find((e) => e.id === id2)!;
+      const el3 = scene.elements.find((e) => e.id === id3)!;
+
+      const c1 = el1.transform.y + 25;
+      const c2 = el2.transform.y + 25;
+      const c3 = el3.transform.y + 25;
+
+      expect(c1).toBeCloseTo(25, 1);
+      expect(c3).toBeCloseTo(425, 1);
+      expect(c2).toBeCloseTo(225, 1);
+      // x unchanged
+      expect(el1.transform.x).toBe(50);
+      expect(el2.transform.x).toBe(50);
+      expect(el3.transform.x).toBe(50);
+    });
+  });
+
+  describe('circular distribution', () => {
+    it('arranges elements in a circle with equal angular spacing', () => {
+      const id1 = createShape('A', 0, 0, 50, 50);
+      const id2 = createShape('B', 100, 0, 50, 50);
+      const id3 = createShape('C', 200, 0, 50, 50);
+
+      const cmd = new DistributeElementsCommand([id1, id2, id3], 'circular', { centerX: 200, centerY: 200, radius: 100 });
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const els = [id1, id2, id3].map((id) => scene.elements.find((e) => e.id === id)!);
+
+      // Each element's center should be on the circle of radius 100 around (200, 200)
+      for (const el of els) {
+        const centerX = el.transform.x + 25;
+        const centerY = el.transform.y + 25;
+        const dist = Math.sqrt((centerX - 200) ** 2 + (centerY - 200) ** 2);
+        expect(dist).toBeCloseTo(100, 1);
+      }
+
+      // Angles should be 120 degrees apart (2*PI/3)
+      const angles = els.map((el) => {
+        const cx = el.transform.x + 25;
+        const cy = el.transform.y + 25;
+        return Math.atan2(cy - 200, cx - 200);
+      });
+
+      // Sort angles
+      angles.sort((a, b) => a - b);
+      expect(angles[1] - angles[0]).toBeCloseTo((2 * Math.PI) / 3, 1);
+      expect(angles[2] - angles[1]).toBeCloseTo((2 * Math.PI) / 3, 1);
+    });
+
+    it('arranges 4 elements at 90-degree intervals', () => {
+      const id1 = createShape('A', 0, 0, 40, 40);
+      const id2 = createShape('B', 50, 0, 40, 40);
+      const id3 = createShape('C', 100, 0, 40, 40);
+      const id4 = createShape('D', 150, 0, 40, 40);
+
+      const cmd = new DistributeElementsCommand([id1, id2, id3, id4], 'circular', { centerX: 100, centerY: 100, radius: 80 });
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const els = [id1, id2, id3, id4].map((id) => scene.elements.find((e) => e.id === id)!);
+
+      for (const el of els) {
+        const centerX = el.transform.x + 20;
+        const centerY = el.transform.y + 20;
+        const dist = Math.sqrt((centerX - 100) ** 2 + (centerY - 100) ** 2);
+        expect(dist).toBeCloseTo(80, 1);
+      }
+    });
+  });
+
+  describe('undo/redo', () => {
+    it('undo restores original positions', () => {
+      const id1 = createShape('A', 0, 50, 50, 50);
+      const id2 = createShape('B', 70, 50, 50, 50);
+      const id3 = createShape('C', 400, 50, 50, 50);
+
+      const sceneBefore = useDocumentStore.getState().getScene()!;
+      const origX1 = sceneBefore.elements.find((e) => e.id === id1)!.transform.x;
+      const origX2 = sceneBefore.elements.find((e) => e.id === id2)!.transform.x;
+
+      executor.execute(new DistributeElementsCommand([id1, id2, id3], 'horizontal'));
+
+      const sceneAfter = useDocumentStore.getState().getScene()!;
+      expect(sceneAfter.elements.find((e) => e.id === id2)!.transform.x).not.toBe(origX2);
+
+      executor.undo();
+
+      const sceneUndo = useDocumentStore.getState().getScene()!;
+      expect(sceneUndo.elements.find((e) => e.id === id1)!.transform.x).toBe(origX1);
+      expect(sceneUndo.elements.find((e) => e.id === id2)!.transform.x).toBe(origX2);
+    });
+
+    it('redo reapplies distribution', () => {
+      const id1 = createShape('A', 0, 50, 50, 50);
+      const id2 = createShape('B', 70, 50, 50, 50);
+      const id3 = createShape('C', 400, 50, 50, 50);
+
+      executor.execute(new DistributeElementsCommand([id1, id2, id3], 'horizontal'));
+      const sceneAfter = useDocumentStore.getState().getScene()!;
+      const distX2 = sceneAfter.elements.find((e) => e.id === id2)!.transform.x;
+
+      executor.undo();
+      executor.redo();
+
+      const sceneRedo = useDocumentStore.getState().getScene()!;
+      expect(sceneRedo.elements.find((e) => e.id === id2)!.transform.x).toBeCloseTo(distX2, 1);
+    });
+
+    it('undo for circular distribution restores positions', () => {
+      const id1 = createShape('A', 0, 0, 50, 50);
+      const id2 = createShape('B', 100, 0, 50, 50);
+      const id3 = createShape('C', 200, 0, 50, 50);
+
+      const origX = useDocumentStore.getState().getScene()!.elements.map((e) => e.transform.x);
+
+      executor.execute(new DistributeElementsCommand([id1, id2, id3], 'circular', { centerX: 200, centerY: 200, radius: 100 }));
+      executor.undo();
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const restoredX = scene.elements.map((e) => e.transform.x);
+      for (let i = 0; i < origX.length; i++) {
+        expect(restoredX[i]).toBeCloseTo(origX[i], 1);
+      }
+    });
+  });
+
+  describe('cross-layer distribution', () => {
+    it('distributes elements across different layers independently', () => {
+      const scene = useDocumentStore.getState().getScene()!;
+      useDocumentStore.getState().updateScene(() => ({
+        ...scene,
+        layers: [
+          { id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false },
+          { id: 'l2', name: 'Layer 2', order: 2, visible: true, locked: false },
+        ],
+      }));
+
+      const id1 = createShape('A', 0, 50, 50, 50); // layer l1
+      
+      const input2: ElementInput = {
+        type: 'shape', layerId: 'l2', shapeKind: 'rect', name: 'B',
+        transform: { x: 100, y: 50, width: 60, height: 60, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { fill: '#fff', stroke: '#000', strokeWidth: 2, opacity: 1 },
+      };
+      executor.execute(new CreateElementCommand(input2));
+      const id2 = useDocumentStore.getState().getScene()!.elements.at(-1)!.id;
+
+      const input3: ElementInput = {
+        type: 'shape', layerId: 'l2', shapeKind: 'rect', name: 'C',
+        transform: { x: 400, y: 50, width: 60, height: 60, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { fill: '#fff', stroke: '#000', strokeWidth: 2, opacity: 1 },
+      };
+      executor.execute(new CreateElementCommand(input3));
+      const id3 = useDocumentStore.getState().getScene()!.elements.at(-1)!.id;
+
+      executor.execute(new DistributeElementsCommand([id1, id2, id3], 'horizontal'));
+
+      const finalScene = useDocumentStore.getState().getScene()!;
+      const el1 = finalScene.elements.find((e) => e.id === id1)!;
+      const el2 = finalScene.elements.find((e) => e.id === id2)!;
+      const el3 = finalScene.elements.find((e) => e.id === id3)!;
+
+      // Cross-layer: only elements in same layer check collisions, but X coords still shifted
+      // Each element's center is distributed across the shared span
+      const c1 = el1.transform.x + 25;
+      const c2 = el2.transform.x + 30; // 60 wide
+      const c3 = el3.transform.x + 30;
+      
+      expect(c1).toBeCloseTo(25, 1); // leftmost stays, center at 25
+      expect(c3).toBeCloseTo(430, 1); // rightmost stays, center at 430
+      // step = (430 - 25) / 2 = 202.5
+      expect(c2).toBeCloseTo(227.5, 1);
     });
   });
 });

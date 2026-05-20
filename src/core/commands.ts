@@ -1308,6 +1308,336 @@ export class AlignElementsCommand implements SceneCommand {
   }
 }
 
+// ─── DistributeElements Command ─────────────────────────────────────────────────
+
+export type DistributeType = 'horizontal' | 'vertical' | 'circular';
+
+export interface CircularDistributeOptions {
+  centerX: number;
+  centerY: number;
+  radius: number;
+}
+
+export class DistributeElementsCommand implements SceneCommand {
+  id: string;
+  label: string;
+  private elementIds: string[];
+  private distributeType: DistributeType;
+  private options: CircularDistributeOptions | null;
+  private previousPositions: Map<string, { x: number; y: number }>;
+
+  constructor(
+    elementIds: string[],
+    distributeType: DistributeType,
+    options?: CircularDistributeOptions,
+    label?: string,
+  ) {
+    this.id = generateId('distribute');
+    this.elementIds = elementIds;
+    this.distributeType = distributeType;
+    this.options = options ?? null;
+    this.label = label || `Distribute ${distributeType}`;
+    this.previousPositions = new Map();
+  }
+
+  validate(scene: SceneDocument): ValidationResult {
+    if (this.elementIds.length < 3) {
+      return failureResult({
+        code: 'SCHEMA_FIELD_TYPE_ERROR',
+        message: 'At least 3 elements are required for distribution',
+        severity: 'error',
+        suggestion: 'Select at least 3 elements to distribute',
+      });
+    }
+
+    if (this.distributeType === 'circular') {
+      if (!this.options || typeof this.options.centerX !== 'number' || typeof this.options.centerY !== 'number' || typeof this.options.radius !== 'number') {
+        return failureResult({
+          code: 'SCHEMA_FIELD_TYPE_ERROR',
+          message: 'Circular distribution requires centerX, centerY, and radius options',
+          severity: 'error',
+          suggestion: 'Provide a valid center point and radius',
+        });
+      }
+      if (this.options.radius <= 0) {
+        return failureResult({
+          code: 'SCHEMA_FIELD_TYPE_ERROR',
+          message: 'Circular distribution radius must be positive',
+          severity: 'error',
+          suggestion: 'Provide a radius greater than 0',
+        });
+      }
+    }
+
+    const distributedSet = new Set(this.elementIds);
+
+    for (const elementId of this.elementIds) {
+      const element = scene.elements.find((el) => el.id === elementId);
+      if (!element) {
+        return failureResult({
+          code: ErrorCode.REF_GROUP_NOT_FOUND as string,
+          message: `Element "${elementId}" not found`,
+          severity: 'error',
+          elementIds: [elementId],
+          suggestion: 'The element may have been deleted',
+        });
+      }
+
+      if (element.locked) {
+        return failureResult({
+          code: ErrorCode.RULE_LOCKED_ELEMENT_EDITED as string,
+          message: `Element "${element.name || element.id}" is locked and cannot be distributed`,
+          severity: 'error',
+          elementIds: [element.id],
+          suggestion: 'Unlock the element before distributing',
+        });
+      }
+    }
+
+    const rawElements = this.elementIds
+      .map((id) => scene.elements.find((el) => el.id === id)!)
+      .filter((el) => el.type !== 'connector');
+
+    if (rawElements.length < 3) {
+      return failureResult({
+        code: 'SCHEMA_FIELD_TYPE_ERROR',
+        message: 'At least 3 non-connector elements are required for distribution',
+        severity: 'error',
+        suggestion: 'Connector elements cannot be distributed independently',
+      });
+    }
+
+    const geometryAdapter = createGeometryAdapter();
+    const deltas = this.computeDeltas(rawElements, geometryAdapter);
+
+    for (const element of rawElements) {
+      const delta = deltas.get(element.id);
+      if (!delta) continue;
+
+      const prospectiveTransform = {
+        ...element.transform,
+        x: element.transform.x + delta.dx,
+        y: element.transform.y + delta.dy,
+      };
+      const prospectiveElement = { ...element, transform: prospectiveTransform };
+      const prospectiveBBox = geometryAdapter.getBBox(prospectiveElement);
+
+      const layerElements = scene.elements.filter(
+        (el) =>
+          el.layerId === element.layerId &&
+          el.type !== 'connector' &&
+          !distributedSet.has(el.id),
+      );
+
+      for (const other of layerElements) {
+        const otherBBox = geometryAdapter.getBBox(other);
+        if (bboxesOverlap(prospectiveBBox, otherBBox)) {
+          const overlapX = Math.max(prospectiveBBox.x, otherBBox.x);
+          const overlapY = Math.max(prospectiveBBox.y, otherBBox.y);
+          const overlapW =
+            Math.min(prospectiveBBox.x + prospectiveBBox.width, otherBBox.x + otherBBox.width) - overlapX;
+          const overlapH =
+            Math.min(prospectiveBBox.y + prospectiveBBox.height, otherBBox.y + otherBBox.height) - overlapY;
+
+          return failureResult({
+            code: ErrorCode.GEO_MOVE_TARGET_CONFLICT as string,
+            message: `Distributing "${element.name || element.id}" would overlap with "${other.name || other.id}" in layer "${element.layerId}"`,
+            severity: 'error',
+            layerIds: [element.layerId],
+            elementIds: [element.id, other.id],
+            bboxes: [{ x: overlapX, y: overlapY, width: overlapW, height: overlapH }],
+            suggestion: 'Move non-distributed elements away or use a different layer',
+          });
+        }
+      }
+    }
+
+    return successResult();
+  }
+
+  private computeDeltas(
+    elements: SceneElement[],
+    geometryAdapter: GeometryAdapter,
+  ): Map<string, { dx: number; dy: number }> {
+    const deltas = new Map<string, { dx: number; dy: number }>();
+    if (elements.length < 2) return deltas;
+
+    switch (this.distributeType) {
+      case 'horizontal':
+        this.computeHorizontalDeltas(elements, geometryAdapter, deltas);
+        break;
+      case 'vertical':
+        this.computeVerticalDeltas(elements, geometryAdapter, deltas);
+        break;
+      case 'circular':
+        this.computeCircularDeltas(elements, geometryAdapter, deltas);
+        break;
+    }
+
+    return deltas;
+  }
+
+  private computeHorizontalDeltas(
+    elements: SceneElement[],
+    geometryAdapter: GeometryAdapter,
+    deltas: Map<string, { dx: number; dy: number }>,
+  ): void {
+    const bboxes = elements.map((el) => ({ el, bbox: geometryAdapter.getBBox(el) }));
+    bboxes.sort((a, b) => (a.bbox.x + a.bbox.width / 2) - (b.bbox.x + b.bbox.width / 2));
+
+    const n = bboxes.length;
+    const leftmostCenter = bboxes[0].bbox.x + bboxes[0].bbox.width / 2;
+    const rightmostCenter = bboxes[n - 1].bbox.x + bboxes[n - 1].bbox.width / 2;
+
+    const totalSpan = rightmostCenter - leftmostCenter;
+    const step = totalSpan / (n - 1);
+
+    for (let i = 1; i < n - 1; i++) {
+      const targetCenterX = leftmostCenter + step * i;
+      const currentCenterX = bboxes[i].bbox.x + bboxes[i].bbox.width / 2;
+      const dx = targetCenterX - currentCenterX;
+      if (Math.abs(dx) > 1e-6) {
+        deltas.set(bboxes[i].el.id, { dx, dy: 0 });
+      }
+    }
+  }
+
+  private computeVerticalDeltas(
+    elements: SceneElement[],
+    geometryAdapter: GeometryAdapter,
+    deltas: Map<string, { dx: number; dy: number }>,
+  ): void {
+    const bboxes = elements.map((el) => ({ el, bbox: geometryAdapter.getBBox(el) }));
+    bboxes.sort((a, b) => (a.bbox.y + a.bbox.height / 2) - (b.bbox.y + b.bbox.height / 2));
+
+    const n = bboxes.length;
+    const topmostCenter = bboxes[0].bbox.y + bboxes[0].bbox.height / 2;
+    const bottommostCenter = bboxes[n - 1].bbox.y + bboxes[n - 1].bbox.height / 2;
+
+    const totalSpan = bottommostCenter - topmostCenter;
+    const step = totalSpan / (n - 1);
+
+    for (let i = 1; i < n - 1; i++) {
+      const targetCenterY = topmostCenter + step * i;
+      const currentCenterY = bboxes[i].bbox.y + bboxes[i].bbox.height / 2;
+      const dy = targetCenterY - currentCenterY;
+      if (Math.abs(dy) > 1e-6) {
+        deltas.set(bboxes[i].el.id, { dx: 0, dy });
+      }
+    }
+  }
+
+  private computeCircularDeltas(
+    elements: SceneElement[],
+    geometryAdapter: GeometryAdapter,
+    deltas: Map<string, { dx: number; dy: number }>,
+  ): void {
+    const { centerX, centerY, radius } = this.options!;
+    const n = elements.length;
+    const angleStep = (2 * Math.PI) / n;
+
+    for (let i = 0; i < n; i++) {
+      const el = elements[i];
+      const bbox = geometryAdapter.getBBox(el);
+      const elCenterX = bbox.x + bbox.width / 2;
+      const elCenterY = bbox.y + bbox.height / 2;
+
+      const angle = angleStep * i - Math.PI / 2; // start from top (-PI/2)
+      const targetCenterX = centerX + radius * Math.cos(angle);
+      const targetCenterY = centerY + radius * Math.sin(angle);
+
+      const dx = targetCenterX - elCenterX;
+      const dy = targetCenterY - elCenterY;
+
+      if (Math.abs(dx) > 1e-6 || Math.abs(dy) > 1e-6) {
+        deltas.set(el.id, { dx, dy });
+      }
+    }
+  }
+
+  execute(scene: SceneDocument): SceneDocument {
+    const distributedSet = new Set(this.elementIds);
+    const geometryAdapter = createGeometryAdapter();
+    const rawElements = this.elementIds
+      .map((id) => scene.elements.find((el) => el.id === id)!)
+      .filter((el): el is SceneElement => !!el && el.type !== 'connector');
+
+    const deltas = this.computeDeltas(rawElements, geometryAdapter);
+
+    const updatedElements = scene.elements.map((el) => {
+      const delta = deltas.get(el.id);
+      if (!delta) return el;
+
+      this.previousPositions.set(el.id, { x: el.transform.x, y: el.transform.y });
+
+      return {
+        ...el,
+        transform: {
+          ...el.transform,
+          x: el.transform.x + delta.dx,
+          y: el.transform.y + delta.dy,
+        },
+      };
+    });
+
+    const finalElements = updatedElements.map((el) => {
+      if (el.type !== 'connector') return el;
+
+      let updated = { ...el };
+
+      if (el.source?.elementId && distributedSet.has(el.source.elementId)) {
+        const delta = deltas.get(el.source.elementId);
+        if (delta) {
+          updated = {
+            ...updated,
+            source: { ...updated.source, x: updated.source.x + delta.dx, y: updated.source.y + delta.dy },
+          };
+        }
+      }
+
+      if (el.target?.elementId && distributedSet.has(el.target.elementId)) {
+        const delta = deltas.get(el.target.elementId);
+        if (delta) {
+          updated = {
+            ...updated,
+            target: { ...updated.target, x: updated.target.x + delta.dx, y: updated.target.y + delta.dy },
+          };
+        }
+      }
+
+      return updated;
+    });
+
+    return { ...scene, elements: finalElements };
+  }
+
+  invert(_scene: SceneDocument): SceneCommand | null {
+    const elementIds = this.elementIds.filter((id) => this.previousPositions.has(id));
+
+    if (elementIds.length === 0) return null;
+
+    const invertCmd: SceneCommand = {
+      id: generateId('distribute-undo'),
+      label: `Undo: ${this.label}`,
+      validate: () => successResult(),
+      execute: (scene: SceneDocument) => {
+        const movedSet = new Set(elementIds);
+        return {
+          ...scene,
+          elements: scene.elements.map((el) => {
+            if (!movedSet.has(el.id)) return el;
+            const prevPos = this.previousPositions.get(el.id);
+            return prevPos ? { ...el, transform: { ...el.transform, x: prevPos.x, y: prevPos.y } } : el;
+          }),
+        };
+      },
+      invert: () => null,
+    };
+
+    return invertCmd;
+  }
+}
+
 // ─── TransformElements Command ─────────────────────────────────────────────────
 
 export type TransformParams = {
