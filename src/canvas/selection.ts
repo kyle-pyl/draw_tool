@@ -1,4 +1,4 @@
-import type { SceneDocument, SceneElement } from '../core/types';
+import type { SceneDocument, SceneElement, ElementGroup } from '../core/types';
 
 export class SelectionManager {
   private _selectedIds: Set<string>;
@@ -54,6 +54,26 @@ export class SelectionManager {
     for (const id of ids) {
       this._selectedIds.delete(id);
     }
+  }
+
+  selectGroup(group: ElementGroup): void {
+    this._selectedIds.clear();
+    for (const id of group.elementIds) {
+      this._selectedIds.add(id);
+    }
+  }
+
+  selectGroupByName(scene: SceneDocument, groupName: string): boolean {
+    const group = scene.groups.find((g) => g.name === groupName);
+    if (!group) return false;
+    this.selectGroup(group);
+    return true;
+  }
+
+  getGroupsForSelected(scene: SceneDocument): ElementGroup[] {
+    return scene.groups.filter((g) =>
+      g.elementIds.some((id) => this._selectedIds.has(id)),
+    );
   }
 
   isSelected(id: string): boolean {

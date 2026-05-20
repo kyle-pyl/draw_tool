@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CommandExecutor, CreateElementCommand, MoveElementsCommand, UpdateElementCommand, ChangeLayerCommand, TransformElementsCommand } from '../../core/commands';
+import { CommandExecutor, CreateElementCommand, MoveElementsCommand, UpdateElementCommand, ChangeLayerCommand, TransformElementsCommand, GroupElementsCommand, UngroupCommand, AddToGroupCommand, RemoveFromGroupCommand } from '../../core/commands';
 import type { SceneCommand, CommandHistoryEntry, ElementInput, ElementChanges, TransformParams } from '../../core/commands';
 import type { SceneDocument } from '../../core/types';
 import { successResult, failureResult } from '../../core/errors';
@@ -1067,5 +1067,361 @@ describe('TransformElementsCommand', () => {
 
     executor.redo();
     expect(useDocumentStore.getState().getScene()!.elements[0].transform.scaleX).toBe(3);
+  });
+});
+
+// ─── GroupElements Command ─────────────────────────────────────────────────────
+
+describe('GroupElementsCommand', () => {
+  let executor: CommandExecutor;
+
+  function createShape(name: string, x: number, y: number, w = 50, h = 50) {
+    const input: ElementInput = {
+      type: 'shape', layerId: 'l1', shapeKind: 'rect', name,
+      transform: { x, y, width: w, height: h, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: '#fff', stroke: '#000', strokeWidth: 2, opacity: 1 },
+    };
+    const cmd = new CreateElementCommand(input);
+    executor.execute(cmd);
+    return useDocumentStore.getState().getScene()!.elements.at(-1)!.id;
+  }
+
+  beforeEach(() => {
+    executor = new CommandExecutor();
+    useDocumentStore.getState().loadScene(structuredClone(makeScene()));
+  });
+
+  it('creates a group with given elements', () => {
+    const id1 = createShape('A', 0, 0);
+    const id2 = createShape('B', 100, 0);
+
+    const cmd = new GroupElementsCommand([id1, id2], 'Group 1');
+    const result = executor.execute(cmd);
+    expect(result.valid).toBe(true);
+
+    const scene = useDocumentStore.getState().getScene()!;
+    expect(scene.groups.length).toBe(1);
+    expect(scene.groups[0].name).toBe('Group 1');
+    expect(scene.groups[0].elementIds).toContain(id1);
+    expect(scene.groups[0].elementIds).toContain(id2);
+  });
+
+  it('groups can span multiple layers', () => {
+    useDocumentStore.getState().updateScene((s) => ({
+      ...s,
+      layers: [...s.layers, { id: 'l2', name: 'Layer 2', order: 2, visible: true, locked: false }],
+    }));
+
+    const id1 = createShape('A', 0, 0);
+    const cmd2 = new CreateElementCommand({
+      type: 'shape', layerId: 'l2', shapeKind: 'rect', name: 'B',
+      transform: { x: 100, y: 0, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: '#fff', stroke: '#000', strokeWidth: 2, opacity: 1 },
+    });
+    executor.execute(cmd2);
+    const id2 = useDocumentStore.getState().getScene()!.elements.at(-1)!.id;
+
+    const result = executor.execute(new GroupElementsCommand([id1, id2], 'CrossLayer'));
+    expect(result.valid).toBe(true);
+
+    const scene = useDocumentStore.getState().getScene()!;
+    expect(scene.groups[0].elementIds).toHaveLength(2);
+  });
+
+  it('getGroupId returns the generated group id', () => {
+    const id1 = createShape('A', 0, 0);
+    const cmd = new GroupElementsCommand([id1], 'Test');
+    expect(cmd.getGroupId()).toBeTruthy();
+    expect(typeof cmd.getGroupId()).toBe('string');
+  });
+
+  it('fails validation with empty elementIds', () => {
+    const cmd = new GroupElementsCommand([], 'Empty');
+    const result = cmd.validate(useDocumentStore.getState().getScene()!);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].message).toContain('no elements');
+  });
+
+  it('fails validation with non-existent elements', () => {
+    const cmd = new GroupElementsCommand(['nonexistent'], 'Bad');
+    const result = cmd.validate(useDocumentStore.getState().getScene()!);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].code).toBe('REF_GROUP_NOT_FOUND');
+  });
+
+  it('undo removes the created group', () => {
+    const id1 = createShape('A', 0, 0);
+    executor.execute(new GroupElementsCommand([id1], 'G'));
+    expect(useDocumentStore.getState().getScene()!.groups.length).toBe(1);
+
+    const undone = executor.undo();
+    expect(undone).toBe(true);
+    expect(useDocumentStore.getState().getScene()!.groups.length).toBe(0);
+  });
+
+  it('redo restores the group after undo', () => {
+    const id1 = createShape('A', 0, 0);
+    executor.execute(new GroupElementsCommand([id1], 'G'));
+    executor.undo();
+    expect(useDocumentStore.getState().getScene()!.groups.length).toBe(0);
+
+    executor.redo();
+    expect(useDocumentStore.getState().getScene()!.groups.length).toBe(1);
+  });
+});
+
+// ─── Ungroup Command ───────────────────────────────────────────────────────────
+
+describe('UngroupCommand', () => {
+  let executor: CommandExecutor;
+
+  function createShape(name: string, x: number, y: number) {
+    const input: ElementInput = {
+      type: 'shape', layerId: 'l1', shapeKind: 'rect', name,
+      transform: { x, y, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: '#fff', stroke: '#000', strokeWidth: 2, opacity: 1 },
+    };
+    const cmd = new CreateElementCommand(input);
+    executor.execute(cmd);
+    return useDocumentStore.getState().getScene()!.elements.at(-1)!.id;
+  }
+
+  beforeEach(() => {
+    executor = new CommandExecutor();
+    useDocumentStore.getState().loadScene(structuredClone(makeScene()));
+  });
+
+  it('dissolves a group', () => {
+    const id1 = createShape('A', 0, 0);
+    const id2 = createShape('B', 100, 0);
+
+    const groupCmd = new GroupElementsCommand([id1, id2], 'G');
+    executor.execute(groupCmd);
+    const groupId = groupCmd.getGroupId();
+
+    const ungroupCmd = new UngroupCommand(groupId);
+    const result = executor.execute(ungroupCmd);
+    expect(result.valid).toBe(true);
+
+    const scene = useDocumentStore.getState().getScene()!;
+    expect(scene.groups.length).toBe(0);
+    // Elements should remain in the scene
+    expect(scene.elements.length).toBe(2);
+  });
+
+  it('fails when group does not exist', () => {
+    const cmd = new UngroupCommand('nonexistent');
+    const result = cmd.validate(useDocumentStore.getState().getScene()!);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].code).toBe('REF_GROUP_NOT_FOUND');
+  });
+
+  it('undo restores the dissolved group', () => {
+    const id1 = createShape('A', 0, 0);
+    const groupCmd = new GroupElementsCommand([id1], 'G');
+    executor.execute(groupCmd);
+    const groupId = groupCmd.getGroupId();
+
+    executor.execute(new UngroupCommand(groupId));
+    expect(useDocumentStore.getState().getScene()!.groups.length).toBe(0);
+
+    executor.undo();
+    const scene = useDocumentStore.getState().getScene()!;
+    expect(scene.groups.length).toBe(1);
+    expect(scene.groups[0].name).toBe('G');
+  });
+
+  it('redo dissolves the group again', () => {
+    const id1 = createShape('A', 0, 0);
+    const groupCmd = new GroupElementsCommand([id1], 'G');
+    executor.execute(groupCmd);
+    executor.execute(new UngroupCommand(groupCmd.getGroupId()));
+    executor.undo();
+    expect(useDocumentStore.getState().getScene()!.groups.length).toBe(1);
+
+    executor.redo();
+    expect(useDocumentStore.getState().getScene()!.groups.length).toBe(0);
+  });
+});
+
+// ─── AddToGroup Command ────────────────────────────────────────────────────────
+
+describe('AddToGroupCommand', () => {
+  let executor: CommandExecutor;
+
+  function createShape(name: string, x: number, y: number) {
+    const input: ElementInput = {
+      type: 'shape', layerId: 'l1', shapeKind: 'rect', name,
+      transform: { x, y, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: '#fff', stroke: '#000', strokeWidth: 2, opacity: 1 },
+    };
+    const cmd = new CreateElementCommand(input);
+    executor.execute(cmd);
+    return useDocumentStore.getState().getScene()!.elements.at(-1)!.id;
+  }
+
+  beforeEach(() => {
+    executor = new CommandExecutor();
+    useDocumentStore.getState().loadScene(structuredClone(makeScene()));
+  });
+
+  it('adds elements to an existing group', () => {
+    const id1 = createShape('A', 0, 0);
+    const id2 = createShape('B', 100, 0);
+    const id3 = createShape('C', 200, 0);
+
+    const groupCmd = new GroupElementsCommand([id1], 'G');
+    executor.execute(groupCmd);
+    const groupId = groupCmd.getGroupId();
+
+    const result = executor.execute(new AddToGroupCommand(groupId, [id2, id3]));
+    expect(result.valid).toBe(true);
+
+    const scene = useDocumentStore.getState().getScene()!;
+    expect(scene.groups[0].elementIds).toHaveLength(3);
+    expect(scene.groups[0].elementIds).toContain(id2);
+    expect(scene.groups[0].elementIds).toContain(id3);
+  });
+
+  it('deduplicates already existing members', () => {
+    const id1 = createShape('A', 0, 0);
+
+    const groupCmd = new GroupElementsCommand([id1], 'G');
+    executor.execute(groupCmd);
+    const groupId = groupCmd.getGroupId();
+
+    executor.execute(new AddToGroupCommand(groupId, [id1]));
+    const scene = useDocumentStore.getState().getScene()!;
+    expect(scene.groups[0].elementIds).toHaveLength(1);
+  });
+
+  it('fails when group does not exist', () => {
+    const cmd = new AddToGroupCommand('nonexistent', ['e1']);
+    const result = cmd.validate(useDocumentStore.getState().getScene()!);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].code).toBe('REF_GROUP_NOT_FOUND');
+  });
+
+  it('fails when element does not exist', () => {
+    const id1 = createShape('A', 0, 0);
+    const groupCmd = new GroupElementsCommand([id1], 'G');
+    executor.execute(groupCmd);
+
+    const cmd = new AddToGroupCommand(groupCmd.getGroupId(), ['nonexistent']);
+    const result = cmd.validate(useDocumentStore.getState().getScene()!);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].message).toContain('not found');
+  });
+
+  it('undo removes the added elements from the group', () => {
+    const id1 = createShape('A', 0, 0);
+    const id2 = createShape('B', 100, 0);
+
+    const groupCmd = new GroupElementsCommand([id1], 'G');
+    executor.execute(groupCmd);
+
+    executor.execute(new AddToGroupCommand(groupCmd.getGroupId(), [id2]));
+    expect(useDocumentStore.getState().getScene()!.groups[0].elementIds).toHaveLength(2);
+
+    executor.undo();
+    expect(useDocumentStore.getState().getScene()!.groups[0].elementIds).toHaveLength(1);
+  });
+
+  it('redo re-adds the elements after undo', () => {
+    const id1 = createShape('A', 0, 0);
+    const id2 = createShape('B', 100, 0);
+
+    const groupCmd = new GroupElementsCommand([id1], 'G');
+    executor.execute(groupCmd);
+    executor.execute(new AddToGroupCommand(groupCmd.getGroupId(), [id2]));
+    executor.undo();
+    expect(useDocumentStore.getState().getScene()!.groups[0].elementIds).toHaveLength(1);
+
+    executor.redo();
+    expect(useDocumentStore.getState().getScene()!.groups[0].elementIds).toHaveLength(2);
+  });
+});
+
+// ─── RemoveFromGroup Command ───────────────────────────────────────────────────
+
+describe('RemoveFromGroupCommand', () => {
+  let executor: CommandExecutor;
+
+  function createShape(name: string, x: number, y: number) {
+    const input: ElementInput = {
+      type: 'shape', layerId: 'l1', shapeKind: 'rect', name,
+      transform: { x, y, width: 50, height: 50, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: '#fff', stroke: '#000', strokeWidth: 2, opacity: 1 },
+    };
+    const cmd = new CreateElementCommand(input);
+    executor.execute(cmd);
+    return useDocumentStore.getState().getScene()!.elements.at(-1)!.id;
+  }
+
+  beforeEach(() => {
+    executor = new CommandExecutor();
+    useDocumentStore.getState().loadScene(structuredClone(makeScene()));
+  });
+
+  it('removes elements from a group', () => {
+    const id1 = createShape('A', 0, 0);
+    const id2 = createShape('B', 100, 0);
+    const id3 = createShape('C', 200, 0);
+
+    const groupCmd = new GroupElementsCommand([id1, id2, id3], 'G');
+    executor.execute(groupCmd);
+
+    const result = executor.execute(new RemoveFromGroupCommand(groupCmd.getGroupId(), [id1]));
+    expect(result.valid).toBe(true);
+
+    const scene = useDocumentStore.getState().getScene()!;
+    expect(scene.groups[0].elementIds).toHaveLength(2);
+    expect(scene.groups[0].elementIds).not.toContain(id1);
+    expect(scene.groups[0].elementIds).toContain(id2);
+    expect(scene.groups[0].elementIds).toContain(id3);
+  });
+
+  it('fails when group does not exist', () => {
+    const cmd = new RemoveFromGroupCommand('nonexistent', ['e1']);
+    const result = cmd.validate(useDocumentStore.getState().getScene()!);
+    expect(result.valid).toBe(false);
+  });
+
+  it('fails when element is not in the group', () => {
+    const id1 = createShape('A', 0, 0);
+    const groupCmd = new GroupElementsCommand([id1], 'G');
+    executor.execute(groupCmd);
+
+    const cmd = new RemoveFromGroupCommand(groupCmd.getGroupId(), ['nonexistent']);
+    const result = cmd.validate(useDocumentStore.getState().getScene()!);
+    expect(result.valid).toBe(false);
+    expect(result.errors[0].message).toContain('not in group');
+  });
+
+  it('undo restores removed elements to the group', () => {
+    const id1 = createShape('A', 0, 0);
+    const id2 = createShape('B', 100, 0);
+
+    const groupCmd = new GroupElementsCommand([id1, id2], 'G');
+    executor.execute(groupCmd);
+    executor.execute(new RemoveFromGroupCommand(groupCmd.getGroupId(), [id1]));
+    expect(useDocumentStore.getState().getScene()!.groups[0].elementIds).toHaveLength(1);
+
+    executor.undo();
+    expect(useDocumentStore.getState().getScene()!.groups[0].elementIds).toHaveLength(2);
+  });
+
+  it('redo removes the elements again', () => {
+    const id1 = createShape('A', 0, 0);
+    const id2 = createShape('B', 100, 0);
+
+    const groupCmd = new GroupElementsCommand([id1, id2], 'G');
+    executor.execute(groupCmd);
+    executor.execute(new RemoveFromGroupCommand(groupCmd.getGroupId(), [id1]));
+    executor.undo();
+    expect(useDocumentStore.getState().getScene()!.groups[0].elementIds).toHaveLength(2);
+
+    executor.redo();
+    expect(useDocumentStore.getState().getScene()!.groups[0].elementIds).toHaveLength(1);
   });
 });

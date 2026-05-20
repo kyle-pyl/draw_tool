@@ -1130,11 +1130,11 @@
 | 最后修订日期 | 2026-05-19 |
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | 选择管理器类，维护当前选中元素的 ID 集合。提供单选（select，清空其他选择）、切换选择（toggleSelect，用于 Shift+点击多选）、清空选择（clearSelection）、全选可见未锁定元素（selectAll）、批量选择（selectByIds/addToSelection/removeFromSelection）、选中状态查询（isSelected）、选中元素获取（getSelectedElements）和选中计数（count）等功能 |
+| 功能描述 | 选择管理器类，维护当前选中元素的 ID 集合。提供单选（select，清空其他选择）、切换选择（toggleSelect，用于 Shift+点击多选）、清空选择（clearSelection）、全选可见未锁定元素（selectAll）、批量选择（selectByIds/addToSelection/removeFromSelection）、分组选择（selectGroup 按 ElementGroup 选中全部成员、selectGroupByName 按组名选中、getGroupsForSelected 获取当前选中元素所属的组）、选中状态查询（isSelected）、选中元素获取（getSelectedElements）和选中计数（count）等功能 |
 | 输入参数 | constructor() - 无参数，初始状态为空 |
-| 输出参数 | select(id): void; toggleSelect(id): void; clearSelection(): void; selectAll(scene): void; selectByIds(ids): void; addToSelection(ids): void; removeFromSelection(ids): void; isSelected(id): boolean; getSelectedElements(scene): SceneElement[]; count: number; selectedIds: ReadonlySet<string> |
-| 典型用例 | `const sm = new SelectionManager(); sm.select('e1'); sm.toggleSelect('e2'); const els = sm.getSelectedElements(scene);` |
-| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-02-04）|
+| 输出参数 | select(id): void; toggleSelect(id): void; clearSelection(): void; selectAll(scene): void; selectByIds(ids): void; addToSelection(ids): void; removeFromSelection(ids): void; selectGroup(group: ElementGroup): void; selectGroupByName(scene: SceneDocument, groupName: string): boolean; getGroupsForSelected(scene: SceneDocument): ElementGroup[]; isSelected(id): boolean; getSelectedElements(scene): SceneElement[]; count: number; selectedIds: ReadonlySet<string> |
+| 典型用例 | `const sm = new SelectionManager(); sm.select('e1'); sm.toggleSelect('e2'); const els = sm.getSelectedElements(scene); sm.selectGroup(group);` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-02-04）；2026-05-20, OpenCode/deepseek-v4-pro, T-06-01 新增 selectGroup/selectGroupByName/getGroupsForSelected 方法 |
 
 ### API-0059 DocumentStore
 
@@ -1988,3 +1988,79 @@
 | 输出参数 | 无（接口类型） |
 | 典型用例 | `const props: PropertyPanelProps = { scene, selectionManager, onPropertyChange, onLayerChange }` |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-10）|
+
+### API-0104 GroupElementsCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0104 |
+| 名称 | GroupElementsCommand |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 创建元素分组命令。接收 elementIds 和 groupName，在 scene.groups 中创建新的 ElementGroup。分组可跨图层。validate 检查所有引用元素存在且 elementIds 非空。execute 将新 ElementGroup 追加到 scene.groups。invert 生成 UngroupCommand 用于撤销。getGroupId() 返回自动生成的组 ID |
+| 输入参数 | constructor(elementIds: string[], groupName: string, label?: string) |
+| 输出参数 | implements SceneCommand - 可通过 CommandExecutor 执行、撤销和重做；getGroupId(): string - 返回生成的组 ID |
+| 典型用例 | `const cmd = new GroupElementsCommand(['e1', 'e2'], 'MyGroup'); executor.execute(cmd); const gid = cmd.getGroupId();` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-06-01）|
+
+### API-0105 UngroupCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0105 |
+| 名称 | UngroupCommand |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 解散分组命令。接收 groupId，从 scene.groups 中移除指定组。元素本身不受影响（保留在 scene.elements 中）。validate 检查组存在。execute 移除组并保存完整组信息。invert 生成 GroupElementsCommand 用于恢复组 |
+| 输入参数 | constructor(groupId: string, label?: string) |
+| 输出参数 | implements SceneCommand |
+| 典型用例 | `executor.execute(new UngroupCommand('g1'));` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-06-01）|
+
+### API-0106 AddToGroupCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0106 |
+| 名称 | AddToGroupCommand |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 追加成员命令。接收 groupId 和 elementIds，将元素追加到已有分组。execute 自动去重（已在组中的元素不重复添加）。validate 检查组存在且所有引用元素存在。invert 生成 RemoveFromGroupCommand 用于撤销 |
+| 输入参数 | constructor(groupId: string, elementIds: string[], label?: string) |
+| 输出参数 | implements SceneCommand |
+| 典型用例 | `executor.execute(new AddToGroupCommand('g1', ['e3', 'e4']));` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-06-01）|
+
+### API-0107 RemoveFromGroupCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0107 |
+| 名称 | RemoveFromGroupCommand |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 移除成员命令。接收 groupId 和 elementIds，从已有分组中移除指定元素。validate 检查组存在且元素在组内。execute 从组中移除指定元素（元素本身不被删除）。invert 生成 AddToGroupCommand 用于撤销 |
+| 输入参数 | constructor(groupId: string, elementIds: string[], label?: string) |
+| 输出参数 | implements SceneCommand |
+| 典型用例 | `executor.execute(new RemoveFromGroupCommand('g1', ['e3']));` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-06-01）|

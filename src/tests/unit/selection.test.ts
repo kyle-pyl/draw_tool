@@ -215,4 +215,77 @@ describe('SelectionManager', () => {
       expect(sm.selectedIds.size).toBe(1);
     });
   });
+
+  describe('selectGroup', () => {
+    it('should select all elements in a group', () => {
+      const scene = createScene([
+        createElement('e1'),
+        createElement('e2'),
+        createElement('e3'),
+      ]);
+      sm.selectGroup({ id: 'g1', name: 'G', elementIds: ['e1', 'e3'] });
+      expect(sm.count).toBe(2);
+      expect(sm.isSelected('e1')).toBe(true);
+      expect(sm.isSelected('e2')).toBe(false);
+      expect(sm.isSelected('e3')).toBe(true);
+    });
+
+    it('should clear previous selection when selecting a group', () => {
+      sm.select('e2');
+      sm.selectGroup({ id: 'g1', name: 'G', elementIds: ['e1'] });
+      expect(sm.isSelected('e2')).toBe(false);
+      expect(sm.count).toBe(1);
+    });
+  });
+
+  describe('selectGroupByName', () => {
+    it('should select all elements in a named group from scene', () => {
+      const scene = createScene([
+        createElement('e1'),
+        createElement('e2'),
+      ]);
+      scene.groups = [{ id: 'g1', name: 'MyGroup', elementIds: ['e1', 'e2'] }];
+
+      const result = sm.selectGroupByName(scene, 'MyGroup');
+      expect(result).toBe(true);
+      expect(sm.count).toBe(2);
+      expect(sm.isSelected('e1')).toBe(true);
+      expect(sm.isSelected('e2')).toBe(true);
+    });
+
+    it('should return false when group not found', () => {
+      const scene = createScene([]);
+      const result = sm.selectGroupByName(scene, 'Nonexistent');
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('getGroupsForSelected', () => {
+    it('should return groups that contain any selected element', () => {
+      const scene = createScene([
+        createElement('e1'),
+        createElement('e2'),
+        createElement('e3'),
+      ]);
+      scene.groups = [
+        { id: 'g1', name: 'Group A', elementIds: ['e1', 'e2'] },
+        { id: 'g2', name: 'Group B', elementIds: ['e3'] },
+      ];
+
+      sm.selectByIds(['e1', 'e3']);
+      const groups = sm.getGroupsForSelected(scene);
+      expect(groups).toHaveLength(2);
+      expect(groups[0].name).toBe('Group A');
+      expect(groups[1].name).toBe('Group B');
+    });
+
+    it('should return empty array when no selected elements are in any group', () => {
+      const scene = createScene([
+        createElement('e1'),
+      ]);
+      scene.groups = [{ id: 'g1', name: 'G', elementIds: ['e2'] }];
+      sm.select('e1');
+      expect(sm.getGroupsForSelected(scene)).toEqual([]);
+    });
+  });
 });

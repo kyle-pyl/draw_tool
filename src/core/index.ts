@@ -83,5 +83,12 @@ export { getBBox, createGeometryAdapter } from './geometry';
 export { checkLayerCollisions } from './collision';
 export type { CollisionEntry, CollisionResult, CollisionCheckOptions } from './collision';
 
-export { CommandExecutor, CreateElementCommand } from './commands';
+export {
+  CommandExecutor,
+  CreateElementCommand,
+  GroupElementsCommand,
+  UngroupCommand,
+  AddToGroupCommand,
+  RemoveFromGroupCommand,
+} from './commands';
 export type { SceneCommand, CommandHistoryEntry, ElementInput } from './commands';
