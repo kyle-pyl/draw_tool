@@ -450,7 +450,7 @@
 | 任务名称      | 实现分组命令 |
 | 完成时间      | 2026-05-20 11:00 |
 | 作者/智能体   | OpenCode/deepseek-v4-pro |
-| Git Commit    | （待提交） |
+| Git Commit    | cbe839f |
 | 修改记录      | 修改：src/core/commands.ts（新增 GroupElementsCommand、UngroupCommand、AddToGroupCommand、RemoveFromGroupCommand 四个命令类）、src/canvas/selection.ts（新增 selectGroup、selectGroupByName、getGroupsForSelected 方法）、src/core/index.ts（新增四个分组命令的导出）、src/tests/unit/commands.test.ts（新增 22 个分组命令测试用例）、src/tests/unit/selection.test.ts（新增 6 个分组选择测试用例） |
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0104（GroupElementsCommand）、API-0105（UngroupCommand）、API-0106（AddToGroupCommand）、API-0107（RemoveFromGroupCommand）、API-0058（SelectionManager 修订：新增 selectGroup/selectGroupByName/getGroupsForSelected 方法） |
