@@ -2605,3 +2605,39 @@
 | 输出参数 | { templateId, position, layerId, params?, elementIds } - 符合 TemplateInstance 接口的记录对象 |
 | 典型用例 | const instance = createTemplateInstance('t1', pos, 'l1', elIds); scene.templates.push(instance) |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+### API-0138 registerGeometricTemplates
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0138 |
+| 名称 | registerGeometricTemplates |
+| 所属系统 | modules |
+| 所属模块 | geometric-templates |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 注册全部 9 个基础几何图形模板到全局模板注册表（矩形、圆、椭圆、三角形、菱形、五角星、箭头、双向箭头、线条），全部分类为'基础几何'。可安全重复调用 |
+| 输入参数 | 无 |
+| 输出参数 | void |
+| 典型用例 | import { registerGeometricTemplates } from './modules/geometric-templates'; registerGeometricTemplates(); |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+### API-0139 geometricTemplateDefinitions
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0139 |
+| 名称 | geometricTemplateDefinitions |
+| 所属系统 | modules |
+| 所属模块 | geometric-templates |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 基础几何模板定义数组，包含 9 个 TemplateDefinition 对象（geom-rect/geom-circle/geom-ellipse/geom-triangle/geom-diamond/geom-pentagram/geom-arrow/geom-bidirectional-arrow/geom-line），供模块外引用模板定义数据 |
+| 输入参数 | 无（常量导出） |
+| 输出参数 | TemplateDefinition[]（9 个基础几何模板定义） |
+| 典型用例 | import { geometricTemplateDefinitions } from './modules/geometric-templates'; const rectTpl = geometricTemplateDefinitions.find(t => t.id === 'geom-rect'); |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |

@@ -2,4 +2,4 @@
  * Diagram modules - Flowchart, Architecture, RTL, Mind Map, Topology, Chart.
  */
 
-export {};
+export { registerGeometricTemplates, geometricTemplateDefinitions } from './geometric-templates';
