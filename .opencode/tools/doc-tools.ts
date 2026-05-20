@@ -13,7 +13,7 @@ import { tool } from "@opencode-ai/plugin";
 
 // Dynamic import of the ESM core module
 async function loadUtils() {
-  return import("../scripts/doc-utils.mjs");
+  return import("../../scripts/doc-utils.mjs");
 }
 
 // ─── doc_api_query ────────────────────────────────────────────────────────────
