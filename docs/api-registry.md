@@ -1112,10 +1112,10 @@
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
 | 功能描述 | React SVG 画布渲染组件。接收 SceneDocument 和 Viewport 作为 props，按图层 order 升序渲染所有元素到 SVG。支持渲染 shape（rect、circle、ellipse、polygon、path）、text（含对齐和样式）、image（img 引用）、connector（polyline 占位）。支持滚轮缩放（以鼠标位置为中心）、空格+拖拽平移、中键拖拽平移交互，光标样式自动切换（default/grab/grabbing），通过 onViewportChange 回调通知父组件重渲染。支持元素单选（点击）、多选（Shift+点击）、空白区域取消选中、锁定元素和锁定图层内元素不可选中，通过 selectionManager prop 管理选择状态。选中元素在屏幕空间渲染蓝色包围盒和 8 个控制柄。支持框选（marquee selection）：在空白区域拖拽绘制半透明蓝色矩形框，释放时选中完全包含在选区内的所有可见未锁定元素，排除锁定图层内元素，Shift+框选追加到现有选中，小拖拽（<4px）视为点击清空选中。隐藏图层使用 visibility: hidden 渲染以保留 DOM 空间。 |
-| 输入参数 | props: { scene: SceneDocument, viewport: Viewport, width?: number | string, height?: number | string, className?: string, onViewportChange?: () => void, selectionManager?: SelectionManager, onSelectionChange?: () => void } |
+| 输入参数 | props: { scene: SceneDocument, viewport: Viewport, width?: number | string, height?: number | string, className?: string, onViewportChange?: () => void, selectionManager?: SelectionManager, onSelectionChange?: () => void, activeTool?: DrawingToolType, drawingLayerId?: string, onDrawComplete?: (input: ElementInput) => void } |
 | 输出参数 | ReactElement - SVG 元素，包含按图层组织的 `<g>` 元素树、框选矩形和选择覆盖层 |
 | 典型用例 | `<CanvasView scene={scene} viewport={viewport} selectionManager={selectionMgr} onViewportChange={update} onSelectionChange={update} />` |
-| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-02-02）；2026-05-19, OpenCode/deepseek-v4-pro, T-02-03 新增 onViewportChange prop、滚轮缩放、空格/中键拖拽平移和光标样式切换；2026-05-19, OpenCode/deepseek-v4-pro, T-02-04 新增 selectionManager/onSelectionChange props、元素点击选择和多选交互、选择覆盖层渲染；2026-05-19, OpenCode/deepseek-v4-pro, T-02-05 新增框选（marquee selection）功能：空白区域拖拽选区、Shift+框选追加、视口变换适配、锁定/隐藏元素过滤；2026-05-19, OpenCode/deepseek-v4-pro, T-04-04 隐藏图层改为 visibility:hidden（保留 DOM 空间）、锁定图层（layer.locked）元素不响应点击和框选交互、marquee 框选排除锁定图层内元素 |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-02-02）；2026-05-19, OpenCode/deepseek-v4-pro, T-02-03 新增 onViewportChange prop、滚轮缩放、空格/中键拖拽平移和光标样式切换；2026-05-19, OpenCode/deepseek-v4-pro, T-02-04 新增 selectionManager/onSelectionChange props、元素点击选择和多选交互、选择覆盖层渲染；2026-05-19, OpenCode/deepseek-v4-pro, T-02-05 新增框选（marquee selection）功能：空白区域拖拽选区、Shift+框选追加、视口变换适配、锁定/隐藏元素过滤；2026-05-19, OpenCode/deepseek-v4-pro, T-04-04 隐藏图层改为 visibility:hidden（保留 DOM 空间）、锁定图层（layer.locked）元素不响应点击和框选交互、marquee 框选排除锁定图层内元素；2026-05-20, OpenCode/deepseek-v4-pro, T-05-07 新增 activeTool/drawingLayerId/onDrawComplete props、拖拽绘制（rect/circle/ellipse/line）、多边形逐点绘制、实时预览渲染、crosshair 光标 |
 
 ### API-0058 SelectionManager
 
@@ -1703,3 +1703,98 @@
 | 输出参数 | implements SceneCommand |
 | 典型用例 | `executor.execute(new TransformElementsCommand(['e1'], { scaleX: 2, rotation: 45 }));` |
 | 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-06）|
+
+### API-0089 DrawingToolType
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0089 |
+| 名称 | DrawingToolType |
+| 所属系统 | canvas |
+| 所属模块 | CanvasView |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 画布绘制工具类型字面量联合类型，定义用户可在工具栏中选择的绘制模式 |
+| 输入参数 | 无（类型别名） |
+| 输出参数 | 'select' \| 'rect' \| 'circle' \| 'ellipse' \| 'line' \| 'polygon' |
+| 典型用例 | `const tool: DrawingToolType = 'rect'` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-07）|
+
+### API-0090 ShapeToolbar
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0090 |
+| 名称 | ShapeToolbar |
+| 所属系统 | ui |
+| 所属模块 | ShapeToolbar |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 浮动形状绘制工具栏 React 组件。显示矩形、圆、椭圆、线条、多边形的工具按钮（含 SVG 图标），高亮当前激活工具，点击切换工具。固定排列在画布左侧垂直工具栏中 |
+| 输入参数 | props: { activeTool: DrawingToolType, onToolChange: (tool: DrawingToolType) => void } |
+| 输出参数 | ReactElement - 包含 6 个工具按钮的浮动 div |
+| 典型用例 | `<ShapeToolbar activeTool={activeTool} onToolChange={setActiveTool} />` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-07）|
+
+### API-0091 ShapeToolbarProps
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0091 |
+| 名称 | ShapeToolbarProps |
+| 所属系统 | ui |
+| 所属模块 | ShapeToolbar |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | ShapeToolbar 组件的 Props 类型接口，包含当前激活工具和工具变更回调 |
+| 输入参数 | activeTool: DrawingToolType, onToolChange: (tool: DrawingToolType) => void |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const props: ShapeToolbarProps = { activeTool: 'rect', onToolChange: handleChange }` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-07）|
+
+### API-0092 drawStateToInput
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0092 |
+| 名称 | drawStateToInput |
+| 所属系统 | canvas |
+| 所属模块 | CanvasView |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 内部辅助函数，将画布上的绘制状态（工具类型、起始/当前坐标、多边形顶点）转换为 CreateElementCommand 所需的 ElementInput |
+| 输入参数 | tool: DrawingToolType, state: DrawState, layerId: string |
+| 输出参数 | ElementInput - 可直接传入 CreateElementCommand 的元素创建参数 |
+| 典型用例 | `const input = drawStateToInput('rect', { x1: 0, y1: 0, x2: 100, y2: 100, points: [] }, 'l1')` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-07）|
+
+### API-0093 renderDrawPreview
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0093 |
+| 名称 | renderDrawPreview |
+| 所属系统 | canvas |
+| 所属模块 | CanvasView |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 内部渲染函数，根据当前绘制状态渲染各形状类型的实时预览轮廓。矩形/圆/椭圆/线条使用虚线描边半透明填充预览，多边形使用顶点圆圈和虚线连线预览 |
+| 输入参数 | tool: DrawingToolType, state: DrawState |
+| 输出参数 | React.ReactNode - SVG 预览元素组 |
+| 典型用例 | 在 CanvasView 内部调用：`renderDrawPreview(activeTool, drawState)` 渲染到 SVG 中 |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-07）|

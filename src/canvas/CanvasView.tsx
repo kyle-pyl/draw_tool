@@ -1,8 +1,19 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import type { SceneDocument, SceneElement, ShapeElement, TextElement, ImageElement, ConnectorElement, ConnectorEndpoint, ElementStyle, BBox } from '../core/types';
+import type { ElementInput } from '../core';
 import type { Viewport } from './viewport';
 import type { SelectionManager } from './selection';
 import type { ConflictHighlighter } from './conflict';
+
+export type DrawingToolType = 'select' | 'rect' | 'circle' | 'ellipse' | 'line' | 'polygon';
+
+interface DrawState {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  points: { x: number; y: number }[];
+}
 
 interface CanvasViewProps {
   scene: SceneDocument;
@@ -14,6 +25,9 @@ interface CanvasViewProps {
   selectionManager?: SelectionManager;
   onSelectionChange?: () => void;
   conflictHighlighter?: ConflictHighlighter;
+  activeTool?: DrawingToolType;
+  drawingLayerId?: string;
+  onDrawComplete?: (input: ElementInput) => void;
 }
 
 function getElementBBox(el: SceneElement): BBox {
@@ -243,7 +257,224 @@ interface MarqueeState {
   endY: number;
 }
 
-export function CanvasView({ scene, viewport, width, height, className, onViewportChange, selectionManager, onSelectionChange, conflictHighlighter }: CanvasViewProps) {
+const DEFAULT_STYLE: ElementStyle = {
+  fill: '#e8e8e8',
+  stroke: '#333',
+  strokeWidth: 2,
+  opacity: 1,
+};
+
+function drawStateToInput(tool: DrawingToolType, state: DrawState, layerId: string): ElementInput {
+  const { x1, y1, x2, y2, points } = state;
+
+  switch (tool) {
+    case 'rect': {
+      const x = Math.min(x1, x2);
+      const y = Math.min(y1, y2);
+      const w = Math.abs(x2 - x1) || 20;
+      const h = Math.abs(y2 - y1) || 20;
+      return {
+        type: 'shape',
+        layerId,
+        shapeKind: 'rect',
+        transform: { x, y, width: w, height: h, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { ...DEFAULT_STYLE },
+      };
+    }
+    case 'circle': {
+      const cx = (x1 + x2) / 2;
+      const cy = (y1 + y2) / 2;
+      const d = Math.max(Math.min(Math.abs(x2 - x1), Math.abs(y2 - y1)), 10);
+      return {
+        type: 'shape',
+        layerId,
+        shapeKind: 'circle',
+        transform: { x: cx - d / 2, y: cy - d / 2, width: d, height: d, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { ...DEFAULT_STYLE },
+      };
+    }
+    case 'ellipse': {
+      const cx = (x1 + x2) / 2;
+      const cy = (y1 + y2) / 2;
+      const rx = Math.max(Math.abs(x2 - x1) / 2, 10);
+      const ry = Math.max(Math.abs(y2 - y1) / 2, 10);
+      return {
+        type: 'shape',
+        layerId,
+        shapeKind: 'ellipse',
+        transform: { x: cx - rx, y: cy - ry, width: rx * 2, height: ry * 2, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { ...DEFAULT_STYLE },
+      };
+    }
+    case 'line': {
+      const x = Math.min(x1, x2);
+      const y = Math.min(y1, y2);
+      const w = Math.abs(x2 - x1) || 20;
+      const h = Math.abs(y2 - y1) || 20;
+      const d = `M ${x1 - x} ${y1 - y} L ${x2 - x} ${y2 - y}`;
+      return {
+        type: 'shape',
+        layerId,
+        shapeKind: 'path',
+        pathCommands: d,
+        transform: { x: x, y: y, width: w, height: h, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { ...DEFAULT_STYLE, fill: 'none' },
+      };
+    }
+    case 'polygon': {
+      if (points.length < 3) {
+        const px = Math.min(...points.map((p) => p.x));
+        const py = Math.min(...points.map((p) => p.y));
+        const w = Math.max(Math.max(...points.map((p) => p.x)) - px, 10);
+        const h = Math.max(Math.max(...points.map((p) => p.y)) - py, 10);
+        return {
+          type: 'shape',
+          layerId,
+          shapeKind: 'path',
+          pathCommands: `M ${points.map((p) => `${p.x} ${p.y}`).join(' L ')}`,
+          transform: { x: px, y: py, width: w, height: h, rotation: 0, scaleX: 1, scaleY: 1 },
+          style: { ...DEFAULT_STYLE },
+        };
+      }
+      const xs = points.map((p) => p.x);
+      const ys = points.map((p) => p.y);
+      const minX = Math.min(...xs);
+      const minY = Math.min(...ys);
+      const maxX = Math.max(...xs);
+      const maxY = Math.max(...ys);
+      const w = Math.max(maxX - minX, 10);
+      const h = Math.max(maxY - minY, 10);
+      const relPoints = points.map((p) => ({ x: p.x - minX, y: p.y - minY }));
+      return {
+        type: 'shape',
+        layerId,
+        shapeKind: 'polygon',
+        points: relPoints,
+        transform: { x: minX, y: minY, width: w, height: h, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { ...DEFAULT_STYLE },
+      };
+    }
+    default:
+      return {
+        type: 'shape',
+        layerId,
+        shapeKind: 'rect',
+        transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { ...DEFAULT_STYLE },
+      };
+  }
+}
+
+function renderDrawPreview(tool: DrawingToolType, state: DrawState): React.ReactNode {
+  const { x1, y1, x2, y2, points } = state;
+  const previewStroke = '#4285F4';
+  const previewFill = 'rgba(66, 133, 244, 0.12)';
+
+  switch (tool) {
+    case 'rect': {
+      const x = Math.min(x1, x2);
+      const y = Math.min(y1, y2);
+      const w = Math.abs(x2 - x1);
+      const h = Math.abs(y2 - y1);
+      return (
+        <rect
+          x={x}
+          y={y}
+          width={w || 1}
+          height={h || 1}
+          fill={previewFill}
+          stroke={previewStroke}
+          strokeWidth={2}
+          strokeDasharray="5 3"
+          pointerEvents="none"
+        />
+      );
+    }
+    case 'circle': {
+      const cx = (x1 + x2) / 2;
+      const cy = (y1 + y2) / 2;
+      const r = Math.max(Math.min(Math.abs(x2 - x1), Math.abs(y2 - y1)) / 2, 1);
+      return (
+        <circle
+          cx={cx}
+          cy={cy}
+          r={r}
+          fill={previewFill}
+          stroke={previewStroke}
+          strokeWidth={2}
+          strokeDasharray="5 3"
+          pointerEvents="none"
+        />
+      );
+    }
+    case 'ellipse': {
+      const cx = (x1 + x2) / 2;
+      const cy = (y1 + y2) / 2;
+      const rx = Math.max(Math.abs(x2 - x1) / 2, 1);
+      const ry = Math.max(Math.abs(y2 - y1) / 2, 1);
+      return (
+        <ellipse
+          cx={cx}
+          cy={cy}
+          rx={rx}
+          ry={ry}
+          fill={previewFill}
+          stroke={previewStroke}
+          strokeWidth={2}
+          strokeDasharray="5 3"
+          pointerEvents="none"
+        />
+      );
+    }
+    case 'line': {
+      return (
+        <line
+          x1={x1}
+          y1={y1}
+          x2={x2}
+          y2={y2}
+          stroke={previewStroke}
+          strokeWidth={2}
+          strokeDasharray="5 3"
+          pointerEvents="none"
+        />
+      );
+    }
+    case 'polygon': {
+      if (points.length === 0) return null;
+      const ptsStr = points.map((p) => `${p.x},${p.y}`).join(' ');
+      return (
+        <g pointerEvents="none">
+          {points.length > 1 && (
+            <polyline
+              points={ptsStr}
+              fill="none"
+              stroke={previewStroke}
+              strokeWidth={2}
+              strokeDasharray="2 2"
+            />
+          )}
+          <line
+            x1={points[points.length - 1].x}
+            y1={points[points.length - 1].y}
+            x2={x2}
+            y2={y2}
+            stroke={previewStroke}
+            strokeWidth={1.5}
+            strokeDasharray="3 3"
+          />
+          {points.map((p, i) => (
+            <circle key={i} cx={p.x} cy={p.y} r={3} fill={previewStroke} stroke="none" />
+          ))}
+        </g>
+      );
+    }
+    default:
+      return null;
+  }
+}
+
+export function CanvasView({ scene, viewport, width, height, className, onViewportChange, selectionManager, onSelectionChange, conflictHighlighter, activeTool, drawingLayerId, onDrawComplete }: CanvasViewProps) {
   const layersSorted = [...scene.layers].sort((a, b) => a.order - b.order);
   const layerElementMap = new Map<string, SceneElement[]>();
   const layerMap = new Map(scene.layers.map((l) => [l.id, l]));
@@ -267,6 +498,11 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
   const [marquee, setMarquee] = useState<MarqueeState | null>(null);
   const didDragRef = useRef(false);
 
+  const [drawState, setDrawState] = useState<DrawState | null>(null);
+  const drawStateRef = useRef<DrawState | null>(null);
+  const drawHandledRef = useRef(false);
+  const isDrawing = activeTool && activeTool !== 'select';
+
   const selectedElements = selectionManager
     ? selectionManager.getSelectedElements(scene)
     : [];
@@ -275,12 +511,38 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
     onViewportChange?.();
   }, [onViewportChange]);
 
+  const screenToCanvas = useCallback(
+    (sx: number, sy: number) => viewport.screenToCanvas(sx, sy),
+    [viewport],
+  );
+
+  const completeDragDraw = useCallback(
+    (tool: DrawingToolType, state: DrawState) => {
+      if (!onDrawComplete || !drawingLayerId) return;
+      const input = drawStateToInput(tool, state, drawingLayerId);
+      onDrawComplete(input);
+    },
+    [onDrawComplete, drawingLayerId],
+  );
+
+  const completePolygonDraw = useCallback(
+    (state: DrawState) => {
+      if (!onDrawComplete || !drawingLayerId) return;
+      if (state.points.length < 2) return;
+      const fullPoints = state.points;
+      const input = drawStateToInput('polygon', { ...state, points: fullPoints }, drawingLayerId);
+      onDrawComplete(input);
+    },
+    [onDrawComplete, drawingLayerId],
+  );
+
   const handleElementClick = useCallback(
     (e: React.MouseEvent, el: SceneElement) => {
       e.stopPropagation();
       if (!selectionManager) return;
       if (spaceDownRef.current) return;
       if (el.locked) return;
+      if (isDrawing) return;
       if (e.shiftKey) {
         selectionManager.toggleSelect(el.id);
       } else {
@@ -288,15 +550,36 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
       }
       onSelectionChange?.();
     },
-    [selectionManager, onSelectionChange]
+    [selectionManager, onSelectionChange, isDrawing]
   );
 
   const handleBackgroundClick = useCallback(() => {
     if (!selectionManager) return;
+    if (drawHandledRef.current) {
+      drawHandledRef.current = false;
+      return;
+    }
     if (didDragRef.current) return;
     selectionManager.clearSelection();
     onSelectionChange?.();
   }, [selectionManager, onSelectionChange]);
+
+  const handleDoubleClick = useCallback(
+    (e: React.MouseEvent<SVGSVGElement>) => {
+      const target = e.target as Element;
+      const isOnElement = target.closest('[data-element-id]') !== null;
+      if (isOnElement) return;
+
+      if (drawStateRef.current && activeTool === 'polygon' && drawStateRef.current.points.length >= 2) {
+        e.preventDefault();
+        completePolygonDraw(drawStateRef.current);
+        drawStateRef.current = null;
+        setDrawState(null);
+        drawHandledRef.current = true;
+      }
+    },
+    [activeTool, completePolygonDraw],
+  );
 
   const handleMouseLeave = useCallback(() => {
     if (isPanningRef.current) {
@@ -361,6 +644,49 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
         return;
       }
 
+      if (e.button === 0 && isDrawing) {
+        const target = e.target as Element;
+        const isOnElement = target.closest('[data-element-id]') !== null;
+
+        if (activeTool === 'polygon') {
+          if (isOnElement) return;
+          e.preventDefault();
+          drawHandledRef.current = true;
+          const rect = e.currentTarget.getBoundingClientRect();
+          const canvasPt = screenToCanvas(e.clientX - rect.left, e.clientY - rect.top);
+
+          const prev = drawStateRef.current;
+          const newPoints = prev?.points ? [...prev.points, canvasPt] : [canvasPt];
+          const newState: DrawState = {
+            x1: canvasPt.x,
+            y1: canvasPt.y,
+            x2: canvasPt.x,
+            y2: canvasPt.y,
+            points: newPoints,
+          };
+          drawStateRef.current = newState;
+          setDrawState(newState);
+          return;
+        }
+
+        if (!isOnElement) {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const canvasPt = screenToCanvas(e.clientX - rect.left, e.clientY - rect.top);
+          const newState: DrawState = {
+            x1: canvasPt.x,
+            y1: canvasPt.y,
+            x2: canvasPt.x,
+            y2: canvasPt.y,
+            points: [],
+          };
+          drawStateRef.current = newState;
+          setDrawState(newState);
+          return;
+        }
+
+        return;
+      }
+
       if (e.button === 0) {
         const target = e.target as Element;
         const isOnElement = target.closest('[data-element-id]') !== null;
@@ -376,7 +702,7 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
         }
       }
     },
-    [spacePressed]
+    [spacePressed, isDrawing, activeTool, screenToCanvas]
   );
 
   const handleMouseMove = useCallback(
@@ -390,6 +716,16 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
         return;
       }
 
+      if (drawStateRef.current) {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const canvasPt = screenToCanvas(e.clientX - rect.left, e.clientY - rect.top);
+        const ds = drawStateRef.current;
+        const updated: DrawState = { ...ds, x2: canvasPt.x, y2: canvasPt.y };
+        drawStateRef.current = updated;
+        setDrawState(updated);
+        return;
+      }
+
       if (marquee) {
         const rect = e.currentTarget.getBoundingClientRect();
         const mx = e.clientX - rect.left;
@@ -400,13 +736,20 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
         setMarquee(prev => prev ? { ...prev, endX: mx, endY: my } : null);
       }
     },
-    [viewport, notifyChange, marquee]
+    [viewport, notifyChange, marquee, screenToCanvas]
   );
 
   const handleMouseUp = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     if ((e.button === 1 || e.button === 0) && isPanningRef.current) {
       isPanningRef.current = false;
       setIsPanning(false);
+      return;
+    }
+
+    if (drawStateRef.current && activeTool && activeTool !== 'polygon') {
+      completeDragDraw(activeTool, drawStateRef.current);
+      drawStateRef.current = null;
+      setDrawState(null);
       return;
     }
 
@@ -444,7 +787,7 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
     }
 
     setMarquee(null);
-  }, [viewport, marquee, selectionManager, scene, onSelectionChange]);
+  }, [viewport, marquee, selectionManager, scene, onSelectionChange, activeTool, completeDragDraw]);
 
   const handleContextMenu = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     if (isPanningRef.current) {
@@ -452,7 +795,15 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
     }
   }, []);
 
-  const cursor = isPanning ? 'grabbing' : spacePressed ? 'grab' : 'default';
+  const getCursor = (): string => {
+    if (isPanning) return 'grabbing';
+    if (spacePressed) return 'grab';
+    if (activeTool === 'polygon') return 'crosshair';
+    if (isDrawing) return 'crosshair';
+    return 'default';
+  };
+
+  const cursor = getCursor();
 
   return (
     <svg
@@ -465,6 +816,7 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
+      onDoubleClick={isDrawing ? handleDoubleClick : undefined}
       onContextMenu={handleContextMenu}
       onClick={handleBackgroundClick}
     >
@@ -493,6 +845,11 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
             </g>
           );
         })}
+        {drawState && activeTool && (
+          <g pointerEvents="none">
+            {renderDrawPreview(activeTool, drawState)}
+          </g>
+        )}
       </g>
       {marquee && (
         <rect
