@@ -16,6 +16,7 @@ const TOOL_ITEMS: { type: DrawingToolType; label: string }[] = [
   { type: 'line', label: 'Line' },
   { type: 'polygon', label: 'Polygon' },
   { type: 'text', label: 'Text' },
+  { type: 'connector', label: 'Connector' },
 ];
 
 function ToolIcon({ type }: { type: DrawingToolType }) {
@@ -63,6 +64,14 @@ function ToolIcon({ type }: { type: DrawingToolType }) {
       return (
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
           <text x={size / 2} y={size / 2 + 4} textAnchor="middle" fontSize={11} fontWeight="bold" fill="currentColor">T</text>
+        </svg>
+      );
+    case 'connector':
+      return (
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          <circle cx={pad + 2} cy={size - pad - 2} r={3} fill="currentColor" />
+          <circle cx={size - pad - 2} cy={pad + 2} r={3} fill="currentColor" />
+          <line x1={pad + 2} y1={size - pad - 2} x2={size - pad - 2} y2={pad + 2} stroke="currentColor" strokeWidth={1.5} />
         </svg>
       );
   }

@@ -1111,11 +1111,11 @@
 | 最后修订日期 | 2026-05-19 |
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | React SVG 画布渲染组件。接收 SceneDocument 和 Viewport 作为 props，按图层 order 升序渲染所有元素到 SVG。支持渲染 shape（rect、circle、ellipse、polygon、path）、text（含文本样式、背景色、边框渲染）、image（img 引用）、connector（polyline 占位）。支持滚轮缩放（以鼠标位置为中心）、空格+拖拽平移、中键拖拽平移交互，光标样式自动切换。支持元素单选（点击）、多选（Shift+点击）、空白区域取消选中、锁定元素不可选中、框选（marquee selection）。支持绘制工具（rect/circle/ellipse/line/polygon/text），text 工具点击即创建文本无需拖拽。支持文本元素双击编辑（onTextEditRequest 回调） |
+| 功能描述 | React SVG 画布渲染组件。接收 SceneDocument 和 Viewport 作为 props，按图层 order 升序渲染所有元素到 SVG。支持渲染 shape（rect、circle、ellipse、polygon、path）、text（含文本样式、背景色、边框渲染）、image（img 引用）、connector（直线/折线路由渲染）。支持滚轮缩放（以鼠标位置为中心）、空格+拖拽平移、中键拖拽平移交互，光标样式自动切换。支持元素单选（点击）、多选（Shift+点击）、空白区域取消选中、锁定元素不可选中、框选（marquee selection）。支持绘制工具（rect/circle/ellipse/line/polygon/text/connector），connector 工具支持悬停元素显示锚点、点击锚点拖拽创建连接线（支持直线路由和元素/自由端点），text 工具点击即创建文本无需拖拽。支持文本元素双击编辑（onTextEditRequest 回调） |
 | 输入参数 | props: { scene: SceneDocument, viewport: Viewport, width?: number | string, height?: number | string, className?: string, onViewportChange?: () => void, selectionManager?: SelectionManager, onSelectionChange?: () => void, conflictHighlighter?: ConflictHighlighter, activeTool?: DrawingToolType, drawingLayerId?: string, onDrawComplete?: (input: ElementInput) => void, onTextEditRequest?: (elementId: string) => void } |
 | 输出参数 | ReactElement - SVG 元素，包含按图层组织的 `<g>` 元素树、框选矩形和选择覆盖层 |
 | 典型用例 | `<CanvasView scene={scene} viewport={viewport} selectionManager={selectionMgr} onViewportChange={update} onSelectionChange={update} />` |
-| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-02-02）；2026-05-19, OpenCode/deepseek-v4-pro, T-02-03 新增 onViewportChange prop、滚轮缩放、空格/中键拖拽平移和光标样式切换；2026-05-19, OpenCode/deepseek-v4-pro, T-02-04 新增 selectionManager/onSelectionChange props、元素点击选择和多选交互、选择覆盖层渲染；2026-05-19, OpenCode/deepseek-v4-pro, T-02-05 新增框选（marquee selection）功能：空白区域拖拽选区、Shift+框选追加、视口变换适配、锁定/隐藏元素过滤；2026-05-19, OpenCode/deepseek-v4-pro, T-04-04 隐藏图层改为 visibility:hidden（保留 DOM 空间）、锁定图层（layer.locked）元素不响应点击和框选交互、marquee 框选排除锁定图层内元素；2026-05-20, OpenCode/deepseek-v4-pro, T-05-07 新增 activeTool/drawingLayerId/onDrawComplete props、拖拽绘制（rect/circle/ellipse/line）、多边形逐点绘制、实时预览渲染、crosshair 光标；2026-05-20, OpenCode/deepseek-v4-pro, T-05-08 新增 onTextEditRequest prop（文本双击编辑）、text 工具（点击创建文本）、renderTextElement 支持背景色/边框渲染 |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-02-02）；2026-05-19, OpenCode/deepseek-v4-pro, T-02-03 新增 onViewportChange prop、滚轮缩放、空格/中键拖拽平移和光标样式切换；2026-05-19, OpenCode/deepseek-v4-pro, T-02-04 新增 selectionManager/onSelectionChange props、元素点击选择和多选交互、选择覆盖层渲染；2026-05-19, OpenCode/deepseek-v4-pro, T-02-05 新增框选（marquee selection）功能：空白区域拖拽选区、Shift+框选追加、视口变换适配、锁定/隐藏元素过滤；2026-05-19, OpenCode/deepseek-v4-pro, T-04-04 隐藏图层改为 visibility:hidden（保留 DOM 空间）、锁定图层（layer.locked）元素不响应点击和框选交互、marquee 框选排除锁定图层内元素；2026-05-20, OpenCode/deepseek-v4-pro, T-05-07 新增 activeTool/drawingLayerId/onDrawComplete props、拖拽绘制（rect/circle/ellipse/line）、多边形逐点绘制、实时预览渲染、crosshair 光标；2026-05-20, OpenCode/deepseek-v4-pro, T-05-08 新增 onTextEditRequest prop（文本双击编辑）、text 工具（点击创建文本）、renderTextElement 支持背景色/边框渲染；2026-05-20, OpenCode/deepseek-v4-pro, T-07-02 新增 connector 工具（锚点高亮交互、拖拽锚点创建连接线、直线/折线路由渲染、实时预览线）、connector 渲染从 polyline 改为根据 route.type 选择 line 或 polyline |
 
 ### API-0058 SelectionManager
 
@@ -1719,9 +1719,9 @@
 | 最后修订者 | OpenCode/deepseek-v4-pro |
 | 功能描述 | 画布绘制工具类型字面量联合类型，定义用户可在工具栏中选择的绘制模式 |
 | 输入参数 | 无（类型别名） |
-| 输出参数 | 'select' \| 'rect' \| 'circle' \| 'ellipse' \| 'line' \| 'polygon' \| 'text' |
+| 输出参数 | 'select' \| 'rect' \| 'circle' \| 'ellipse' \| 'line' \| 'polygon' \| 'text' \| 'connector' |
 | 典型用例 | `const tool: DrawingToolType = 'rect'` |
-| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-07）；2026-05-20, OpenCode/deepseek-v4-pro, T-05-08 新增 'text' 类型 |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-07）；2026-05-20, OpenCode/deepseek-v4-pro, T-05-08 新增 'text' 类型；2026-05-20, OpenCode/deepseek-v4-pro, T-07-02 新增 'connector' 类型 |
 
 ### API-0090 ShapeToolbar
 
@@ -2215,7 +2215,7 @@
 | 输入参数 | element: SceneElement - 需要获取锚点的场景元素 |
 | 输出参数 | AnchorPoint[] - 锚点数组，每个包含 id（唯一标识）、position（{ x: number, y: number } 相对坐标 0-1）、direction（弧度） |
 | 典型用例 | `const anchors = getAnchors(shapeElement); anchors.forEach(a => console.log(a.id, a.position));` |
-| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-07-01）|
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-07-01）；2026-05-20, OpenCode/deepseek-v4-pro, T-07-02 CanvasView 连接器工具调用此函数获取元素锚点以渲染可交互锚点 |
 
 ### API-0118 resolveAnchor
 
@@ -2234,7 +2234,7 @@
 | 输入参数 | element: SceneElement - 所属元素；anchorId: string - 要解析的锚点 ID |
 | 输出参数 | { x: number, y: number } | null - 锚点在画布中的绝对坐标，锚点不存在时返回 null |
 | 典型用例 | `const abs = resolveAnchor(rectElement, 'right'); if (abs) { connector.source.x = abs.x; connector.source.y = abs.y; }` |
-| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-07-01）|
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-07-01）；2026-05-20, OpenCode/deepseek-v4-pro, T-07-02 CanvasView 连接器工具调用此函数解析锚点绝对坐标用于端点定位 |
 
 ### API-0116 MoveLayersCommand
 

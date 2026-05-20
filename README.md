@@ -5,11 +5,11 @@ Agent 友好的论文与技术图表绘制工具。纯 Web 应用，本地优先
 ## 当前状态
 
 | 项目 | 状态 |
-|---|---|
-| 阶段 | 阶段 6：批量与排版 |
-| 版本 | 0.6.0 |
-| 可用功能 | 核心类型已定义（scene.json 结构、元素模型、图层、连接线、图表等），错误码和校验结果类型已定义，scene.json Schema 结构校验器已实现（含引用完整性校验和几何规则校验），示例项目 examples/basic/ 已创建并通过校验，ID 生成工具已实现（generateId），视口变换管理器（Viewport）已实现，SVG 画布渲染组件已实现（CanvasView：支持 shape、text、image、connector 渲染，支持滚轮缩放和拖拽平移交互，支持元素单选、多选和框选（marquee selection），显示蓝色选择包围盒和 8 个控制柄，隐藏图层使用 visibility:hidden 保留 DOM 空间，锁定图层元素不响应交互），Document Store 已实现（useDocumentStore），JSON 项目文件加载已实现（loadSceneFromFile），File System Access API 项目目录打开已实现（loadProjectFromDirectory），ZIP 项目导入导出已实现（importProjectFromZip/exportProjectToZip），项目保存功能已实现（saveProject），BBox 计算器已实现（getBBox：支持所有 10 种元素类型），同层碰撞检测已实现（checkLayerCollisions），图层冲突校验器已实现（validateScene Stage 6），图层渲染顺序和冲突高亮已实现（ConflictHighlighter + ConflictPanel），命令系统框架已实现（CommandExecutor：执行/校验/撤销/重做/历史管理），CreateElement 命令已实现，MoveElements 命令已实现（含碰撞/锁定/连接线跟随），UpdateElement 命令已实现，ChangeLayer 命令已实现（跨层移动），TransformElements 命令已实现（缩放/旋转/尺寸变换），图形绘制工具已实现（ShapeToolbar），文本工具已实现（TextEditor 覆盖层编辑器），图片导入工具已实现（SVG 安全清洗），属性面板已实现（PropertyPanel），分组命令已实现（GroupElementsCommand：创建跨层分组）、UngroupCommand（解散组）、AddToGroupCommand（追加成员）、RemoveFromGroupCommand（移除成员），SelectionManager 新增分组选择方法（selectGroup/selectGroupByName/getGroupsForSelected），对齐命令已实现（AlignElementsCommand：左/右/上/下/水平居中/垂直居中/中心对齐，含碰撞校验和连接线跟随），分布命令已实现（DistributeElementsCommand：水平均匀/垂直均匀/环形等距排列，含碰撞校验和连接线跟随），按层批量编辑命令已实现（BatchLayerEditCommand：统一填充色/轮廓色/透明度/显示/隐藏/删除/复制/移动全层元素，含锁定检查和冲突校验，连接线端点自动解绑，完整 undo/redo 支持），多图层移动命令已实现（MoveLayersCommand：多层整体上移下移指定步数，非连续层各层独立移动保持相对顺序，事务式校验任一层冲突则整体回滚，完整 undo/redo 支持），锚点系统已实现（getAnchors：返回 9 个默认锚点或 shape 自定义锚点；resolveAnchor：将锚点解析为画布绝对坐标，支持旋转计算） |
-| 构建状态 | 可安装、可启动、可构建、可运行测试（759 个测试通过） |
+|---|---|---|
+| 阶段 | 阶段 7：连接线系统 |
+| 版本 | 0.7.0 |
+| 可用功能 | 核心类型已定义（scene.json 结构、元素模型、图层、连接线、图表等），错误码和校验结果类型已定义，scene.json Schema 结构校验器已实现（含引用完整性校验和几何规则校验），示例项目 examples/basic/ 已创建并通过校验，ID 生成工具已实现（generateId），视口变换管理器（Viewport）已实现，SVG 画布渲染组件已实现（CanvasView：支持 shape、text、image、connector 渲染，支持滚轮缩放和拖拽平移交互，支持元素单选、多选和框选（marquee selection），显示蓝色选择包围盒和 8 个控制柄，隐藏图层使用 visibility:hidden 保留 DOM 空间，锁定图层元素不响应交互），Document Store 已实现（useDocumentStore），JSON 项目文件加载已实现（loadSceneFromFile），File System Access API 项目目录打开已实现（loadProjectFromDirectory），ZIP 项目导入导出已实现（importProjectFromZip/exportProjectToZip），项目保存功能已实现（saveProject），BBox 计算器已实现（getBBox：支持所有 10 种元素类型），同层碰撞检测已实现（checkLayerCollisions），图层冲突校验器已实现（validateScene Stage 6），图层渲染顺序和冲突高亮已实现（ConflictHighlighter + ConflictPanel），命令系统框架已实现（CommandExecutor：执行/校验/撤销/重做/历史管理），CreateElement 命令已实现，MoveElements 命令已实现（含碰撞/锁定/连接线跟随），UpdateElement 命令已实现，ChangeLayer 命令已实现（跨层移动），TransformElements 命令已实现（缩放/旋转/尺寸变换），图形绘制工具已实现（ShapeToolbar），文本工具已实现（TextEditor 覆盖层编辑器），图片导入工具已实现（SVG 安全清洗），属性面板已实现（PropertyPanel），分组命令已实现（GroupElementsCommand：创建跨层分组）、UngroupCommand（解散组）、AddToGroupCommand（追加成员）、RemoveFromGroupCommand（移除成员），SelectionManager 新增分组选择方法（selectGroup/selectGroupByName/getGroupsForSelected），对齐命令已实现（AlignElementsCommand：左/右/上/下/水平居中/垂直居中/中心对齐，含碰撞校验和连接线跟随），分布命令已实现（DistributeElementsCommand：水平均匀/垂直均匀/环形等距排列，含碰撞校验和连接线跟随），按层批量编辑命令已实现（BatchLayerEditCommand：统一填充色/轮廓色/透明度/显示/隐藏/删除/复制/移动全层元素，含锁定检查和冲突校验，连接线端点自动解绑，完整 undo/redo 支持），多图层移动命令已实现（MoveLayersCommand：多层整体上移下移指定步数，非连续层各层独立移动保持相对顺序，事务式校验任一层冲突则整体回滚，完整 undo/redo 支持），锚点系统已实现（getAnchors：返回 9 个默认锚点或 shape 自定义锚点；resolveAnchor：将锚点解析为画布绝对坐标，支持旋转计算），连接线创建和渲染已实现（connector 工具：悬停元素显示锚点高亮、点击源锚点拖拽到目标锚点创建连接线、支持直线和折线路由渲染、实时预览线） |
+| 构建状态 | 可安装、可启动、可构建、可运行测试（765 个测试通过） |
 
 ## 功能目标
 
@@ -61,8 +61,8 @@ examples/     # 示例项目
 | 文档名称 | 功能 | 路径 | 最近修订日期 | 修订来源任务 |
 |---|---|---|---|---|---|
 | 顶层设计文档 | 产品目标、架构、数据模型、实现路线 | docs/top-level-design.md | 2026-05-18 | 初始创建 |
-| 任务清单 | 完整有序的开发任务列表 | docs/task-list.md | 2026-05-20 | T-06-05 |
-| 任务日志 | 每个任务的完成记录 | docs/task-log.md | 2026-05-20 | T-06-05 |
-| 接口/函数文档 | 项目所有公开接口的注册表 | docs/api-registry.md | 2026-05-20 | T-06-05 |
+| 任务清单 | 完整有序的开发任务列表 | docs/task-list.md | 2026-05-20 | T-07-02 |
+| 任务日志 | 每个任务的完成记录 | docs/task-log.md | 2026-05-20 | T-07-02 |
+| 接口/函数文档 | 项目所有公开接口的注册表 | docs/api-registry.md | 2026-05-20 | T-07-02 |
 | 缺陷记录表 | 开发过程中的缺陷跟踪 | docs/defect-log.md | 2026-05-18 | T-00-01 |
 | 文档维护指南 | 文档体系说明和维护规则 | docs/documentation-guide.md | 2026-05-18 | T-00-01 |

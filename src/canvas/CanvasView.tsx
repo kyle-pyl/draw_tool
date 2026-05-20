@@ -1,11 +1,12 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
-import type { SceneDocument, SceneElement, ShapeElement, TextElement, ImageElement, ConnectorElement, ConnectorEndpoint, ElementStyle, BBox } from '../core/types';
+import type { SceneDocument, SceneElement, ShapeElement, TextElement, ImageElement, ConnectorElement, ConnectorEndpoint, ElementStyle, BBox, AnchorPoint } from '../core/types';
 import type { ElementInput } from '../core';
 import type { Viewport } from './viewport';
 import type { SelectionManager } from './selection';
 import type { ConflictHighlighter } from './conflict';
+import { getAnchors, resolveAnchor } from '../core/anchors';
 
-export type DrawingToolType = 'select' | 'rect' | 'circle' | 'ellipse' | 'line' | 'polygon' | 'text';
+export type DrawingToolType = 'select' | 'rect' | 'circle' | 'ellipse' | 'line' | 'polygon' | 'text' | 'connector';
 
 interface DrawState {
   x1: number;
@@ -34,6 +35,62 @@ interface CanvasViewProps {
 function getElementBBox(el: SceneElement): BBox {
   const { x, y, width, height } = el.transform;
   return { x, y, width, height };
+}
+
+function getVisibleAnchors(el: SceneElement): { anchor: AnchorPoint; absX: number; absY: number }[] {
+  const anchors = getAnchors(el);
+  return anchors.map((anchor) => {
+    const resolved = resolveAnchor(el, anchor.id);
+    return {
+      anchor,
+      absX: resolved?.x ?? el.transform.x + anchor.position.x * el.transform.width,
+      absY: resolved?.y ?? el.transform.y + anchor.position.y * el.transform.height,
+    };
+  });
+}
+
+function findElementAtPoint(
+  canvasX: number,
+  canvasY: number,
+  elements: SceneElement[],
+  excludeConnectors: boolean,
+): SceneElement | null {
+  const connectorBBoxPad = 0;
+  for (let i = elements.length - 1; i >= 0; i--) {
+    const el = elements[i];
+    if (!el.visible || el.locked) continue;
+    if (excludeConnectors && el.type === 'connector') continue;
+    const bbox = getElementBBox(el);
+    if (
+      canvasX >= bbox.x &&
+      canvasX <= bbox.x + bbox.width &&
+      canvasY >= bbox.y &&
+      canvasY <= bbox.y + bbox.height
+    ) {
+      return el;
+    }
+  }
+  return null;
+}
+
+function findNearestAnchor(
+  canvasX: number,
+  canvasY: number,
+  anchors: { anchor: AnchorPoint; absX: number; absY: number }[],
+): string | null {
+  const snapDist = 16;
+  let nearestId: string | null = null;
+  let nearestDist = Infinity;
+  for (const a of anchors) {
+    const dx = canvasX - a.absX;
+    const dy = canvasY - a.absY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < snapDist && dist < nearestDist) {
+      nearestDist = dist;
+      nearestId = a.anchor.id;
+    }
+  }
+  return nearestId;
 }
 
 function renderHandles(sx: number, sy: number, sw: number, sh: number, hs: number = 8) {
@@ -229,15 +286,29 @@ function renderConnectorElement(el: ConnectorElement, elements: SceneElement[]) 
   const source = resolveEndpointPosition(el.source, elements);
   const target = resolveEndpointPosition(el.target, elements);
   const routePoints = el.route.points;
-
-  const allPoints =
-    routePoints.length > 0
-      ? [source, ...routePoints, target]
-      : [source, target];
-
-  const pointsStr = allPoints.map((p) => `${p.x},${p.y}`).join(' ');
+  const routeType = el.route.type;
 
   const styleProps = pickStyleProps(el.style);
+
+  if (routeType === 'straight' || routePoints.length === 0) {
+    return (
+      <line
+        key={el.id}
+        x1={source.x}
+        y1={source.y}
+        x2={target.x}
+        y2={target.y}
+        fill="none"
+        stroke={styleProps.stroke as string || '#333'}
+        strokeWidth={styleProps.strokeWidth as number || 2}
+        opacity={styleProps.opacity as number}
+        strokeDasharray={styleProps.strokeDasharray as string}
+      />
+    );
+  }
+
+  const allPoints = [source, ...routePoints, target];
+  const pointsStr = allPoints.map((p) => `${p.x},${p.y}`).join(' ');
 
   return (
     <polyline
@@ -553,7 +624,27 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
   const [drawState, setDrawState] = useState<DrawState | null>(null);
   const drawStateRef = useRef<DrawState | null>(null);
   const drawHandledRef = useRef(false);
-  const isDrawing = activeTool && activeTool !== 'select';
+  const isDrawing = activeTool && activeTool !== 'select' && activeTool !== 'connector';
+  const isConnectorTool = activeTool === 'connector';
+
+  const [hoveredElementId, setHoveredElementId] = useState<string | null>(null);
+  const [hoveredAnchorId, setHoveredAnchorId] = useState<string | null>(null);
+  const [connectorDrawing, setConnectorDrawing] = useState<{
+    sourceElementId: string;
+    sourceAnchorId: string;
+    sourceX: number;
+    sourceY: number;
+    currentX: number;
+    currentY: number;
+  } | null>(null);
+  const connectorDrawingRef = useRef<{
+    sourceElementId: string;
+    sourceAnchorId: string;
+    sourceX: number;
+    sourceY: number;
+    currentX: number;
+    currentY: number;
+  } | null>(null);
 
   const selectedElements = selectionManager
     ? selectionManager.getSelectedElements(scene)
@@ -710,6 +801,42 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
         return;
       }
 
+      if (e.button === 0 && isConnectorTool) {
+        const target = e.target as Element;
+        const elementGroup = target.closest('[data-element-id]');
+        if (elementGroup) {
+          const elementId = elementGroup.getAttribute('data-element-id');
+          if (elementId) {
+            const el = scene.elements.find((e2) => e2.id === elementId);
+            if (el && el.type !== 'connector') {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const canvasPt = screenToCanvas(e.clientX - rect.left, e.clientY - rect.top);
+              const anchors = getVisibleAnchors(el);
+              const nearestAnchorId = findNearestAnchor(canvasPt.x, canvasPt.y, anchors);
+              if (nearestAnchorId) {
+                const resolved = resolveAnchor(el, nearestAnchorId);
+                if (resolved) {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  const state = {
+                    sourceElementId: el.id,
+                    sourceAnchorId: nearestAnchorId,
+                    sourceX: resolved.x,
+                    sourceY: resolved.y,
+                    currentX: resolved.x,
+                    currentY: resolved.y,
+                  };
+                  connectorDrawingRef.current = state;
+                  setConnectorDrawing(state);
+                  return;
+                }
+              }
+            }
+          }
+        }
+        return;
+      }
+
       if (e.button === 0 && isDrawing) {
         const target = e.target as Element;
         const isOnElement = target.closest('[data-element-id]') !== null;
@@ -768,7 +895,7 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
         }
       }
     },
-    [spacePressed, isDrawing, activeTool, screenToCanvas]
+    [spacePressed, isDrawing, activeTool, screenToCanvas, isConnectorTool, scene.elements]
   );
 
   const handleMouseMove = useCallback(
@@ -779,6 +906,16 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
         lastMouseRef.current = { x: e.clientX, y: e.clientY };
         viewport.pan(dx, dy);
         notifyChange();
+        return;
+      }
+
+      if (connectorDrawingRef.current) {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const canvasPt = screenToCanvas(e.clientX - rect.left, e.clientY - rect.top);
+        const cd = connectorDrawingRef.current;
+        const updated = { ...cd, currentX: canvasPt.x, currentY: canvasPt.y };
+        connectorDrawingRef.current = updated;
+        setConnectorDrawing(updated);
         return;
       }
 
@@ -801,14 +938,98 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
         }
         setMarquee(prev => prev ? { ...prev, endX: mx, endY: my } : null);
       }
+
+      if (isConnectorTool && !connectorDrawingRef.current) {
+        const target = e.target as Element;
+        const elementGroup = target.closest('[data-element-id]');
+        if (elementGroup) {
+          const elementId = elementGroup.getAttribute('data-element-id');
+          if (elementId) {
+            const el = scene.elements.find((e2) => e2.id === elementId);
+            if (el && el.type !== 'connector') {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const canvasPt = screenToCanvas(e.clientX - rect.left, e.clientY - rect.top);
+              const anchors = getVisibleAnchors(el);
+              const nearestId = findNearestAnchor(canvasPt.x, canvasPt.y, anchors);
+              setHoveredElementId(elementId);
+              setHoveredAnchorId(nearestId);
+              return;
+            }
+          }
+        }
+        setHoveredElementId(null);
+        setHoveredAnchorId(null);
+      }
     },
-    [viewport, notifyChange, marquee, screenToCanvas]
+    [viewport, notifyChange, marquee, screenToCanvas, isConnectorTool, scene.elements]
   );
 
   const handleMouseUp = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     if ((e.button === 1 || e.button === 0) && isPanningRef.current) {
       isPanningRef.current = false;
       setIsPanning(false);
+      return;
+    }
+
+    if (connectorDrawingRef.current && onDrawComplete && drawingLayerId) {
+      const cd = connectorDrawingRef.current;
+      const target = e.target as Element;
+      const elementGroup = target.closest('[data-element-id]');
+      let targetElementId: string | undefined;
+      let targetAnchorId: string | undefined;
+
+      if (elementGroup) {
+        const elId = elementGroup.getAttribute('data-element-id');
+        if (elId && elId !== cd.sourceElementId) {
+          const el = scene.elements.find((e2) => e2.id === elId);
+          if (el && el.type !== 'connector') {
+            const anchors = getVisibleAnchors(el);
+            const nearestId = findNearestAnchor(cd.currentX, cd.currentY, anchors);
+            if (nearestId) {
+              targetElementId = el.id;
+              targetAnchorId = nearestId;
+            }
+          }
+        }
+      }
+
+      const input: ElementInput = {
+        type: 'connector',
+        layerId: drawingLayerId,
+        transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { fill: 'none', stroke: '#333', strokeWidth: 2, opacity: 1 },
+        source: {
+          elementId: cd.sourceElementId,
+          anchorId: cd.sourceAnchorId,
+          x: cd.sourceX,
+          y: cd.sourceY,
+        },
+        target: {
+          elementId: targetElementId,
+          anchorId: targetAnchorId,
+          x: targetElementId ? (() => {
+            const tel = scene.elements.find((e2) => e2.id === targetElementId);
+            if (tel && targetAnchorId) {
+              const r = resolveAnchor(tel, targetAnchorId);
+              if (r) return r.x;
+            }
+            return cd.currentX;
+          })() : cd.currentX,
+          y: targetElementId ? (() => {
+            const tel = scene.elements.find((e2) => e2.id === targetElementId);
+            if (tel && targetAnchorId) {
+              const r = resolveAnchor(tel, targetAnchorId);
+              if (r) return r.y;
+            }
+            return cd.currentY;
+          })() : cd.currentY,
+        },
+        route: { type: 'straight', points: [] },
+      };
+
+      onDrawComplete(input);
+      connectorDrawingRef.current = null;
+      setConnectorDrawing(null);
       return;
     }
 
@@ -853,7 +1074,7 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
     }
 
     setMarquee(null);
-  }, [viewport, marquee, selectionManager, scene, onSelectionChange, activeTool, completeDragDraw]);
+  }, [viewport, marquee, selectionManager, scene, onSelectionChange, activeTool, completeDragDraw, onDrawComplete, drawingLayerId]);
 
   const handleContextMenu = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     if (isPanningRef.current) {
@@ -864,6 +1085,7 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
   const getCursor = (): string => {
     if (isPanning) return 'grabbing';
     if (spacePressed) return 'grab';
+    if (activeTool === 'connector') return 'crosshair';
     if (activeTool === 'polygon') return 'crosshair';
     if (isDrawing) return 'crosshair';
     return 'default';
@@ -914,6 +1136,49 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
         {drawState && activeTool && (
           <g pointerEvents="none">
             {renderDrawPreview(activeTool, drawState)}
+          </g>
+        )}
+        {isConnectorTool && hoveredElementId && (() => {
+          const el = scene.elements.find((e) => e.id === hoveredElementId);
+          if (!el || el.type === 'connector') return null;
+          const anchors = getVisibleAnchors(el);
+          return (
+            <g pointerEvents="none">
+              {anchors.map((a) => {
+                const isHovered = a.anchor.id === hoveredAnchorId;
+                const r = isHovered ? 6 : 4;
+                return (
+                  <circle
+                    key={`anchor-${el.id}-${a.anchor.id}`}
+                    cx={a.absX}
+                    cy={a.absY}
+                    r={r}
+                    fill={isHovered ? '#4CAF50' : '#fff'}
+                    stroke={isHovered ? '#2E7D32' : '#2196F3'}
+                    strokeWidth={1.5}
+                  />
+                );
+              })}
+            </g>
+          );
+        })()}
+        {connectorDrawing && (
+          <g pointerEvents="none">
+            <line
+              x1={connectorDrawing.sourceX}
+              y1={connectorDrawing.sourceY}
+              x2={connectorDrawing.currentX}
+              y2={connectorDrawing.currentY}
+              stroke="#4CAF50"
+              strokeWidth={2}
+              strokeDasharray="5 3"
+            />
+            <circle
+              cx={connectorDrawing.sourceX}
+              cy={connectorDrawing.sourceY}
+              r={5}
+              fill="#4CAF50"
+            />
           </g>
         )}
       </g>

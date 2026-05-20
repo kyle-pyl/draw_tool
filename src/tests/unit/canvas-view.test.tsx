@@ -387,10 +387,12 @@ describe('CanvasView', () => {
       });
 
       const { container } = render(<CanvasView scene={scene} viewport={viewport} />);
-      const polyline = container.querySelector('polyline');
-      expect(polyline).toBeInTheDocument();
-      expect(polyline).toHaveAttribute('points', '10,10 100,200');
-      expect(polyline).toHaveAttribute('fill', 'none');
+      const line = container.querySelector('line');
+      expect(line).toBeInTheDocument();
+      expect(line).toHaveAttribute('x1', '10');
+      expect(line).toHaveAttribute('y1', '10');
+      expect(line).toHaveAttribute('x2', '100');
+      expect(line).toHaveAttribute('y2', '200');
     });
 
     it('should render a connector with route points', () => {
@@ -417,6 +419,57 @@ describe('CanvasView', () => {
       const { container } = render(<CanvasView scene={scene} viewport={viewport} />);
       const polyline = container.querySelector('polyline');
       expect(polyline).toHaveAttribute('points', '0,0 50,0 100,50 100,100');
+    });
+
+    it('should render a connector with straight route as line element', () => {
+      scene = createScene({
+        elements: [
+          {
+            id: 'c3', type: 'connector', layerId: 'l1',
+            transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: 'none', stroke: '#333', strokeWidth: 2, strokeDasharray: '5,5', opacity: 0.8 },
+            visible: true, locked: false,
+            source: { x: 50, y: 80 },
+            target: { x: 300, y: 150 },
+            route: { type: 'straight', points: [] },
+          },
+        ],
+      });
+
+      const { container } = render(<CanvasView scene={scene} viewport={viewport} />);
+      const line = container.querySelector('line');
+      expect(line).toBeInTheDocument();
+      expect(line).toHaveAttribute('x1', '50');
+      expect(line).toHaveAttribute('y1', '80');
+      expect(line).toHaveAttribute('x2', '300');
+      expect(line).toHaveAttribute('y2', '150');
+      expect(line).toHaveAttribute('stroke', '#333');
+      expect(line).toHaveAttribute('stroke-width', '2');
+      expect(line).toHaveAttribute('stroke-dasharray', '5,5');
+      expect(line).toHaveAttribute('opacity', '0.8');
+    });
+
+    it('should render connector with empty route points as straight line', () => {
+      scene = createScene({
+        elements: [
+          {
+            id: 'c4', type: 'connector', layerId: 'l1',
+            transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: 'none', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            visible: true, locked: false,
+            source: { x: 5, y: 5 },
+            target: { x: 95, y: 95 },
+            route: { type: 'straight', points: [] },
+          },
+        ],
+      });
+
+      const { container } = render(<CanvasView scene={scene} viewport={viewport} />);
+      const line = container.querySelector('line');
+      expect(line).toHaveAttribute('x1', '5');
+      expect(line).toHaveAttribute('y1', '5');
+      expect(line).toHaveAttribute('x2', '95');
+      expect(line).toHaveAttribute('y2', '95');
     });
   });
 

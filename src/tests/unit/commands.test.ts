@@ -534,6 +534,126 @@ describe('CreateElementCommand', () => {
     expect(el.visible).toBe(true);
     expect(el.locked).toBe(false);
   });
+
+  it('creates a connector element connecting two elements via anchors', () => {
+    // First create two elements to connect
+    const el1Input: ElementInput = {
+      type: 'shape', layerId: 'l1', shapeKind: 'rect', name: 'Source',
+      transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { ...defaultStyle },
+    };
+    const el2Input: ElementInput = {
+      type: 'shape', layerId: 'l1', shapeKind: 'rect', name: 'Target',
+      transform: { x: 200, y: 0, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { ...defaultStyle },
+    };
+    const cmd1 = new CreateElementCommand(el1Input);
+    const cmd2 = new CreateElementCommand(el2Input);
+    executor.execute(cmd1);
+    executor.execute(cmd2);
+
+    const sourceElId = cmd1.getElementId();
+    const targetElId = cmd2.getElementId();
+
+    const input: ElementInput = {
+      type: 'connector', layerId: 'l1',
+      transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: 'none', stroke: '#333', strokeWidth: 2, opacity: 1 },
+      source: { elementId: sourceElId, anchorId: 'right', x: 100, y: 50 },
+      target: { elementId: targetElId, anchorId: 'left', x: 200, y: 50 },
+      route: { type: 'straight', points: [] },
+    };
+
+    executor.execute(new CreateElementCommand(input));
+    const scene = useDocumentStore.getState().getScene()!;
+    const conn = scene.elements.find((e) => e.type === 'connector');
+    expect(conn).toBeDefined();
+    if (conn && conn.type === 'connector') {
+      expect(conn.source.elementId).toBe(sourceElId);
+      expect(conn.source.anchorId).toBe('right');
+      expect(conn.target.elementId).toBe(targetElId);
+      expect(conn.target.anchorId).toBe('left');
+      expect(conn.route.type).toBe('straight');
+    }
+  });
+
+  it('connector is exempt from same-layer collision check during creation', () => {
+    // Create an element in l1
+    const elInput: ElementInput = {
+      type: 'shape', layerId: 'l1', shapeKind: 'rect', name: 'Block',
+      transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { ...defaultStyle },
+    };
+    executor.execute(new CreateElementCommand(elInput));
+
+    // Creating a connector in the same layer should not trigger collision
+    const input: ElementInput = {
+      type: 'connector', layerId: 'l1',
+      transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: 'none', stroke: '#333', strokeWidth: 2, opacity: 1 },
+      source: { x: 50, y: 50 },
+      target: { x: 200, y: 200 },
+      route: { type: 'straight', points: [] },
+    };
+
+    const result = executor.execute(new CreateElementCommand(input));
+    expect(result.valid).toBe(true);
+  });
+
+  it('creates a connector with polyline route', () => {
+    const input: ElementInput = {
+      type: 'connector', layerId: 'l1',
+      transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: 'none', stroke: '#333', strokeWidth: 2, opacity: 1 },
+      source: { x: 0, y: 0 },
+      target: { x: 200, y: 200 },
+      route: {
+        type: 'polyline',
+        points: [
+          { x: 100, y: 0 },
+          { x: 200, y: 100 },
+        ],
+      },
+    };
+
+    executor.execute(new CreateElementCommand(input));
+    const scene = useDocumentStore.getState().getScene()!;
+    const conn = scene.elements.find((e) => e.type === 'connector');
+    expect(conn).toBeDefined();
+    if (conn && conn.type === 'connector') {
+      expect(conn.route.type).toBe('polyline');
+      expect(conn.route.points).toHaveLength(2);
+      expect(conn.route.points[0]).toEqual({ x: 100, y: 0 });
+      expect(conn.route.points[1]).toEqual({ x: 200, y: 100 });
+    }
+  });
+
+  it('creates a connector with free-floating endpoints (no element binding)', () => {
+    const input: ElementInput = {
+      type: 'connector', layerId: 'l1',
+      transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: 'none', stroke: '#3F51B5', strokeWidth: 3, opacity: 0.9 },
+      source: { x: 10, y: 20 },
+      target: { x: 310, y: 420 },
+      route: { type: 'straight', points: [] },
+    };
+
+    executor.execute(new CreateElementCommand(input));
+    const scene = useDocumentStore.getState().getScene()!;
+    const conn = scene.elements.find((e) => e.type === 'connector');
+    expect(conn).toBeDefined();
+    if (conn && conn.type === 'connector') {
+      expect(conn.source.x).toBe(10);
+      expect(conn.source.y).toBe(20);
+      expect(conn.target.x).toBe(310);
+      expect(conn.target.y).toBe(420);
+      expect(conn.source.elementId).toBeUndefined();
+      expect(conn.target.elementId).toBeUndefined();
+      expect(conn.style.stroke).toBe('#3F51B5');
+      expect(conn.style.strokeWidth).toBe(3);
+      expect(conn.style.opacity).toBe(0.9);
+    }
+  });
 });
 
 // ─── T-05-03 MoveElementsCommand Tests ──────────────────────────────────────
