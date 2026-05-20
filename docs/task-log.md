@@ -632,7 +632,7 @@
 | 任务名称 | 实现模板面板 UI |
 | 完成时间 | 2026-05-20 23:15 |
 | 作者/智能体 | OpenCode/deepseek-v4-pro |
-| Git Commit | 待填写 |
+| Git Commit | 791c5d3 |
 | 修改记录 | 新建：src/ui/TemplatePanel.tsx（模板面板组件：分类浏览、搜索过滤、SVG缩略图预览、点击插入）、src/tests/unit/template-panel.test.tsx（14个测试用例）；修改：src/ui/index.ts（新增 TemplatePanel 和 TemplatePanelProps 导出） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0147（TemplatePanel）、API-0148（TemplatePanelProps） |
