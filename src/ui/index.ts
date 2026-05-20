@@ -14,3 +14,5 @@ export { PropertyPanel } from './PropertyPanel';
 export type { PropertyPanelProps } from './PropertyPanel';
 export { TemplatePanel } from './TemplatePanel';
 export type { TemplatePanelProps } from './TemplatePanel';
+export { DataPanel } from './DataPanel';
+export type { DataPanelProps, ChartConfig } from './DataPanel';

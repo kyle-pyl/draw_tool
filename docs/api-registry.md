@@ -2884,3 +2884,41 @@
 | 输出参数 | 无（接口类型） |
 | 典型用例 | `parseCSV(content, { delimiter: ';', header: false })` |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0153 DataPanel
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0153 |
+| 名称 | DataPanel |
+| 所属系统 | ui |
+| 所属模块 | DataPanel |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | React 组件，提供数据面板 UI。展示当前项目的数据源列表，选择数据源后显示列名、类型、缺失率和样例值。提供图表类型选择（柱状图、折线图、散点图、箱线图、直方图、热图）和数据列到图表轴/分组/颜色的映射配置，点击生成图表按钮时通过回调输出 ChartConfig。 |
+| 输入参数 | dataSources: DataSource[]（数据源列表）、parsedData: ParsedData | null（已解析的 CSV 数据，null 表示未选择或加载中）、loading: boolean（是否正在加载数据）、parseError: string | null（解析错误信息）、onSelectDataSource: (dataSourceId: string) => void（选择数据源回调）、onGenerateChart: (config: ChartConfig) => void（生成图表回调） |
+| 输出参数 | 无（React 组件，通过回调传出数据） |
+| 典型用例 | <DataPanel dataSources={scene.dataSources} parsedData={parsedData} loading={loading} parseError={parseError} onSelectDataSource={(id) => loadAndParseDs(id)} onGenerateChart={(config) => createChartElement(config)} /> |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0154 ChartConfig
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0154 |
+| 名称 | ChartConfig |
+| 所属系统 | ui |
+| 所属模块 | DataPanel |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 图表生成配置的数据结构，被 DataPanel 通过 onGenerateChart 回调传出，后续由图表生成器消费。 |
+| 输入参数 | dataSourceId: string（数据源 ID）、chartType: ChartType（图表类型，bar/line/scatter/boxplot/histogram/heatmap）、columnMappings: { x?: string, y?: string, group?: string, color?: string }（列映射，y 通常必选） |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | const config: ChartConfig = { dataSourceId: 'ds-1', chartType: 'bar', columnMappings: { y: 'Revenue', x: 'Month' } } |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |

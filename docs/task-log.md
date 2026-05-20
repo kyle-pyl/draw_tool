@@ -649,3 +649,16 @@
 | 修改记录 | 新建：src/io/csv-parser.ts（parseCSV 函数 + ParsedData/ColumnInfo/CsvParseOptions 接口，集成 PapaParse，列类型推断 number/string/date/boolean，缺失值识别 N/A NA null 空串）、src/tests/unit/csv-parser.test.ts（28 个测试用例）；修改：src/io/index.ts（新增 parseCSV/ParsedData/ColumnInfo/CsvParseOptions 导出）、package.json（新增 papaparse @types/papaparse 依赖） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0149（parseCSV）、API-0150（ParsedData）、API-0151（ColumnInfo）、API-0152（CsvParseOptions） |
+
+### T-09-02 实现数据面板 UI
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号 | T-09-02 |
+| 任务名称 | 实现数据面板 UI |
+| 完成时间 | 2026-05-20 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| Git Commit |  |
+| 修改记录 | 新建：src/ui/DataPanel.tsx（DataPanel 组件 + ChartConfig 接口，支持数据源列表、列信息表含类型徽章/缺失率/样例值预览、6 种图表类型选择器、列到轴/分组/颜色映射配置、可折叠分区、可关闭面板）、src/tests/unit/data-panel.test.tsx（24 个测试用例覆盖渲染、数据源列表交互、加载/错误状态、列信息/样例值显示、图表类型选择、列映射、生成按钮启用/禁用、面板关闭/重开、空值/空列处理）；修改：src/ui/index.ts（新增 DataPanel 和 ChartConfig 导出） |
+| 发现缺陷 | 无 |
+| 产出接口/函数 | API-0153（DataPanel）、API-0154（ChartConfig） |
