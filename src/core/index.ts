@@ -100,6 +100,7 @@ export {
   BatchLayerEditCommand,
   MoveLayersCommand,
   DeleteElementCommand,
+  ChartToVectorCommand,
 } from './commands';
 export type { SceneCommand, CommandHistoryEntry, ElementInput, AlignType, DistributeType, CircularDistributeOptions, BatchLayerOperation, LayerMoveDirection, DeleteElementStrategy } from './commands';
 

@@ -1,10 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CommandExecutor, CreateElementCommand, MoveElementsCommand, UpdateElementCommand, ChangeLayerCommand, TransformElementsCommand, GroupElementsCommand, UngroupCommand, AddToGroupCommand, RemoveFromGroupCommand, AlignElementsCommand, DistributeElementsCommand, BatchLayerEditCommand, MoveLayersCommand, DeleteElementCommand } from '../../core/commands';
+import { CommandExecutor, CreateElementCommand, MoveElementsCommand, UpdateElementCommand, ChangeLayerCommand, TransformElementsCommand, GroupElementsCommand, UngroupCommand, AddToGroupCommand, RemoveFromGroupCommand, AlignElementsCommand, DistributeElementsCommand, BatchLayerEditCommand, MoveLayersCommand, DeleteElementCommand, ChartToVectorCommand } from '../../core/commands';
 import type { SceneCommand, CommandHistoryEntry, ElementInput, ElementChanges, TransformParams, AlignType, DistributeType, CircularDistributeOptions, BatchLayerOperation, DeleteElementStrategy } from '../../core/commands';
 import type { SceneDocument } from '../../core/types';
 import { successResult, failureResult } from '../../core/errors';
 import { useDocumentStore } from '../../core/store';
 import type { Transform2D, ElementStyle } from '../../core/types';
+import { generateChart, type ChartGenerationConfig } from '../../modules/chart/generator';
+import { parseCSV } from '../../io/csv-parser';
 
 function makeScene(): SceneDocument {
   return {
@@ -3665,6 +3667,239 @@ describe('DeleteElementCommand', () => {
       executor.redo();
       const scene3 = useDocumentStore.getState().getScene()!;
       expect(scene3.elements).toHaveLength(1);
+    });
+  });
+});
+
+// ─── ChartToVectorCommand tests ───────────────────────────────────────────────
+
+function makeChartScene(): SceneDocument {
+  const csv = 'name,value,category\nA,10,X\nB,25,Y\nC,15,X';
+  const parsedData = parseCSV(csv);
+  const config: ChartGenerationConfig = {
+    chartType: 'bar',
+    columnMappings: { x: 'name', y: 'value' },
+    title: 'Revenue',
+  };
+  const chartEl = generateChart(parsedData, config, 'ds-1', 'l1');
+  return {
+    schemaVersion: '1.0.0',
+    project: { name: 'Chart Test' },
+    canvas: {
+      units: 'px',
+      background: '#fff',
+      defaultFont: 'Arial',
+      gridSize: 0,
+      snapToGrid: false,
+    },
+    rules: {
+      maxLayerCount: 10,
+      collisionStrategy: 'bbox',
+      hiddenElementsCollide: false,
+      lockedElementsCollide: false,
+      connectorsExempt: true,
+    },
+    layers: [
+      { id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false },
+    ],
+    elements: [chartEl],
+    groups: [],
+    dataSources: [],
+    charts: [],
+    templates: [],
+    exportPresets: [],
+  };
+}
+
+describe('ChartToVectorCommand', () => {
+  let executor: CommandExecutor;
+
+  beforeEach(() => {
+    useDocumentStore.getState().loadScene(makeChartScene());
+    executor = new CommandExecutor();
+  });
+
+  describe('constructor', () => {
+    it('creates command with generated id and label', () => {
+      const chartId = useDocumentStore.getState().getScene()!.elements[0].id;
+      const cmd = new ChartToVectorCommand([chartId]);
+      expect(cmd.id).toMatch(/^chart2vec_/);
+      expect(cmd.label).toContain('Convert');
+    });
+
+    it('creates command with custom label', () => {
+      const chartId = useDocumentStore.getState().getScene()!.elements[0].id;
+      const cmd = new ChartToVectorCommand([chartId], 'Convert My Chart');
+      expect(cmd.label).toBe('Convert My Chart');
+    });
+  });
+
+  describe('validate', () => {
+    it('validates chart element exists and has svgContent', () => {
+      const chartId = useDocumentStore.getState().getScene()!.elements[0].id;
+      const cmd = new ChartToVectorCommand([chartId]);
+      const scene = useDocumentStore.getState().getScene()!;
+      const result = cmd.validate(scene);
+      expect(result.valid).toBe(true);
+    });
+
+    it('fails when no element IDs are provided', () => {
+      const cmd = new ChartToVectorCommand([]);
+      const scene = useDocumentStore.getState().getScene()!;
+      const result = cmd.validate(scene);
+      expect(result.valid).toBe(false);
+    });
+
+    it('fails when element does not exist', () => {
+      const cmd = new ChartToVectorCommand(['nonexistent']);
+      const scene = useDocumentStore.getState().getScene()!;
+      const result = cmd.validate(scene);
+      expect(result.valid).toBe(false);
+    });
+
+    it('fails when element is not a chart type', () => {
+      const scene = useDocumentStore.getState().getScene()!;
+      useDocumentStore.getState().updateScene((s) => ({
+        ...s,
+        elements: [
+          ...s.elements,
+          {
+            id: 'shape1',
+            type: 'shape',
+            layerId: 'l1',
+            name: 'Rectangle',
+            transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: '#fff', stroke: '#000', strokeWidth: 2, opacity: 1 },
+            visible: true,
+            locked: false,
+            shapeKind: 'rect',
+          },
+        ],
+      }));
+      const cmd = new ChartToVectorCommand(['shape1']);
+      const updatedScene = useDocumentStore.getState().getScene()!;
+      const result = cmd.validate(updatedScene);
+      expect(result.valid).toBe(false);
+    });
+
+    it('fails when max layer count is exceeded', () => {
+      const chartId = useDocumentStore.getState().getScene()!.elements[0].id;
+      useDocumentStore.getState().updateScene((s) => ({
+        ...s,
+        rules: { ...s.rules, maxLayerCount: 1 },
+      }));
+      const updatedScene = useDocumentStore.getState().getScene()!;
+      const cmd = new ChartToVectorCommand([chartId]);
+      const result = cmd.validate(updatedScene);
+      expect(result.valid).toBe(false);
+    });
+  });
+
+  describe('execute', () => {
+    it('converts chart to vector elements and removes original chart', () => {
+      const chartId = useDocumentStore.getState().getScene()!.elements[0].id;
+      const sceneBefore = useDocumentStore.getState().getScene()!;
+      expect(sceneBefore.elements.some((e) => e.id === chartId)).toBe(true);
+
+      executor.execute(new ChartToVectorCommand([chartId]));
+      const sceneAfter = useDocumentStore.getState().getScene()!;
+
+      expect(sceneAfter.elements.some((e) => e.id === chartId)).toBe(false);
+      expect(sceneAfter.layers.length).toBe(2);
+      expect(sceneAfter.groups.length).toBe(1);
+      expect(sceneAfter.elements.length).toBeGreaterThan(0);
+    });
+
+    it('creates a new layer for converted elements', () => {
+      const chartId = useDocumentStore.getState().getScene()!.elements[0].id;
+      executor.execute(new ChartToVectorCommand([chartId]));
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.layers.length).toBe(2);
+      const newLayer = scene.layers[scene.layers.length - 1];
+      expect(newLayer.name).toContain('Chart Vectors');
+      expect(newLayer.visible).toBe(true);
+      expect(newLayer.locked).toBe(false);
+    });
+
+    it('all converted elements belong to the new layer', () => {
+      const chartId = useDocumentStore.getState().getScene()!.elements[0].id;
+      const cmd = new ChartToVectorCommand([chartId]);
+      executor.execute(cmd);
+      const scene = useDocumentStore.getState().getScene()!;
+      const newLayerId = cmd.getNewLayerId();
+      expect(scene.layers.some((l) => l.id === newLayerId)).toBe(true);
+
+      const chartElRemaining = scene.elements.find((e) => e.id === chartId);
+      expect(chartElRemaining).toBeUndefined();
+
+      const convertedElements = scene.elements.filter((e) => e.layerId === newLayerId);
+      expect(convertedElements.length).toBeGreaterThan(0);
+
+      for (const el of scene.elements) {
+        if (el.id !== chartId && el.layerId !== 'l1') {
+          expect(el.layerId).toBe(newLayerId);
+        }
+      }
+    });
+
+    it('creates a group for the converted elements', () => {
+      const chartId = useDocumentStore.getState().getScene()!.elements[0].id;
+      executor.execute(new ChartToVectorCommand([chartId]));
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.groups.length).toBe(1);
+      expect(scene.groups[0].name).toBe('Chart Vector Group');
+
+      const newLayerId = scene.layers[1].id;
+      const convertedIds = scene.elements
+        .filter((e) => e.layerId === newLayerId)
+        .map((e) => e.id);
+      for (const id of convertedIds) {
+        expect(scene.groups[0].elementIds).toContain(id);
+      }
+    });
+
+    it('converted elements include both shapes and text', () => {
+      const chartId = useDocumentStore.getState().getScene()!.elements[0].id;
+      executor.execute(new ChartToVectorCommand([chartId]));
+      const scene = useDocumentStore.getState().getScene()!;
+      const shapes = scene.elements.filter((e) => e.type === 'shape');
+      const texts = scene.elements.filter((e) => e.type === 'text');
+      expect(shapes.length).toBeGreaterThan(0);
+      expect(texts.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('undo', () => {
+    it('restores original chart element and removes new layer', () => {
+      const chartId = useDocumentStore.getState().getScene()!.elements[0].id;
+      executor.execute(new ChartToVectorCommand([chartId]));
+      const sceneAfter = useDocumentStore.getState().getScene()!;
+
+      const canUndo = executor.canUndo();
+      expect(canUndo).toBe(true);
+
+      executor.undo();
+      const sceneRestored = useDocumentStore.getState().getScene()!;
+
+      expect(sceneRestored.elements.some((e) => e.id === chartId)).toBe(true);
+      expect(sceneRestored.layers.length).toBe(1);
+      expect(sceneRestored.groups.length).toBe(0);
+    });
+  });
+
+  describe('redo', () => {
+    it('re-applies conversion after undo', () => {
+      const chartId = useDocumentStore.getState().getScene()!.elements[0].id;
+      executor.execute(new ChartToVectorCommand([chartId]));
+
+      executor.undo();
+      expect(useDocumentStore.getState().getScene()!.elements.some((e) => e.id === chartId)).toBe(true);
+
+      executor.redo();
+      const sceneRedo = useDocumentStore.getState().getScene()!;
+      expect(sceneRedo.elements.some((e) => e.id === chartId)).toBe(false);
+      expect(sceneRedo.layers.length).toBe(2);
+      expect(sceneRedo.groups.length).toBe(1);
     });
   });
 });

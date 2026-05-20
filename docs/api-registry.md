@@ -3021,3 +3021,60 @@
 | 输出参数 | 无（类型别名） |
 | 典型用例 | const cfg: ChartGenerationConfig = { ..., legendPosition: 'right' } |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0160 convertChartSvgToElements
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0160 |
+| 名称 | convertChartSvgToElements |
+| 所属系统 | modules |
+| 所属模块 | chart/convert |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 将图表的缓存 SVG 内容解析并转换为独立的矢量元素。遍历 SVG 中的 rect/circle/ellipse/line/polyline/polygon/path/text 标签，按 ChartElement 的 transform 坐标和尺寸进行缩放映射，生成对应的 ShapeElement 和 TextElement 数组。转换后所有元素 target layerId 保持一致 |
+| 输入参数 | chartElement: ChartElement（含 svgContent 的图表元素）, targetLayerId: string（目标图层 ID） |
+| 输出参数 | ConvertedElementResult - { elements: Array<ShapeElement | TextElement> }，elements 为空数组表示 svgContent 缺失或无可转换元素 |
+| 典型用例 | const { elements } = convertChartSvgToElements(chartEl, 'new-layer'); elements.forEach(el => scene.elements.push(el)); |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0161 ConvertedElementResult
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0161 |
+| 名称 | ConvertedElementResult |
+| 所属系统 | modules |
+| 所属模块 | chart/convert |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | convertChartSvgToElements 函数的返回值接口，包含转换后的独立矢量元素数组 |
+| 输入参数 | elements: Array<ShapeElement | TextElement> |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | const result: ConvertedElementResult = { elements: [...] } |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0162 ChartToVectorCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0162 |
+| 名称 | ChartToVectorCommand |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 图表转矢量组命令。validate 检查所有目标元素为 chart 类型且有缓存的 svgContent、最大图层数未超限。execute 创建新图层、调用 convertChartSvgToElements 将 SVG 拆解为独立 shape/text 元素、创建 ElementGroup 包含所有新元素、从场景中移除原 chart 元素。invert 恢复原 chart 元素、删除新图层和新组、移除所有转化后的元素。getNewLayerId() 返回新创建的图层 ID |
+| 输入参数 | constructor(elementIds: string[], label?: string) |
+| 输出参数 | implements SceneCommand - 可通过 CommandExecutor 执行、撤销和重做；getNewLayerId(): string - 返回新图层 ID |
+| 典型用例 | const cmd = new ChartToVectorCommand(['chart1']); executor.execute(cmd); const newLayerId = cmd.getNewLayerId(); |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |

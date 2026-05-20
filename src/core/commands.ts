@@ -4,7 +4,7 @@
  * CommandExecutor manages the history stacks and coordinates with the Document Store.
  */
 
-import type { SceneDocument, SceneElement, ConnectorElement, ElementType, Transform2D, ElementStyle, BBox, ElementGroup } from './types';
+import type { SceneDocument, SceneElement, ConnectorElement, ElementType, Transform2D, ElementStyle, BBox, ElementGroup, ChartElement, Layer } from './types';
 import type { ValidationResult, ValidationError } from './errors';
 import { successResult, failureResult } from './errors';
 import { useDocumentStore } from './store';
@@ -15,6 +15,7 @@ import { createGeometryAdapter } from './geometry';
 import type { GeometryAdapter } from './types';
 import { ErrorCode } from './errors';
 import { recalculateRoutesForElements } from './routing';
+import { convertChartSvgToElements } from '../modules/chart/convert';
 
 export interface SceneCommand {
   /** Unique command identifier */
@@ -2666,6 +2667,172 @@ export class DeleteElementCommand implements SceneCommand {
         }
 
         return { ...scene, elements };
+      },
+      invert: () => null,
+    };
+
+    return invertCmd;
+  }
+}
+
+// ─── Chart To Vector Command ───────────────────────────────────────────────────
+
+export class ChartToVectorCommand implements SceneCommand {
+  id: string;
+  label: string;
+  private elementIds: string[];
+  private newLayerId: string;
+  private newElementIds: string[] = [];
+  private newGroupId: string;
+  private savedChart: ChartElement | null = null;
+
+  constructor(elementIds: string[], label?: string) {
+    this.id = generateId('chart2vec');
+    this.elementIds = elementIds;
+    this.newLayerId = generateId('chvec');
+    this.newGroupId = generateId('chvecgrp');
+    this.label = label || `Convert ${elementIds.length} chart(s) to vectors`;
+  }
+
+  getNewLayerId(): string {
+    return this.newLayerId;
+  }
+
+  validate(scene: SceneDocument): ValidationResult {
+    if (this.elementIds.length === 0) {
+      return failureResult({
+        code: 'SCHEMA_FIELD_TYPE_ERROR',
+        message: 'No chart elements selected for conversion',
+        severity: 'error',
+        suggestion: 'Select at least one chart element to convert',
+      });
+    }
+
+    for (const id of this.elementIds) {
+      const el = scene.elements.find((e) => e.id === id);
+      if (!el) {
+        return failureResult({
+          code: ErrorCode.REF_GROUP_NOT_FOUND as string,
+          message: `Element "${id}" not found`,
+          severity: 'error',
+          elementIds: [id],
+          suggestion: 'The element may have been deleted',
+        });
+      }
+      if (el.type !== 'chart') {
+        return failureResult({
+          code: 'SCHEMA_INVALID_TYPE',
+          message: `Element "${id}" is not a chart element (type: ${el.type})`,
+          severity: 'error',
+          elementIds: [id],
+          suggestion: 'Only chart elements can be converted to vector groups',
+        });
+      }
+      const chartEl = el as ChartElement;
+      if (!chartEl.svgContent) {
+        return failureResult({
+          code: 'SCHEMA_FIELD_TYPE_ERROR',
+          message: `Chart element "${id}" has no rendered SVG content`,
+          severity: 'error',
+          elementIds: [id],
+          suggestion: 'Generate the chart first before converting to vectors',
+        });
+      }
+    }
+
+    if (scene.layers.length >= scene.rules.maxLayerCount) {
+      return failureResult({
+        code: ErrorCode.RULE_MAX_LAYER_EXCEEDED,
+        message: 'Cannot create new layer for vector group: maximum layer count reached',
+        severity: 'error',
+        suggestion: 'Remove an empty layer or increase maxLayerCount',
+      });
+    }
+
+    return successResult();
+  }
+
+  execute(scene: SceneDocument): SceneDocument {
+    const newLayer: Layer = {
+      id: this.newLayerId,
+      name: `Chart Vectors ${this.elementIds.map((id) => `#${id.slice(-4)}`).join(', ')}`,
+      order: Math.max(...scene.layers.map((l) => l.order), 0) + 1,
+      visible: true,
+      locked: false,
+    };
+
+    let updatedElements = [...scene.elements];
+    const newElements: SceneElement[] = [];
+    this.newElementIds = [];
+
+    for (const id of this.elementIds) {
+      const idx = updatedElements.findIndex((e) => e.id === id);
+      if (idx === -1) continue;
+      const chartEl = updatedElements[idx] as ChartElement;
+      if (!chartEl.svgContent) continue;
+
+      this.savedChart = { ...chartEl };
+
+      const { elements: convertedEls } = convertChartSvgToElements(chartEl, this.newLayerId);
+      for (const convertedEl of convertedEls) {
+        newElements.push(convertedEl);
+        this.newElementIds.push(convertedEl.id);
+      }
+
+      updatedElements.splice(idx, 1);
+    }
+
+    for (const el of newElements) {
+      updatedElements.push(el);
+    }
+
+    const group: ElementGroup = {
+      id: this.newGroupId,
+      name: `Chart Vector Group`,
+      elementIds: [...this.newElementIds],
+    };
+
+    return {
+      ...scene,
+      layers: [...scene.layers, newLayer],
+      elements: updatedElements,
+      groups: [...scene.groups, group],
+    };
+  }
+
+  invert(scene: SceneDocument): SceneCommand | null {
+    if (!this.savedChart || this.newElementIds.length === 0) return null;
+
+    const savedChart = this.savedChart;
+    const newElementIds = this.newElementIds;
+    const newLayerId = this.newLayerId;
+    const newGroupId = this.newGroupId;
+
+    const invertCmd: SceneCommand = {
+      id: generateId('inv-chart2vec'),
+      label: `Undo: ${this.label}`,
+      validate: () => {
+        const store = useDocumentStore.getState();
+        if (!store.scene) {
+          return failureResult({
+            code: 'SCHEMA_MISSING_ID',
+            message: 'No scene loaded',
+            severity: 'error',
+          });
+        }
+        return successResult();
+      },
+      execute: (scene: SceneDocument) => {
+        const elements = scene.elements.filter(
+          (el) => !newElementIds.includes(el.id),
+        );
+        elements.push(savedChart);
+        return {
+          ...scene,
+          layers: scene.layers.filter((l) => l.id !== newLayerId),
+          elements,
+          groups: scene.groups.filter((g) => g.id !== newGroupId),
+        };
       },
       invert: () => null,
     };
