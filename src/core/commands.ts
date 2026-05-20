@@ -154,6 +154,9 @@ export interface ElementInput {
   source?: { elementId?: string; anchorId?: string; x: number; y: number };
   target?: { elementId?: string; anchorId?: string; x: number; y: number };
   route?: { type: 'straight' | 'polyline' | 'orthogonal' | 'curve'; points: { x: number; y: number }[] };
+  arrowStart?: import('./types').ArrowStyle;
+  arrowEnd?: import('./types').ArrowStyle;
+  labels?: import('./types').ConnectorLabel[];
 }
 
 // ─── Collision Helpers ────────────────────────────────────────────────────────
@@ -209,6 +212,9 @@ function buildElementFromInput(input: ElementInput, id: string): SceneElement {
         source: input.source || { x: 0, y: 0 },
         target: input.target || { x: 0, y: 0 },
         route: input.route || { type: 'straight', points: [] },
+        arrowStart: input.arrowStart,
+        arrowEnd: input.arrowEnd,
+        labels: input.labels,
       } as SceneElement;
     default:
       return { ...base } as SceneElement;
@@ -736,6 +742,9 @@ export type ElementChanges = Partial<{
   src: string;
   source: Partial<{ elementId: string; anchorId: string; x: number; y: number }>;
   target: Partial<{ elementId: string; anchorId: string; x: number; y: number }>;
+  arrowStart: import('./types').ArrowStyle | null;
+  arrowEnd: import('./types').ArrowStyle | null;
+  labels: import('./types').ConnectorLabel[];
 }>;
 
 export class UpdateElementCommand implements SceneCommand {
@@ -881,6 +890,15 @@ export class UpdateElementCommand implements SceneCommand {
       }
       if (this.changes.target) {
         updated.target = { ...el.target, ...this.changes.target };
+      }
+      if (this.changes.arrowStart !== undefined) {
+        updated.arrowStart = this.changes.arrowStart;
+      }
+      if (this.changes.arrowEnd !== undefined) {
+        updated.arrowEnd = this.changes.arrowEnd;
+      }
+      if (this.changes.labels !== undefined) {
+        updated.labels = this.changes.labels;
       }
 
       return updated as SceneElement;

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import type { SceneDocument, SceneElement, TextElement } from '../core/types';
+import type { SceneDocument, SceneElement, TextElement, ConnectorElement, ConnectorLabel } from '../core/types';
 import type { SelectionManager } from '../canvas/selection';
 
 export interface PropertyPanelProps {
@@ -131,7 +131,7 @@ function getElementName(el: SceneElement): string {
   return el.name || el.id;
 }
 
-type Section = 'position' | 'style' | 'text' | 'layer';
+type Section = 'position' | 'style' | 'text' | 'connector' | 'layer';
 
 export function PropertyPanel({ scene, selectionManager, onPropertyChange, onLayerChange }: PropertyPanelProps) {
   const [collapsed, setCollapsed] = useState<Set<Section>>(new Set());
@@ -508,9 +508,172 @@ export function PropertyPanel({ scene, selectionManager, onPropertyChange, onLay
                   )}
                 </div>
               </div>
-            )}
-          </div>
         )}
+        </div>
+        )}
+
+        {/* Connector (only for single connector element) */}
+        {single && els[0].type === 'connector' && (() => {
+          const conn = els[0] as ConnectorElement;
+          const arrowTypes: { value: string; label: string }[] = [
+            { value: 'none', label: 'None' },
+            { value: 'triangle', label: 'Triangle' },
+            { value: 'openTriangle', label: 'Open Triangle' },
+            { value: 'diamond', label: 'Diamond' },
+            { value: 'circle', label: 'Circle' },
+          ];
+
+          const handleArrowChange = (endpoint: 'arrowStart' | 'arrowEnd', type: string) => {
+            if (type === 'none') {
+              onPropertyChange(selectedIds, { [endpoint]: null });
+            } else {
+              onPropertyChange(selectedIds, { [endpoint]: { type, size: (conn[endpoint] as any)?.size ?? 1 } });
+            }
+          };
+
+          const handleArrowSizeChange = (endpoint: 'arrowStart' | 'arrowEnd', size: number) => {
+            const current = conn[endpoint];
+            if (current) {
+              onPropertyChange(selectedIds, { [endpoint]: { ...current, size } });
+            }
+          };
+
+          return (
+            <div>
+              <div style={sectionHeaderStyle} onClick={() => toggleSection('connector')}>
+                <span>Connector</span>
+                <span style={{ fontSize: 10 }}>{collapsed.has('connector') ? '+' : '-'}</span>
+              </div>
+              {!collapsed.has('connector') && (
+                <div>
+                  <div style={rowStyle}>
+                    <span style={labelStyle}>Start Arrow</span>
+                    <select
+                      style={selectStyle}
+                      value={conn.arrowStart?.type ?? 'none'}
+                      onChange={(e) => handleArrowChange('arrowStart', e.target.value)}
+                    >
+                      {arrowTypes.map((t) => (
+                        <option key={t.value} value={t.value}>{t.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {conn.arrowStart && conn.arrowStart.type !== 'none' && (
+                    <div style={rowStyle}>
+                      <span style={labelStyle}>S-Arr Size</span>
+                      <input
+                        type="number"
+                        style={inputStyle}
+                        value={formatNum(conn.arrowStart.size ?? 1)}
+                        min={0.5}
+                        max={5}
+                        step={0.5}
+                        onChange={(e) => handleArrowSizeChange('arrowStart', parseFloat(e.target.value) || 1)}
+                      />
+                    </div>
+                  )}
+                  <div style={rowStyle}>
+                    <span style={labelStyle}>End Arrow</span>
+                    <select
+                      style={selectStyle}
+                      value={conn.arrowEnd?.type ?? 'none'}
+                      onChange={(e) => handleArrowChange('arrowEnd', e.target.value)}
+                    >
+                      {arrowTypes.map((t) => (
+                        <option key={t.value} value={t.value}>{t.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {conn.arrowEnd && conn.arrowEnd.type !== 'none' && (
+                    <div style={rowStyle}>
+                      <span style={labelStyle}>E-Arr Size</span>
+                      <input
+                        type="number"
+                        style={inputStyle}
+                        value={formatNum(conn.arrowEnd.size ?? 1)}
+                        min={0.5}
+                        max={5}
+                        step={0.5}
+                        onChange={(e) => handleArrowSizeChange('arrowEnd', parseFloat(e.target.value) || 1)}
+                      />
+                    </div>
+                  )}
+                  <div style={{ ...rowStyle, borderTop: '1px solid #eee', paddingTop: 6, marginTop: 4 }}>
+                    <span style={labelStyle}>Labels</span>
+                  </div>
+                  {(conn.labels ?? []).map((label: ConnectorLabel, i: number) => (
+                    <div key={i} style={{ ...rowStyle, marginLeft: 8 }}>
+                      <input
+                        type="text"
+                        style={{ ...inputStyle, flex: 2 }}
+                        value={label.text}
+                        placeholder="Label text"
+                        onChange={(e) => {
+                          const newLabels = [...(conn.labels ?? [])];
+                          newLabels[i] = { ...newLabels[i], text: e.target.value };
+                          onPropertyChange(selectedIds, { labels: newLabels });
+                        }}
+                      />
+                      <input
+                        type="number"
+                        style={{ ...inputStyle, width: 50, marginLeft: 4 }}
+                        value={formatNum(label.position)}
+                        min={0}
+                        max={1}
+                        step={0.1}
+                        title="Position (0-1)"
+                        onChange={(e) => {
+                          const newLabels = [...(conn.labels ?? [])];
+                          newLabels[i] = { ...newLabels[i], position: parseFloat(e.target.value) || 0.5 };
+                          onPropertyChange(selectedIds, { labels: newLabels });
+                        }}
+                      />
+                      <button
+                        type="button"
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#F44336',
+                          cursor: 'pointer',
+                          fontSize: 14,
+                          padding: '0 4px',
+                          marginLeft: 2,
+                        }}
+                        title="Remove label"
+                        onClick={() => {
+                          const newLabels = (conn.labels ?? []).filter((_, j) => j !== i);
+                          onPropertyChange(selectedIds, { labels: newLabels });
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                  <div style={{ ...rowStyle, marginLeft: 8 }}>
+                    <button
+                      type="button"
+                      style={{
+                        background: '#1976D2',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: 4,
+                        padding: '2px 8px',
+                        cursor: 'pointer',
+                        fontSize: 11,
+                      }}
+                      onClick={() => {
+                        const newLabels = [...(conn.labels ?? []), { text: '', position: 0.5, offset: { dx: 0, dy: -10 } }];
+                        onPropertyChange(selectedIds, { labels: newLabels });
+                      }}
+                    >
+                      + Add Label
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Layer */}
         <div>

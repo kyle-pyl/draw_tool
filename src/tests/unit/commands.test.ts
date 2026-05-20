@@ -862,6 +862,21 @@ describe('UpdateElementCommand', () => {
     return useDocumentStore.getState().getScene()!.elements.at(-1)!.id;
   }
 
+  function createConnector(sourceElId?: string, targetElId?: string) {
+    const input: ElementInput = {
+      type: 'connector',
+      layerId: 'l1',
+      transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: 'none', stroke: '#333', strokeWidth: 2, opacity: 1 },
+      source: { elementId: sourceElId, x: 0, y: 0 },
+      target: { elementId: targetElId, x: 100, y: 100 },
+      route: { type: 'straight', points: [] },
+    };
+    const cmd = new CreateElementCommand(input);
+    executor.execute(cmd);
+    return useDocumentStore.getState().getScene()!.elements.at(-1)!.id;
+  }
+
   beforeEach(() => {
     executor = new CommandExecutor();
     useDocumentStore.getState().loadScene(structuredClone(makeSceneWithLayers()));
@@ -967,6 +982,94 @@ describe('UpdateElementCommand', () => {
 
     executor.redo();
     expect(useDocumentStore.getState().getScene()!.elements[0].style.fill).toBe('#00ff00');
+  });
+
+  it('updates arrowEnd on connector', () => {
+    const id = createConnector();
+    const cmd = new UpdateElementCommand(id, { arrowEnd: { type: 'triangle', size: 1.5 } });
+    const result = executor.execute(cmd);
+    expect(result.valid).toBe(true);
+    const conn = useDocumentStore.getState().getScene()!.elements.find((e) => e.id === id) as any;
+    expect(conn.arrowEnd).toEqual({ type: 'triangle', size: 1.5 });
+  });
+
+  it('updates arrowStart on connector', () => {
+    const id = createConnector();
+    const cmd = new UpdateElementCommand(id, { arrowStart: { type: 'diamond', size: 2, color: '#f00' } });
+    const result = executor.execute(cmd);
+    expect(result.valid).toBe(true);
+    const conn = useDocumentStore.getState().getScene()!.elements.find((e) => e.id === id) as any;
+    expect(conn.arrowStart).toEqual({ type: 'diamond', size: 2, color: '#f00' });
+  });
+
+  it('sets arrow to null (none style)', () => {
+    const id = createConnector();
+    executor.execute(new UpdateElementCommand(id, { arrowEnd: { type: 'triangle', size: 1 } }));
+    executor.execute(new UpdateElementCommand(id, { arrowEnd: null }));
+    const conn = useDocumentStore.getState().getScene()!.elements.find((e) => e.id === id) as any;
+    expect(conn.arrowEnd).toBeNull();
+  });
+
+  it('updates labels on connector', () => {
+    const id = createConnector();
+    const labels = [
+      { text: 'Hello', position: 0.5, offset: { dx: 0, dy: -10 } },
+    ];
+    const cmd = new UpdateElementCommand(id, { labels });
+    const result = executor.execute(cmd);
+    expect(result.valid).toBe(true);
+    const conn = useDocumentStore.getState().getScene()!.elements.find((e) => e.id === id) as any;
+    expect(conn.labels).toEqual(labels);
+  });
+
+  it('updates multiple labels on connector', () => {
+    const id = createConnector();
+    const labels = [
+      { text: 'Start', position: 0.1, offset: { dx: 0, dy: 0 } },
+      { text: 'End', position: 0.9, offset: { dx: 0, dy: 0 } },
+    ];
+    executor.execute(new UpdateElementCommand(id, { labels }));
+    const conn = useDocumentStore.getState().getScene()!.elements.find((e) => e.id === id) as any;
+    expect(conn.labels).toHaveLength(2);
+    expect(conn.labels[0].text).toBe('Start');
+    expect(conn.labels[1].text).toBe('End');
+  });
+
+  it('undo restores arrowEnd change', () => {
+    const id = createConnector();
+    executor.execute(new UpdateElementCommand(id, { arrowEnd: { type: 'triangle', size: 1 } }));
+    executor.undo();
+    const conn = useDocumentStore.getState().getScene()!.elements.find((e) => e.id === id) as any;
+    expect(conn.arrowEnd).toBeUndefined();
+  });
+
+  it('undo restores label changes', () => {
+    const id = createConnector();
+    executor.execute(new UpdateElementCommand(id, { labels: [{ text: 'Test', position: 0.5, offset: { dx: 0, dy: 0 } }] }));
+    executor.undo();
+    const conn = useDocumentStore.getState().getScene()!.elements.find((e) => e.id === id) as any;
+    expect(conn.labels).toBeUndefined();
+  });
+
+  it('creates connector with arrow and labels via CreateElementCommand', () => {
+    const input: ElementInput = {
+      type: 'connector',
+      layerId: 'l1',
+      transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: 'none', stroke: '#333', strokeWidth: 2, opacity: 1 },
+      source: { x: 0, y: 0 },
+      target: { x: 100, y: 100 },
+      route: { type: 'straight', points: [] },
+      arrowEnd: { type: 'triangle', size: 1 },
+      labels: [{ text: 'flow', position: 0.5, offset: { dx: 0, dy: -10 } }],
+    };
+    const cmd = new CreateElementCommand(input);
+    const result = executor.execute(cmd);
+    expect(result.valid).toBe(true);
+    const scene = useDocumentStore.getState().getScene()!;
+    const conn = scene.elements.find((e) => e.type === 'connector') as any;
+    expect(conn.arrowEnd).toEqual({ type: 'triangle', size: 1 });
+    expect(conn.labels).toEqual([{ text: 'flow', position: 0.5, offset: { dx: 0, dy: -10 } }]);
   });
 });
 

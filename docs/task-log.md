@@ -520,3 +520,16 @@
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0057（CanvasView 修订）、API-0089（DrawingToolType 修订）、API-0117（getAnchors 修订）、API-0118（resolveAnchor 修订） |
 
+### T-07-03 实现连接线箭头和标签
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-07-03 |
+| 任务名称      | 实现连接线箭头和标签 |
+| 完成时间      | 2026-05-20 13:30 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | c438a4f |
+| 修改记录      | 修改：src/core/commands.ts（ElementInput 新增 arrowStart/arrowEnd/labels 字段，buildElementFromInput connector 分支支持箭头和标签，ElementChanges 新增 arrowStart/arrowEnd/labels 字段，UpdateElementCommand.execute 新增箭头和标签处理逻辑）；修改：src/canvas/CanvasView.tsx（新增 computePathPoints/computeTotalPathLength/computePointOnPath 路径计算函数，新增 createArrowMarkerId/buildArrowMarkers 箭头标记生成，renderConnectorElement 重构为支持箭头 marker 和标签渲染，SVG 根元素新增 <defs> 箭头标记定义，导入 useMemo 和 ConnectorLabel/ArrowStyle 类型）；修改：src/ui/PropertyPanel.tsx（新增 ConnectorElement/ConnectorLabel 导入，Section 类型新增 'connector'，新增连接器属性编辑区：箭头类型下拉选择、箭头尺寸、标签列表编辑和增删）；修改：src/tests/unit/canvas-view.test.tsx（新增 connector arrows 测试组 7 个用例：箭头标记 defs、marker-end、marker-start、none 样式、openTriangle、circle、polyline 标记；新增 connector labels 测试组 7 个用例：中点标签、多标签、位置计算、偏移、polyline 路径标签、无标签、字体继承）；修改：src/tests/unit/commands.test.ts（新增 UpdateElementCommand 测试组 8 个用例：arrowEnd 更新、arrowStart 更新、箭头设为 null、labels 更新、多 labels 更新、undo 恢复 arrowEnd、undo 恢复 labels、CreateElementCommand 创建带箭头和标签的 connector） |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0024（ConnectorElement 修订）、API-0057（CanvasView 修订）、API-0070（UpdateElementCommand/ElementChanges 修订）、API-0119（computePointOnPath）、API-0120（buildArrowMarkers） |
+

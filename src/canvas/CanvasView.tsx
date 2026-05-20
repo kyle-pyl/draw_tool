@@ -1,5 +1,5 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
-import type { SceneDocument, SceneElement, ShapeElement, TextElement, ImageElement, ConnectorElement, ConnectorEndpoint, ElementStyle, BBox, AnchorPoint } from '../core/types';
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import type { SceneDocument, SceneElement, ShapeElement, TextElement, ImageElement, ConnectorElement, ConnectorEndpoint, ConnectorLabel, ArrowStyle, ElementStyle, BBox, AnchorPoint } from '../core/types';
 import type { ElementInput } from '../core';
 import type { Viewport } from './viewport';
 import type { SelectionManager } from './selection';
@@ -282,6 +282,162 @@ function resolveEndpointPosition(ep: ConnectorEndpoint, _elements: SceneElement[
   return { x: ep.x, y: ep.y };
 }
 
+function computePathPoints(
+  source: { x: number; y: number },
+  target: { x: number; y: number },
+  routePoints: { x: number; y: number }[],
+): { x: number; y: number }[] {
+  return [source, ...routePoints, target];
+}
+
+function computeTotalPathLength(points: { x: number; y: number }[]): number {
+  let total = 0;
+  for (let i = 1; i < points.length; i++) {
+    const dx = points[i].x - points[i - 1].x;
+    const dy = points[i].y - points[i - 1].y;
+    total += Math.sqrt(dx * dx + dy * dy);
+  }
+  return total;
+}
+
+function computePointOnPath(points: { x: number; y: number }[], t: number): { x: number; y: number } {
+  if (points.length === 0) return { x: 0, y: 0 };
+  if (points.length === 1) return points[0];
+
+  const tClamped = Math.max(0, Math.min(1, t));
+  const totalLen = computeTotalPathLength(points);
+  if (totalLen === 0) return points[0];
+
+  const targetDist = tClamped * totalLen;
+  let accumulated = 0;
+
+  for (let i = 1; i < points.length; i++) {
+    const dx = points[i].x - points[i - 1].x;
+    const dy = points[i].y - points[i - 1].y;
+    const segLen = Math.sqrt(dx * dx + dy * dy);
+
+    if (accumulated + segLen >= targetDist || i === points.length - 1) {
+      const segT = segLen > 0 ? (targetDist - accumulated) / segLen : 0;
+      const segTClamped = Math.max(0, Math.min(1, segT));
+      return {
+        x: points[i - 1].x + segTClamped * dx,
+        y: points[i - 1].y + segTClamped * dy,
+      };
+    }
+    accumulated += segLen;
+  }
+
+  return points[points.length - 1];
+}
+
+function createArrowMarkerId(arrow: ArrowStyle, prefix: string): string {
+  return `arrow-${prefix}-${arrow.type}-${arrow.size ?? 1}-${arrow.color ?? 'default'}-${Date.now()}`;
+}
+
+const arrowMarkerCache = new Map<string, React.ReactElement>();
+
+function buildArrowMarkers(scene: SceneDocument): React.ReactElement[] {
+  const markers: React.ReactElement[] = [];
+  const seen = new Set<string>();
+
+  for (const el of scene.elements) {
+    if (el.type !== 'connector') continue;
+    const conn = el as ConnectorElement;
+
+    for (const [pos, arrow] of [['start', conn.arrowStart], ['end', conn.arrowEnd]] as const) {
+      if (!arrow || arrow.type === 'none') continue;
+      const key = `${pos}-${arrow.type}-${arrow.size ?? 1}-${arrow.color ?? conn.style.stroke}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const color = arrow.color ?? (conn.style.stroke as string) ?? '#333';
+      const size = (arrow.size ?? 1) * 6;
+
+      switch (arrow.type) {
+        case 'triangle': {
+          const w = size * 1.6;
+          const h = size * 1.2;
+          markers.push(
+            <marker
+              key={key}
+              id={key}
+              markerWidth={w}
+              markerHeight={h}
+              refX={pos === 'end' ? w * 0.85 : w * 0.15}
+              refY={h / 2}
+              orient="auto"
+              markerUnits="userSpaceOnUse"
+            >
+              <path d={`M 0 0 L ${w} ${h / 2} L 0 ${h} Z`} fill={color} />
+            </marker>,
+          );
+          break;
+        }
+        case 'openTriangle': {
+          const w = size * 1.6;
+          const h = size * 1.2;
+          const sw = 1.5;
+          markers.push(
+            <marker
+              key={key}
+              id={key}
+              markerWidth={w}
+              markerHeight={h}
+              refX={pos === 'end' ? w * 0.85 : w * 0.15}
+              refY={h / 2}
+              orient="auto"
+              markerUnits="userSpaceOnUse"
+            >
+              <path d={`M ${sw} ${sw} L ${w - sw} ${h / 2} L ${sw} ${h - sw}`} fill="none" stroke={color} strokeWidth={sw} />
+            </marker>,
+          );
+          break;
+        }
+        case 'diamond': {
+          const w = size * 1.6;
+          const h = size * 1.6;
+          markers.push(
+            <marker
+              key={key}
+              id={key}
+              markerWidth={w}
+              markerHeight={h}
+              refX={pos === 'end' ? w * 0.8 : w * 0.2}
+              refY={h / 2}
+              orient="auto"
+              markerUnits="userSpaceOnUse"
+            >
+              <polygon points={`${w / 2},0 ${w},${h / 2} ${w / 2},${h} 0,${h / 2}`} fill={color} />
+            </marker>,
+          );
+          break;
+        }
+        case 'circle': {
+          const w = size;
+          const h = size;
+          const r = size / 2 - 0.5;
+          markers.push(
+            <marker
+              key={key}
+              id={key}
+              markerWidth={w}
+              markerHeight={h}
+              refX={pos === 'end' ? w * 0.7 : w * 0.3}
+              refY={h / 2}
+              orient="auto"
+              markerUnits="userSpaceOnUse"
+            >
+              <circle cx={w / 2} cy={h / 2} r={r} fill={color} />
+            </marker>,
+          );
+          break;
+        }
+      }
+    }
+  }
+  return markers;
+}
+
 function renderConnectorElement(el: ConnectorElement, elements: SceneElement[]) {
   const source = resolveEndpointPosition(el.source, elements);
   const target = resolveEndpointPosition(el.target, elements);
@@ -289,34 +445,80 @@ function renderConnectorElement(el: ConnectorElement, elements: SceneElement[]) 
   const routeType = el.route.type;
 
   const styleProps = pickStyleProps(el.style);
+  const strokeColor = (styleProps.stroke as string) || '#333';
+  const strokeW = (styleProps.strokeWidth as number) || 2;
 
-  if (routeType === 'straight' || routePoints.length === 0) {
-    return (
-      <line
-        key={el.id}
-        x1={source.x}
-        y1={source.y}
-        x2={target.x}
-        y2={target.y}
-        fill="none"
-        stroke={styleProps.stroke as string || '#333'}
-        strokeWidth={styleProps.strokeWidth as number || 2}
-        opacity={styleProps.opacity as number}
-        strokeDasharray={styleProps.strokeDasharray as string}
-      />
-    );
-  }
+  const pathPoints = computePathPoints(source, target, routeType === 'straight' && routePoints.length === 0 ? [] : routePoints);
 
-  const allPoints = [source, ...routePoints, target];
-  const pointsStr = allPoints.map((p) => `${p.x},${p.y}`).join(' ');
+  const arrowStartKey = el.arrowStart && el.arrowStart.type !== 'none'
+    ? `start-${el.arrowStart.type}-${el.arrowStart.size ?? 1}-${el.arrowStart.color ?? strokeColor}`
+    : undefined;
 
-  return (
+  const arrowEndKey = el.arrowEnd && el.arrowEnd.type !== 'none'
+    ? `end-${el.arrowEnd.type}-${el.arrowEnd.size ?? 1}-${el.arrowEnd.color ?? strokeColor}`
+    : undefined;
+
+  const pointsStr = pathPoints.map((p) => `${p.x},${p.y}`).join(' ');
+
+  const lineMarkup: React.ReactNode = pathPoints.length === 2 && routeType !== 'polyline' ? (
+    <line
+      x1={pathPoints[0].x}
+      y1={pathPoints[0].y}
+      x2={pathPoints[1].x}
+      y2={pathPoints[1].y}
+      fill="none"
+      stroke={strokeColor}
+      strokeWidth={strokeW}
+      opacity={styleProps.opacity as number}
+      strokeDasharray={styleProps.strokeDasharray as string}
+      markerStart={arrowStartKey ? `url(#${arrowStartKey})` : undefined}
+      markerEnd={arrowEndKey ? `url(#${arrowEndKey})` : undefined}
+    />
+  ) : (
     <polyline
-      key={el.id}
       points={pointsStr}
       fill="none"
-      {...styleProps}
+      stroke={strokeColor}
+      strokeWidth={strokeW}
+      opacity={styleProps.opacity as number}
+      strokeDasharray={styleProps.strokeDasharray as string}
+      markerStart={arrowStartKey ? `url(#${arrowStartKey})` : undefined}
+      markerEnd={arrowEndKey ? `url(#${arrowEndKey})` : undefined}
     />
+  );
+
+  const labelMarkup: React.ReactNode[] = [];
+  if (el.labels && el.labels.length > 0) {
+    for (let i = 0; i < el.labels.length; i++) {
+      const label = el.labels[i];
+      const pt = computePointOnPath(pathPoints, label.position);
+      const lx = pt.x + (label.offset?.dx ?? 0);
+      const ly = pt.y + (label.offset?.dy ?? 0);
+      labelMarkup.push(
+        <text
+          key={`label-${i}`}
+          x={lx}
+          y={ly}
+          fill={strokeColor}
+          fontSize={el.style.fontSize ?? 12}
+          fontFamily={el.style.fontFamily ?? 'Arial'}
+          fontWeight={el.style.fontWeight}
+          fontStyle={el.style.fontStyle}
+          textAnchor="middle"
+          dominantBaseline="central"
+          pointerEvents="none"
+        >
+          {label.text}
+        </text>,
+      );
+    }
+  }
+
+  return (
+    <g key={el.id}>
+      {lineMarkup}
+      {labelMarkup}
+    </g>
   );
 }
 
@@ -1108,6 +1310,9 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
       onContextMenu={handleContextMenu}
       onClick={handleBackgroundClick}
     >
+      <defs>
+        {buildArrowMarkers(scene)}
+      </defs>
       <g transform={viewportTransform}>
         {layersSorted.map((layer) => {
           const els = layerElementMap.get(layer.id) ?? [];

@@ -2254,3 +2254,41 @@
 | 输出参数 | implements SceneCommand - 可通过 CommandExecutor 执行、撤销和重做 |
 | 典型用例 | `executor.execute(new MoveLayersCommand(['l2', 'l3'], 'up', 2));` / `executor.execute(new MoveLayersCommand(['l1'], 'down'));` |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-06-05）|
+
+### API-0119 computePointOnPath
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0119 |
+| 名称 | computePointOnPath |
+| 所属系统 | canvas |
+| 所属模块 | CanvasView |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 根据参数 t（0-1）计算多段路径上的点坐标。按路径总长度比例插值，t=0 返回起点，t=1 返回终点，t=0.5 返回路径中点。用于在连接线路径上定位标签文本 |
+| 输入参数 | points: { x: number, y: number }[] - 路径点数组；t: number - 位置参数（0-1），自动截断到 [0,1] |
+| 输出参数 | { x: number, y: number } - 路径上对应位置的绝对坐标 |
+| 典型用例 | `const pt = computePointOnPath(pathPoints, 0.5);` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-07-03）|
+
+### API-0120 buildArrowMarkers
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0120 |
+| 名称 | buildArrowMarkers |
+| 所属系统 | canvas |
+| 所属模块 | CanvasView |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 遍历场景中的所有连接线元素，为每个不同的箭头样式配置生成 SVG marker 定义。支持 triangle（实心三角形）、openTriangle（开放三角形）、diamond（菱形）、circle（圆点）四种箭头类型。每个 marker 使用 orient="auto" 自动跟随线段方向。使用缓存（Set）避免重复定义相同的 marker |
+| 输入参数 | scene: SceneDocument - 当前场景文档 |
+| 输出参数 | React.ReactElement[] - SVG marker 元素数组，放在 defs 中使用 |
+| 典型用例 | 在 CanvasView 的 SVG render 中使用 `<defs>{buildArrowMarkers(scene)}</defs>` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-07-03）|

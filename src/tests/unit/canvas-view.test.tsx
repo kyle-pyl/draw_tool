@@ -473,6 +473,336 @@ describe('CanvasView', () => {
     });
   });
 
+  describe('connector arrows', () => {
+    it('should render arrow marker definitions in defs', () => {
+      scene = createScene({
+        elements: [
+          {
+            id: 'ca1', type: 'connector', layerId: 'l1',
+            transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: 'none', stroke: '#333', strokeWidth: 2, opacity: 1 },
+            visible: true, locked: false,
+            source: { x: 0, y: 0 },
+            target: { x: 100, y: 100 },
+            route: { type: 'straight', points: [] },
+            arrowEnd: { type: 'triangle', size: 1 },
+          },
+        ],
+      });
+
+      const { container } = render(<CanvasView scene={scene} viewport={viewport} />);
+      const defs = container.querySelector('defs');
+      expect(defs).toBeInTheDocument();
+      const marker = defs!.querySelector('marker');
+      expect(marker).toBeInTheDocument();
+      expect(marker).toHaveAttribute('id', expect.stringContaining('triangle'));
+    });
+
+    it('should apply marker-end when arrowEnd is set', () => {
+      scene = createScene({
+        elements: [
+          {
+            id: 'ca2', type: 'connector', layerId: 'l1',
+            transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: 'none', stroke: '#333', strokeWidth: 2, opacity: 1 },
+            visible: true, locked: false,
+            source: { x: 0, y: 0 },
+            target: { x: 100, y: 100 },
+            route: { type: 'straight', points: [] },
+            arrowEnd: { type: 'triangle', size: 1 },
+          },
+        ],
+      });
+
+      const { container } = render(<CanvasView scene={scene} viewport={viewport} />);
+      const line = container.querySelector('line');
+      expect(line).toHaveAttribute('marker-end', expect.stringContaining('url(#end-triangle'));
+    });
+
+    it('should apply marker-start when arrowStart is set', () => {
+      scene = createScene({
+        elements: [
+          {
+            id: 'ca3', type: 'connector', layerId: 'l1',
+            transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: 'none', stroke: '#333', strokeWidth: 2, opacity: 1 },
+            visible: true, locked: false,
+            source: { x: 0, y: 0 },
+            target: { x: 100, y: 100 },
+            route: { type: 'straight', points: [] },
+            arrowStart: { type: 'diamond', size: 1 },
+          },
+        ],
+      });
+
+      const { container } = render(<CanvasView scene={scene} viewport={viewport} />);
+      const line = container.querySelector('line');
+      expect(line).toHaveAttribute('marker-start', expect.stringContaining('url(#start-diamond'));
+    });
+
+    it('should not apply markers when arrow type is none', () => {
+      scene = createScene({
+        elements: [
+          {
+            id: 'ca4', type: 'connector', layerId: 'l1',
+            transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: 'none', stroke: '#333', strokeWidth: 2, opacity: 1 },
+            visible: true, locked: false,
+            source: { x: 0, y: 0 },
+            target: { x: 100, y: 100 },
+            route: { type: 'straight', points: [] },
+            arrowStart: { type: 'none', size: 1 },
+            arrowEnd: { type: 'none', size: 1 },
+          },
+        ],
+      });
+
+      const { container } = render(<CanvasView scene={scene} viewport={viewport} />);
+      const line = container.querySelector('line');
+      expect(line).not.toHaveAttribute('marker-start');
+      expect(line).not.toHaveAttribute('marker-end');
+    });
+
+    it('should render open triangle arrow marker', () => {
+      scene = createScene({
+        elements: [
+          {
+            id: 'ca5', type: 'connector', layerId: 'l1',
+            transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: 'none', stroke: '#333', strokeWidth: 2, opacity: 1 },
+            visible: true, locked: false,
+            source: { x: 0, y: 0 },
+            target: { x: 100, y: 100 },
+            route: { type: 'straight', points: [] },
+            arrowEnd: { type: 'openTriangle', size: 1 },
+          },
+        ],
+      });
+
+      const { container } = render(<CanvasView scene={scene} viewport={viewport} />);
+      const defs = container.querySelector('defs');
+      const marker = defs!.querySelector('marker');
+      expect(marker).toHaveAttribute('id', expect.stringContaining('openTriangle'));
+    });
+
+    it('should render circle arrow marker', () => {
+      scene = createScene({
+        elements: [
+          {
+            id: 'ca6', type: 'connector', layerId: 'l1',
+            transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: 'none', stroke: '#333', strokeWidth: 2, opacity: 1 },
+            visible: true, locked: false,
+            source: { x: 0, y: 0 },
+            target: { x: 100, y: 100 },
+            route: { type: 'straight', points: [] },
+            arrowEnd: { type: 'circle', size: 1 },
+          },
+        ],
+      });
+
+      const { container } = render(<CanvasView scene={scene} viewport={viewport} />);
+      const defs = container.querySelector('defs');
+      const marker = defs!.querySelector('marker');
+      expect(marker).toHaveAttribute('id', expect.stringContaining('circle'));
+    });
+
+    it('should apply markers on polyline connectors', () => {
+      scene = createScene({
+        elements: [
+          {
+            id: 'ca7', type: 'connector', layerId: 'l1',
+            transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: 'none', stroke: '#333', strokeWidth: 2, opacity: 1 },
+            visible: true, locked: false,
+            source: { x: 0, y: 0 },
+            target: { x: 100, y: 100 },
+            route: { type: 'polyline', points: [{ x: 50, y: 50 }] },
+            arrowEnd: { type: 'triangle', size: 1 },
+          },
+        ],
+      });
+
+      const { container } = render(<CanvasView scene={scene} viewport={viewport} />);
+      const polyline = container.querySelector('polyline');
+      expect(polyline).toHaveAttribute('marker-end', expect.stringContaining('url(#end-triangle'));
+    });
+  });
+
+  describe('connector labels', () => {
+    it('should render labels on connector at midpoint', () => {
+      scene = createScene({
+        elements: [
+          {
+            id: 'cl1', type: 'connector', layerId: 'l1',
+            transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: 'none', stroke: '#333', strokeWidth: 2, opacity: 1 },
+            visible: true, locked: false,
+            source: { x: 0, y: 0 },
+            target: { x: 100, y: 100 },
+            route: { type: 'straight', points: [] },
+            labels: [{ text: 'Hello', position: 0.5, offset: { dx: 0, dy: -10 } }],
+          },
+        ],
+      });
+
+      const { container } = render(<CanvasView scene={scene} viewport={viewport} />);
+      const textEls = container.querySelectorAll('text');
+      const labelText = Array.from(textEls).find(
+        (t) => t.textContent === 'Hello',
+      );
+      expect(labelText).toBeInTheDocument();
+    });
+
+    it('should render multiple labels', () => {
+      scene = createScene({
+        elements: [
+          {
+            id: 'cl2', type: 'connector', layerId: 'l1',
+            transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: 'none', stroke: '#333', strokeWidth: 2, opacity: 1 },
+            visible: true, locked: false,
+            source: { x: 0, y: 0 },
+            target: { x: 100, y: 100 },
+            route: { type: 'straight', points: [] },
+            labels: [
+              { text: 'Start', position: 0.1, offset: { dx: 0, dy: 0 } },
+              { text: 'End', position: 0.9, offset: { dx: 0, dy: 0 } },
+            ],
+          },
+        ],
+      });
+
+      const { container } = render(<CanvasView scene={scene} viewport={viewport} />);
+      const textEls = container.querySelectorAll('text');
+      const labels = Array.from(textEls).map((t) => t.textContent);
+      expect(labels).toContain('Start');
+      expect(labels).toContain('End');
+    });
+
+    it('should place label at correct position on straight line', () => {
+      scene = createScene({
+        elements: [
+          {
+            id: 'cl3', type: 'connector', layerId: 'l1',
+            transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: 'none', stroke: '#333', strokeWidth: 2, opacity: 1 },
+            visible: true, locked: false,
+            source: { x: 0, y: 0 },
+            target: { x: 200, y: 200 },
+            route: { type: 'straight', points: [] },
+            labels: [{ text: 'Mid', position: 0.5, offset: { dx: 0, dy: 0 } }],
+          },
+        ],
+      });
+
+      const { container } = render(<CanvasView scene={scene} viewport={viewport} />);
+      const textEls = container.querySelectorAll('text');
+      const labelText = Array.from(textEls).find((t) => t.textContent === 'Mid');
+      expect(labelText).toBeInTheDocument();
+      // At midpoint (0.5), x should be 100, y should be 100 (midpoint of 0,0 -> 200,200)
+      expect(labelText).toHaveAttribute('x', '100');
+      expect(labelText).toHaveAttribute('y', '100');
+    });
+
+    it('should apply label offset', () => {
+      scene = createScene({
+        elements: [
+          {
+            id: 'cl4', type: 'connector', layerId: 'l1',
+            transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: 'none', stroke: '#333', strokeWidth: 2, opacity: 1 },
+            visible: true, locked: false,
+            source: { x: 0, y: 0 },
+            target: { x: 100, y: 0 },
+            route: { type: 'straight', points: [] },
+            labels: [{ text: 'Above', position: 0.5, offset: { dx: 5, dy: -15 } }],
+          },
+        ],
+      });
+
+      const { container } = render(<CanvasView scene={scene} viewport={viewport} />);
+      const textEls = container.querySelectorAll('text');
+      const labelText = Array.from(textEls).find((t) => t.textContent === 'Above');
+      expect(labelText).toBeInTheDocument();
+      // Source: 0,0 -> Target: 100,0. Midpoint: 50,0. Offset: dx=5, dy=-15 => 55,-15
+      expect(labelText).toHaveAttribute('x', '55');
+      expect(labelText).toHaveAttribute('y', '-15');
+    });
+
+    it('should position labels on polyline connectors', () => {
+      scene = createScene({
+        elements: [
+          {
+            id: 'cl5', type: 'connector', layerId: 'l1',
+            transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: 'none', stroke: '#333', strokeWidth: 2, opacity: 1 },
+            visible: true, locked: false,
+            source: { x: 0, y: 0 },
+            target: { x: 100, y: 100 },
+            route: { type: 'polyline', points: [{ x: 100, y: 0 }] },
+            labels: [{ text: 'OnPath', position: 0.5, offset: { dx: 0, dy: 0 } }],
+          },
+        ],
+      });
+
+      const { container } = render(<CanvasView scene={scene} viewport={viewport} />);
+      const textEls = container.querySelectorAll('text');
+      const labelText = Array.from(textEls).find((t) => t.textContent === 'OnPath');
+      expect(labelText).toBeInTheDocument();
+      // Path: source(0,0) -> waypoint(100,0) -> target(100,100)
+      // Segment 1 length: 100; Segment 2 length: 100; Total: 200
+      // t=0.5 => 100 distance => end of segment 1 => (100,0)
+      expect(labelText).toHaveAttribute('x', '100');
+      expect(labelText).toHaveAttribute('y', '0');
+    });
+
+    it('should not crash when connector has no labels', () => {
+      scene = createScene({
+        elements: [
+          {
+            id: 'cl6', type: 'connector', layerId: 'l1',
+            transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: 'none', stroke: '#333', strokeWidth: 2, opacity: 1 },
+            visible: true, locked: false,
+            source: { x: 0, y: 0 },
+            target: { x: 100, y: 100 },
+            route: { type: 'straight', points: [] },
+          },
+        ],
+      });
+
+      const { container } = render(<CanvasView scene={scene} viewport={viewport} />);
+      const line = container.querySelector('line');
+      expect(line).toBeInTheDocument();
+    });
+
+    it('should use default font from connector style', () => {
+      scene = createScene({
+        elements: [
+          {
+            id: 'cl7', type: 'connector', layerId: 'l1',
+            transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: 'none', stroke: '#333', strokeWidth: 2, opacity: 1, fontSize: 14, fontFamily: 'Courier', fontWeight: 'bold' },
+            visible: true, locked: false,
+            source: { x: 0, y: 0 },
+            target: { x: 100, y: 100 },
+            route: { type: 'straight', points: [] },
+            labels: [{ text: 'Styled', position: 0.5, offset: { dx: 0, dy: 0 } }],
+          },
+        ],
+      });
+
+      const { container } = render(<CanvasView scene={scene} viewport={viewport} />);
+      const textEls = container.querySelectorAll('text');
+      const labelText = Array.from(textEls).find((t) => t.textContent === 'Styled');
+      expect(labelText).toBeInTheDocument();
+      expect(labelText).toHaveAttribute('font-size', '14');
+      expect(labelText).toHaveAttribute('font-family', 'Courier');
+      expect(labelText).toHaveAttribute('font-weight', 'bold');
+    });
+  });
+
   describe('visibility', () => {
     it('should not render hidden elements', () => {
       scene = createScene({
