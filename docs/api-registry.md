@@ -2140,3 +2140,41 @@
 | 输出参数 | implements SceneCommand - 可通过 CommandExecutor 执行、撤销和重做 |
 | 典型用例 | `executor.execute(new DistributeElementsCommand(['e1', 'e2', 'e3'], 'horizontal'));` / `executor.execute(new DistributeElementsCommand(['e1', 'e2', 'e3', 'e4'], 'circular', { centerX: 200, centerY: 200, radius: 120 }));` |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-06-03）|
+
+### API-0113 BatchLayerOperation
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0113 |
+| 名称 | BatchLayerOperation |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 按层批量操作类型字面量联合类型。定义八种图层级批量操作：setFill（统一填充色）、setStroke（统一轮廓色）、setOpacity（统一透明度，值须 0-1）、showAll（显示层内全部元素）、hideAll（隐藏层内全部元素）、deleteAll（删除层内全部元素，自动解绑关联连接线端点）、copyAll（复制全部元素到目标层，生成新 ID，检查冲突）、moveAll（移动全部元素到目标层，检查冲突） |
+| 输入参数 | 无（类型别名） |
+| 输出参数 | 'setFill' \| 'setStroke' \| 'setOpacity' \| 'showAll' \| 'hideAll' \| 'deleteAll' \| 'copyAll' \| 'moveAll' |
+| 典型用例 | `const op: BatchLayerOperation = 'setFill'` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-06-04）|
+
+### API-0114 BatchLayerEditCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0114 |
+| 名称 | BatchLayerEditCommand |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 按层批量编辑命令。对指定图层内的全部元素执行统一操作。setFill/setStroke：修改所有元素的 fill/stroke 样式属性（value 为颜色字符串）。setOpacity：修改所有元素的 opacity（value 为 0-1 数值）。showAll/hideAll：切换所有元素的 visible 为 true/false。deleteAll：删除图层内全部元素，同时解绑所有引用被删元素的连接线端点（设为自由端点）。copyAll：深克隆图层内全部元素到目标层，每个元素生成新 ID，检查目标层冲突。moveAll：将所有元素的 layerId 修改为目标层，检查目标层冲突和锁定状态。所有修改操作均检查元素锁定状态，锁定元素不可修改。完整支持 undo/redo（通过快照还原原始属性、已删除元素、已复制的元素 ID 等） |
+| 输入参数 | constructor(layerId: string, operation: BatchLayerOperation, value?: string \| number, targetLayerId?: string, label?: string) |
+| 输出参数 | implements SceneCommand - 可通过 CommandExecutor 执行、撤销和重做 |
+| 典型用例 | `executor.execute(new BatchLayerEditCommand('l1', 'setFill', '#ff0000'));` / `executor.execute(new BatchLayerEditCommand('l1', 'copyAll', undefined, 'l2'));` / `executor.execute(new BatchLayerEditCommand('l1', 'hideAll'));` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-06-04）|

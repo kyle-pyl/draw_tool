@@ -92,5 +92,6 @@ export {
   RemoveFromGroupCommand,
   AlignElementsCommand,
   DistributeElementsCommand,
+  BatchLayerEditCommand,
 } from './commands';
-export type { SceneCommand, CommandHistoryEntry, ElementInput, AlignType, DistributeType, CircularDistributeOptions } from './commands';
+export type { SceneCommand, CommandHistoryEntry, ElementInput, AlignType, DistributeType, CircularDistributeOptions, BatchLayerOperation } from './commands';

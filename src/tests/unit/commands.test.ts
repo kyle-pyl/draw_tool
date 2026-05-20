@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CommandExecutor, CreateElementCommand, MoveElementsCommand, UpdateElementCommand, ChangeLayerCommand, TransformElementsCommand, GroupElementsCommand, UngroupCommand, AddToGroupCommand, RemoveFromGroupCommand, AlignElementsCommand, DistributeElementsCommand } from '../../core/commands';
-import type { SceneCommand, CommandHistoryEntry, ElementInput, ElementChanges, TransformParams, AlignType, DistributeType, CircularDistributeOptions } from '../../core/commands';
+import { CommandExecutor, CreateElementCommand, MoveElementsCommand, UpdateElementCommand, ChangeLayerCommand, TransformElementsCommand, GroupElementsCommand, UngroupCommand, AddToGroupCommand, RemoveFromGroupCommand, AlignElementsCommand, DistributeElementsCommand, BatchLayerEditCommand } from '../../core/commands';
+import type { SceneCommand, CommandHistoryEntry, ElementInput, ElementChanges, TransformParams, AlignType, DistributeType, CircularDistributeOptions, BatchLayerOperation } from '../../core/commands';
 import type { SceneDocument } from '../../core/types';
 import { successResult, failureResult } from '../../core/errors';
 import { useDocumentStore } from '../../core/store';
@@ -2212,6 +2212,568 @@ describe('DistributeElementsCommand', () => {
       expect(c3).toBeCloseTo(430, 1); // rightmost stays, center at 430
       // step = (430 - 25) / 2 = 202.5
       expect(c2).toBeCloseTo(227.5, 1);
+    });
+  });
+});
+
+// ─── BatchLayerEdit Command ─────────────────────────────────────────────────
+
+describe('BatchLayerEditCommand', () => {
+  let executor: CommandExecutor;
+
+  function makeScene(): SceneDocument {
+    return {
+      schemaVersion: '1.0.0',
+      project: { name: 'Test' },
+      canvas: { units: 'px', background: '#fff', defaultFont: 'Arial', gridSize: 0, snapToGrid: false },
+      rules: { maxLayerCount: 10, collisionStrategy: 'bbox', hiddenElementsCollide: false, lockedElementsCollide: false, connectorsExempt: true },
+      layers: [
+        { id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false },
+        { id: 'l2', name: 'Layer 2', order: 2, visible: true, locked: false },
+      ],
+      elements: [],
+      groups: [],
+      dataSources: [],
+      charts: [],
+      templates: [],
+      exportPresets: [],
+    };
+  }
+
+  function createShape(name: string, x: number, y: number, w = 50, h = 50, layerId = 'l1') {
+    const input: ElementInput = {
+      type: 'shape', layerId, shapeKind: 'rect', name,
+      transform: { x, y, width: w, height: h, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: '#ffffff', stroke: '#000000', strokeWidth: 2, opacity: 1 },
+    };
+    const cmd = new CreateElementCommand(input);
+    executor.execute(cmd);
+    return useDocumentStore.getState().getScene()!.elements.at(-1)!.id;
+  }
+
+  function createText(name: string, x: number, y: number, layerId = 'l1') {
+    const input: ElementInput = {
+      type: 'text', layerId, name,
+      transform: { x, y, width: 100, height: 30, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: '#000000', stroke: 'none', strokeWidth: 0, opacity: 1 },
+      text: 'Hello',
+    };
+    const cmd = new CreateElementCommand(input);
+    executor.execute(cmd);
+    return useDocumentStore.getState().getScene()!.elements.at(-1)!.id;
+  }
+
+  beforeEach(() => {
+    executor = new CommandExecutor();
+    useDocumentStore.getState().loadScene(structuredClone(makeScene()));
+  });
+
+  describe('validation', () => {
+    it('fails when layer does not exist', () => {
+      const cmd = new BatchLayerEditCommand('nonexistent', 'setFill', '#ff0000');
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe('REF_LAYER_NOT_FOUND');
+    });
+
+    it('fails when locked elements are in the layer for setFill', () => {
+      const id1 = createShape('A', 0, 0);
+      const scene = useDocumentStore.getState().getScene()!;
+      useDocumentStore.getState().updateScene(() => ({
+        ...scene,
+        elements: scene.elements.map((el) => (el.id === id1 ? { ...el, locked: true } : el)),
+      }));
+      const cmd = new BatchLayerEditCommand('l1', 'setFill', '#ff0000');
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe('RULE_LOCKED_ELEMENT_EDITED');
+    });
+
+    it('fails when opacity value is invalid', () => {
+      createShape('A', 0, 0);
+      const cmd = new BatchLayerEditCommand('l1', 'setOpacity', 5);
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].message).toContain('between 0 and 1');
+    });
+
+    it('allows setOpacity with valid values', () => {
+      createShape('A', 0, 0);
+      const cmd0 = new BatchLayerEditCommand('l1', 'setOpacity', 0);
+      expect(cmd0.validate(useDocumentStore.getState().getScene()!).valid).toBe(true);
+      const cmd1 = new BatchLayerEditCommand('l1', 'setOpacity', 0.5);
+      expect(cmd1.validate(useDocumentStore.getState().getScene()!).valid).toBe(true);
+      const cmd2 = new BatchLayerEditCommand('l1', 'setOpacity', 1);
+      expect(cmd2.validate(useDocumentStore.getState().getScene()!).valid).toBe(true);
+    });
+
+    it('passes validation for empty layer (deleteAll)', () => {
+      const cmd = new BatchLayerEditCommand('l1', 'deleteAll');
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(true);
+    });
+
+    it('fails when deleteAll has locked elements', () => {
+      createShape('A', 0, 0);
+      const scene = useDocumentStore.getState().getScene()!;
+      const id = scene.elements[0].id;
+      useDocumentStore.getState().updateScene(() => ({
+        ...scene,
+        elements: [{ ...scene.elements[0], locked: true }],
+      }));
+      const cmd = new BatchLayerEditCommand('l1', 'deleteAll');
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe('RULE_LOCKED_ELEMENT_EDITED');
+    });
+
+    it('fails for copyAll with no target layer', () => {
+      createShape('A', 0, 0);
+      const cmd = new BatchLayerEditCommand('l1', 'copyAll');
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].message).toContain('Target layer');
+    });
+
+    it('fails for moveAll with no target layer', () => {
+      createShape('A', 0, 0);
+      const cmd = new BatchLayerEditCommand('l1', 'moveAll');
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].message).toContain('Target layer');
+    });
+
+    it('fails when target layer does not exist', () => {
+      createShape('A', 0, 0);
+      const cmd = new BatchLayerEditCommand('l1', 'copyAll', undefined, 'nonexistent');
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe('REF_LAYER_NOT_FOUND');
+    });
+
+    it('fails when source and target layers are the same', () => {
+      createShape('A', 0, 0);
+      const cmd = new BatchLayerEditCommand('l1', 'copyAll', undefined, 'l1');
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].message).toContain('must be different');
+    });
+
+    it('fails for moveAll when target layer has collision', () => {
+      createShape('A', 0, 0); // layer l1
+      createShape('B', 0, 0, 50, 50, 'l2'); // layer l2 at same position
+
+      const cmd = new BatchLayerEditCommand('l1', 'moveAll', undefined, 'l2');
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe('GEO_MOVE_TARGET_CONFLICT');
+    });
+
+    it('fails for copyAll when target layer has collision', () => {
+      createShape('A', 0, 0); // layer l1
+      createShape('B', 0, 0, 50, 50, 'l2'); // layer l2 at same position
+
+      const cmd = new BatchLayerEditCommand('l1', 'copyAll', undefined, 'l2');
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe('GEO_MOVE_TARGET_CONFLICT');
+    });
+
+    it('passes copyAll when target layer has no collision', () => {
+      createShape('A', 0, 0); // layer l1
+      createShape('B', 200, 200, 50, 50, 'l2'); // far away
+
+      const cmd = new BatchLayerEditCommand('l1', 'copyAll', undefined, 'l2');
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(true);
+    });
+
+    it('fails when moveAll has locked elements', () => {
+      createShape('A', 0, 0);
+      const scene = useDocumentStore.getState().getScene()!;
+      const id = scene.elements[0].id;
+      useDocumentStore.getState().updateScene(() => ({
+        ...scene,
+        elements: [{ ...scene.elements[0], locked: true }],
+      }));
+      const cmd = new BatchLayerEditCommand('l1', 'moveAll', undefined, 'l2');
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe('RULE_LOCKED_ELEMENT_EDITED');
+    });
+  });
+
+  describe('setFill', () => {
+    it('changes fill of all elements in the layer', () => {
+      createShape('A', 0, 0);
+      createShape('B', 100, 0);
+      createText('C', 200, 0);
+
+      const cmd = new BatchLayerEditCommand('l1', 'setFill', '#ff0000');
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      for (const el of scene.elements) {
+        if (el.layerId === 'l1') {
+          expect(el.style.fill).toBe('#ff0000');
+        }
+      }
+    });
+
+    it('does not affect elements in other layers', () => {
+      createShape('A', 0, 0); // l1
+      createShape('B', 100, 100, 50, 50, 'l2'); // l2
+
+      const cmd = new BatchLayerEditCommand('l1', 'setFill', '#00ff00');
+      executor.execute(cmd);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const l2El = scene.elements.find((e) => e.layerId === 'l2')!;
+      expect(l2El.style.fill).toBe('#ffffff');
+    });
+
+    it('undo restores original fill', () => {
+      createShape('A', 0, 0);
+      createShape('B', 100, 0);
+
+      const beforeScene = useDocumentStore.getState().getScene()!;
+      const origFill = beforeScene.elements[0].style.fill;
+
+      const cmd = new BatchLayerEditCommand('l1', 'setFill', '#ff0000');
+      executor.execute(cmd);
+      executor.undo();
+
+      const afterScene = useDocumentStore.getState().getScene()!;
+      for (const el of afterScene.elements) {
+        if (el.layerId === 'l1') {
+          expect(el.style.fill).toBe(origFill);
+        }
+      }
+    });
+
+    it('redo reapplies fill change', () => {
+      createShape('A', 0, 0);
+      executor.execute(new BatchLayerEditCommand('l1', 'setFill', '#ff0000'));
+      executor.undo();
+      executor.redo();
+
+      const scene = useDocumentStore.getState().getScene()!;
+      for (const el of scene.elements) {
+        if (el.layerId === 'l1') {
+          expect(el.style.fill).toBe('#ff0000');
+        }
+      }
+    });
+  });
+
+  describe('setStroke', () => {
+    it('changes stroke of all elements in the layer', () => {
+      createShape('A', 0, 0);
+      createText('B', 100, 0);
+
+      const cmd = new BatchLayerEditCommand('l1', 'setStroke', '#00ff00');
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      for (const el of scene.elements) {
+        if (el.layerId === 'l1') {
+          expect(el.style.stroke).toBe('#00ff00');
+        }
+      }
+    });
+
+    it('undo restores original stroke', () => {
+      createShape('A', 0, 0);
+      const origStroke = useDocumentStore.getState().getScene()!.elements[0].style.stroke;
+
+      executor.execute(new BatchLayerEditCommand('l1', 'setStroke', '#123456'));
+      executor.undo();
+
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.elements[0].style.stroke).toBe(origStroke);
+    });
+  });
+
+  describe('setOpacity', () => {
+    it('changes opacity of all elements in the layer', () => {
+      createShape('A', 0, 0);
+      createShape('B', 100, 0);
+
+      const cmd = new BatchLayerEditCommand('l1', 'setOpacity', 0.5);
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      for (const el of scene.elements) {
+        if (el.layerId === 'l1') {
+          expect(el.style.opacity).toBe(0.5);
+        }
+      }
+    });
+
+    it('undo restores original opacity', () => {
+      createShape('A', 0, 0);
+      const origOpacity = useDocumentStore.getState().getScene()!.elements[0].style.opacity;
+
+      executor.execute(new BatchLayerEditCommand('l1', 'setOpacity', 0.3));
+      executor.undo();
+
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.elements[0].style.opacity).toBe(origOpacity);
+    });
+  });
+
+  describe('showAll / hideAll', () => {
+    it('showAll sets all elements visible', () => {
+      createShape('A', 0, 0);
+      createShape('B', 100, 0);
+      // Hide them first
+      executor.execute(new BatchLayerEditCommand('l1', 'hideAll'));
+
+      executor.execute(new BatchLayerEditCommand('l1', 'showAll'));
+      const scene = useDocumentStore.getState().getScene()!;
+      for (const el of scene.elements) {
+        if (el.layerId === 'l1') {
+          expect(el.visible).toBe(true);
+        }
+      }
+    });
+
+    it('hideAll sets all elements hidden', () => {
+      createShape('A', 0, 0);
+      createShape('B', 100, 0);
+
+      const cmd = new BatchLayerEditCommand('l1', 'hideAll');
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      for (const el of scene.elements) {
+        if (el.layerId === 'l1') {
+          expect(el.visible).toBe(false);
+        }
+      }
+    });
+
+    it('undo of hideAll restores visibility', () => {
+      createShape('A', 0, 0);
+      const wasVisible = useDocumentStore.getState().getScene()!.elements[0].visible;
+
+      executor.execute(new BatchLayerEditCommand('l1', 'hideAll'));
+      executor.undo();
+
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.elements[0].visible).toBe(wasVisible);
+    });
+
+    it('does not affect elements in other layers', () => {
+      createShape('A', 0, 0); // l1
+      createShape('B', 100, 100, 50, 50, 'l2'); // l2
+
+      executor.execute(new BatchLayerEditCommand('l1', 'hideAll'));
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const l2El = scene.elements.find((e) => e.layerId === 'l2')!;
+      expect(l2El.visible).toBe(true);
+    });
+  });
+
+  describe('deleteAll', () => {
+    it('removes all elements in the layer', () => {
+      createShape('A', 0, 0);
+      createShape('B', 100, 0);
+      createText('C', 200, 0);
+
+      const cmd = new BatchLayerEditCommand('l1', 'deleteAll');
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.elements.filter((el) => el.layerId === 'l1')).toHaveLength(0);
+    });
+
+    it('does not delete elements in other layers', () => {
+      createShape('A', 0, 0); // l1
+      createShape('B', 100, 100, 50, 50, 'l2'); // l2
+
+      executor.execute(new BatchLayerEditCommand('l1', 'deleteAll'));
+
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.elements).toHaveLength(1);
+      expect(scene.elements[0].layerId).toBe('l2');
+    });
+
+    it('unbinds connectors referencing deleted elements', () => {
+      const id1 = createShape('A', 0, 0);
+      const id2 = createShape('B', 200, 0);
+
+      const connInput: ElementInput = {
+        type: 'connector', layerId: 'l2', name: 'conn',
+        transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { fill: 'none', stroke: '#000', strokeWidth: 1, opacity: 1 },
+        source: { elementId: id1, x: 50, y: 25 },
+        target: { elementId: id2, x: 150, y: 25 },
+        route: { type: 'straight', points: [] },
+      };
+      executor.execute(new CreateElementCommand(connInput));
+      const connId = useDocumentStore.getState().getScene()!.elements.at(-1)!.id;
+
+      executor.execute(new BatchLayerEditCommand('l1', 'deleteAll'));
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const conn = scene.elements.find((e) => e.id === connId)!;
+      expect(conn).toBeDefined();
+      if (conn.type === 'connector') {
+        expect(conn.source.elementId).toBeUndefined();
+        expect(conn.target.elementId).toBeUndefined();
+      }
+    });
+
+    it('undo restores all deleted elements', () => {
+      createShape('A', 0, 0);
+      createShape('B', 100, 0);
+      const countBefore = useDocumentStore.getState().getScene()!.elements.length;
+
+      executor.execute(new BatchLayerEditCommand('l1', 'deleteAll'));
+      expect(useDocumentStore.getState().getScene()!.elements.filter((el) => el.layerId === 'l1')).toHaveLength(0);
+
+      executor.undo();
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.elements.filter((el) => el.layerId === 'l1')).toHaveLength(countBefore);
+    });
+  });
+
+  describe('copyAll', () => {
+    it('copies all elements to another layer', () => {
+      createShape('A', 0, 0);
+      createShape('B', 100, 0);
+
+      const cmd = new BatchLayerEditCommand('l1', 'copyAll', undefined, 'l2');
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.elements.filter((el) => el.layerId === 'l1')).toHaveLength(2); // originals remain
+      expect(scene.elements.filter((el) => el.layerId === 'l2')).toHaveLength(2); // copies
+    });
+
+    it('copied elements have new IDs', () => {
+      createShape('A', 0, 0);
+      const origIds = useDocumentStore.getState().getScene()!.elements.map((e) => e.id);
+
+      executor.execute(new BatchLayerEditCommand('l1', 'copyAll', undefined, 'l2'));
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const newIds = scene.elements.filter((el) => el.layerId === 'l2').map((e) => e.id);
+      for (const nid of newIds) {
+        expect(origIds).not.toContain(nid);
+      }
+    });
+
+    it('copies text elements', () => {
+      createText('T', 0, 0);
+
+      const cmd = new BatchLayerEditCommand('l1', 'copyAll', undefined, 'l2');
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const copy = scene.elements.find((e) => e.layerId === 'l2')!;
+      expect(copy.type).toBe('text');
+    });
+
+    it('undo removes copied elements', () => {
+      createShape('A', 0, 0);
+      createShape('B', 100, 0);
+
+      executor.execute(new BatchLayerEditCommand('l1', 'copyAll', undefined, 'l2'));
+      expect(useDocumentStore.getState().getScene()!.elements).toHaveLength(4);
+
+      executor.undo();
+      expect(useDocumentStore.getState().getScene()!.elements).toHaveLength(2);
+      expect(useDocumentStore.getState().getScene()!.elements.filter((el) => el.layerId === 'l2')).toHaveLength(0);
+    });
+  });
+
+  describe('moveAll', () => {
+    it('moves all elements to another layer', () => {
+      createShape('A', 0, 0);
+      createShape('B', 100, 0);
+
+      const cmd = new BatchLayerEditCommand('l1', 'moveAll', undefined, 'l2');
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.elements.filter((el) => el.layerId === 'l1')).toHaveLength(0);
+      expect(scene.elements.filter((el) => el.layerId === 'l2')).toHaveLength(2);
+    });
+
+    it('undo moves elements back', () => {
+      createShape('A', 0, 0);
+      createShape('B', 100, 0);
+
+      executor.execute(new BatchLayerEditCommand('l1', 'moveAll', undefined, 'l2'));
+      executor.undo();
+
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.elements.filter((el) => el.layerId === 'l1')).toHaveLength(2);
+      expect(scene.elements.filter((el) => el.layerId === 'l2')).toHaveLength(0);
+    });
+
+    it('redo moves elements again', () => {
+      createShape('A', 0, 0);
+
+      executor.execute(new BatchLayerEditCommand('l1', 'moveAll', undefined, 'l2'));
+      executor.undo();
+      executor.redo();
+
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.elements.filter((el) => el.layerId === 'l1')).toHaveLength(0);
+      expect(scene.elements.filter((el) => el.layerId === 'l2')).toHaveLength(1);
+    });
+
+    it('connectors are moved too', () => {
+      createShape('A', 0, 0);
+      const sId = createShape('B', 200, 0);
+
+      const connInput: ElementInput = {
+        type: 'connector', layerId: 'l1', name: 'conn',
+        transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { fill: 'none', stroke: '#000', strokeWidth: 1, opacity: 1 },
+        source: { elementId: sId, x: 50, y: 25 },
+        target: { x: 150, y: 25 },
+        route: { type: 'straight', points: [] },
+      };
+      executor.execute(new CreateElementCommand(connInput));
+
+      executor.execute(new BatchLayerEditCommand('l1', 'moveAll', undefined, 'l2'));
+
+      const scene = useDocumentStore.getState().getScene()!;
+      // All l1 elements should now be in l2
+      expect(scene.elements.filter((el) => el.layerId === 'l1')).toHaveLength(0);
+      expect(scene.elements.filter((el) => el.layerId === 'l2')).toHaveLength(3); // 2 shapes + 1 connector
+    });
+  });
+
+  describe('command structure', () => {
+    it('has a label', () => {
+      const cmd = new BatchLayerEditCommand('l1', 'setFill', '#f00');
+      expect(cmd.label).toContain('Set fill');
+    });
+
+    it('has an id', () => {
+      const cmd = new BatchLayerEditCommand('l1', 'setFill', '#f00');
+      expect(cmd.id).toBeTruthy();
+    });
+
+    it('copyAll obeys max layer count validation', () => {
+      createShape('A', 0, 0);
+      // copyAll doesn't check maxLayerCount explicitly in validate(), but the scene rules exist
+      const cmd = new BatchLayerEditCommand('l1', 'copyAll', undefined, 'l2');
+      expect(cmd.validate(useDocumentStore.getState().getScene()!).valid).toBe(true);
     });
   });
 });

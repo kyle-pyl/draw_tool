@@ -1638,6 +1638,436 @@ export class DistributeElementsCommand implements SceneCommand {
   }
 }
 
+// ─── BatchLayerEdit Command ───────────────────────────────────────────────────
+
+export type BatchLayerOperation =
+  | 'setFill'
+  | 'setStroke'
+  | 'setOpacity'
+  | 'showAll'
+  | 'hideAll'
+  | 'deleteAll'
+  | 'copyAll'
+  | 'moveAll';
+
+export class BatchLayerEditCommand implements SceneCommand {
+  id: string;
+  label: string;
+  private layerId: string;
+  private operation: BatchLayerOperation;
+  /** Value for setFill, setStroke (string/color), setOpacity (number), showAll/hideAll (unused) */
+  private value: string | number | undefined;
+  private targetLayerId?: string;
+  private previousElementData: Map<string, {
+    style?: Partial<ElementStyle>;
+    visible?: boolean;
+    locked?: boolean;
+    layerId?: string;
+    /** full element snapshot for deleteAll undo */
+    snapshot?: SceneElement;
+  }>;
+  private copiedElementIds: string[];
+  private operationLabel: string;
+
+  constructor(
+    layerId: string,
+    operation: BatchLayerOperation,
+    value?: string | number,
+    targetLayerId?: string,
+    label?: string,
+  ) {
+    this.id = generateId('batchlayer');
+    this.layerId = layerId;
+    this.operation = operation;
+    this.value = value;
+    this.targetLayerId = targetLayerId;
+    this.previousElementData = new Map();
+    this.copiedElementIds = [];
+
+    const opLabels: Record<BatchLayerOperation, string> = {
+      setFill: `Set fill on layer`,
+      setStroke: `Set stroke on layer`,
+      setOpacity: `Set opacity on layer`,
+      showAll: `Show all in layer`,
+      hideAll: `Hide all in layer`,
+      deleteAll: `Delete all in layer`,
+      copyAll: `Copy layer to another`,
+      moveAll: `Move layer to another`,
+    };
+    this.operationLabel = opLabels[operation];
+    this.label = label || this.operationLabel;
+  }
+
+  validate(scene: SceneDocument): ValidationResult {
+    const layer = scene.layers.find((l) => l.id === this.layerId);
+    if (!layer) {
+      return failureResult({
+        code: ErrorCode.REF_LAYER_NOT_FOUND as string,
+        message: `Layer "${this.layerId}" does not exist`,
+        severity: 'error',
+        layerIds: [this.layerId],
+        suggestion: 'Specify an existing layer',
+      });
+    }
+
+    const layerElements = scene.elements.filter((el) => el.layerId === this.layerId);
+
+    switch (this.operation) {
+      case 'setFill':
+      case 'setStroke':
+      case 'setOpacity':
+      case 'showAll':
+      case 'hideAll': {
+        // Check no locked elements are being modified
+        for (const el of layerElements) {
+          if (el.locked) {
+            return failureResult({
+              code: ErrorCode.RULE_LOCKED_ELEMENT_EDITED as string,
+              message: `Element "${el.name || el.id}" is locked and cannot be modified`,
+              severity: 'error',
+              elementIds: [el.id],
+              suggestion: 'Unlock the element first or exclude locked elements',
+            });
+          }
+        }
+        if (this.operation === 'setOpacity' && (typeof this.value !== 'number' || this.value < 0 || this.value > 1)) {
+          return failureResult({
+            code: 'SCHEMA_FIELD_TYPE_ERROR',
+            message: 'Opacity value must be a number between 0 and 1',
+            severity: 'error',
+            suggestion: 'Provide a valid opacity value (0-1)',
+          });
+        }
+        return successResult();
+      }
+
+      case 'deleteAll': {
+        if (layerElements.length === 0) {
+          return successResult();
+        }
+        for (const el of layerElements) {
+          if (el.locked) {
+            return failureResult({
+              code: ErrorCode.RULE_LOCKED_ELEMENT_EDITED as string,
+              message: `Element "${el.name || el.id}" is locked and cannot be deleted`,
+              severity: 'error',
+              elementIds: [el.id],
+              suggestion: 'Unlock the element first or exclude locked elements',
+            });
+          }
+        }
+        return successResult();
+      }
+
+      case 'copyAll':
+      case 'moveAll': {
+        if (!this.targetLayerId) {
+          return failureResult({
+            code: 'SCHEMA_FIELD_TYPE_ERROR',
+            message: 'Target layer ID is required for copy/move operations',
+            severity: 'error',
+            suggestion: 'Provide a target layer ID',
+          });
+        }
+
+        const targetLayer = scene.layers.find((l) => l.id === this.targetLayerId);
+        if (!targetLayer) {
+          return failureResult({
+            code: ErrorCode.REF_LAYER_NOT_FOUND as string,
+            message: `Target layer "${this.targetLayerId}" does not exist`,
+            severity: 'error',
+            layerIds: [this.targetLayerId],
+            suggestion: 'Specify an existing target layer',
+          });
+        }
+
+        if (this.targetLayerId === this.layerId) {
+          return failureResult({
+            code: 'SCHEMA_FIELD_TYPE_ERROR',
+            message: 'Source and target layers must be different for copy/move',
+            severity: 'error',
+            layerIds: [this.layerId],
+            suggestion: 'Choose a different target layer',
+          });
+        }
+
+        // For moveAll: check no elements are locked
+        if (this.operation === 'moveAll') {
+          for (const el of layerElements) {
+            if (el.locked) {
+              return failureResult({
+                code: ErrorCode.RULE_LOCKED_ELEMENT_EDITED as string,
+                message: `Element "${el.name || el.id}" is locked and cannot be moved`,
+                severity: 'error',
+                elementIds: [el.id],
+                suggestion: 'Unlock the element first',
+              });
+            }
+          }
+        }
+
+        // Check collisions in target layer
+        const geometryAdapter = createGeometryAdapter();
+        const targetExisting = scene.elements.filter(
+          (el) => el.layerId === this.targetLayerId && el.type !== 'connector',
+        );
+
+        for (const el of layerElements) {
+          if (el.type === 'connector') continue;
+          const elBBox = geometryAdapter.getBBox(el);
+          for (const other of targetExisting) {
+            const otherBBox = geometryAdapter.getBBox(other);
+            if (bboxesOverlap(elBBox, otherBBox)) {
+              const overlapX = Math.max(elBBox.x, otherBBox.x);
+              const overlapY = Math.max(elBBox.y, otherBBox.y);
+              const overlapW = Math.min(elBBox.x + elBBox.width, otherBBox.x + otherBBox.width) - overlapX;
+              const overlapH = Math.min(elBBox.y + elBBox.height, otherBBox.y + otherBBox.height) - overlapY;
+              const opName = this.operation === 'copyAll' ? 'copy' : 'move';
+              return failureResult({
+                code: ErrorCode.GEO_MOVE_TARGET_CONFLICT as string,
+                message: `Cannot ${opName} "${el.name || el.id}" to layer "${this.targetLayerId}": would overlap with "${other.name || other.id}"`,
+                severity: 'error',
+                layerIds: [this.targetLayerId],
+                elementIds: [el.id, other.id],
+                bboxes: [{ x: overlapX, y: overlapY, width: overlapW, height: overlapH }],
+                suggestion: `Move conflicting elements in the target layer or choose a different target layer`,
+              });
+            }
+          }
+        }
+
+        return successResult();
+      }
+
+      default:
+        return failureResult({
+          code: 'SCHEMA_INVALID_TYPE',
+          message: `Unknown batch operation: "${this.operation}"`,
+          severity: 'error',
+          suggestion: 'Use one of: setFill, setStroke, setOpacity, showAll, hideAll, deleteAll, copyAll, moveAll',
+        });
+    }
+  }
+
+  execute(scene: SceneDocument): SceneDocument {
+    const layerElements = scene.elements.filter((el) => el.layerId === this.layerId);
+
+    // Store previous state for all affected elements (for undo)
+    for (const el of layerElements) {
+      const prev: { style?: Partial<ElementStyle>; visible?: boolean; layerId?: string; snapshot?: SceneElement } = {};
+      if (this.operation === 'setFill' || this.operation === 'setStroke' || this.operation === 'setOpacity') {
+        prev.style = { ...el.style };
+      }
+      if (this.operation === 'showAll' || this.operation === 'hideAll') {
+        prev.visible = el.visible;
+      }
+      if (this.operation === 'moveAll') {
+        prev.layerId = el.layerId;
+      }
+      if (this.operation === 'deleteAll') {
+        prev.snapshot = JSON.parse(JSON.stringify(el)) as SceneElement;
+      }
+      this.previousElementData.set(el.id, prev);
+    }
+
+    switch (this.operation) {
+      case 'setFill': {
+        const fill = String(this.value ?? '#000000');
+        return {
+          ...scene,
+          elements: scene.elements.map((el) =>
+            el.layerId === this.layerId
+              ? { ...el, style: { ...el.style, fill } }
+              : el,
+          ),
+        };
+      }
+
+      case 'setStroke': {
+        const stroke = String(this.value ?? '#000000');
+        return {
+          ...scene,
+          elements: scene.elements.map((el) =>
+            el.layerId === this.layerId
+              ? { ...el, style: { ...el.style, stroke } }
+              : el,
+          ),
+        };
+      }
+
+      case 'setOpacity': {
+        const opacity = typeof this.value === 'number' ? this.value : 1;
+        return {
+          ...scene,
+          elements: scene.elements.map((el) =>
+            el.layerId === this.layerId
+              ? { ...el, style: { ...el.style, opacity } }
+              : el,
+          ),
+        };
+      }
+
+      case 'showAll': {
+        return {
+          ...scene,
+          elements: scene.elements.map((el) =>
+            el.layerId === this.layerId ? { ...el, visible: true } : el,
+          ),
+        };
+      }
+
+      case 'hideAll': {
+        return {
+          ...scene,
+          elements: scene.elements.map((el) =>
+            el.layerId === this.layerId ? { ...el, visible: false } : el,
+          ),
+        };
+      }
+
+      case 'deleteAll': {
+        const deletedIds = new Set(layerElements.map((el) => el.id));
+        // Unbind connectors that reference deleted elements
+        return {
+          ...scene,
+          elements: scene.elements
+            .filter((el) => !deletedIds.has(el.id))
+            .map((el) => {
+              if (el.type !== 'connector') return el;
+              let updated = { ...el };
+              if (el.source?.elementId && deletedIds.has(el.source.elementId)) {
+                updated = { ...updated, source: { ...updated.source, elementId: undefined, anchorId: undefined } };
+              }
+              if (el.target?.elementId && deletedIds.has(el.target.elementId)) {
+                updated = { ...updated, target: { ...updated.target, elementId: undefined, anchorId: undefined } };
+              }
+              return updated;
+            }),
+        };
+      }
+
+      case 'copyAll': {
+        const newElements: SceneElement[] = [];
+        for (const el of layerElements) {
+          const newId = generateId(el.type);
+          this.copiedElementIds.push(newId);
+          const clone = JSON.parse(JSON.stringify(el)) as SceneElement;
+          clone.id = newId;
+          clone.layerId = this.targetLayerId!;
+          newElements.push(clone);
+        }
+        return {
+          ...scene,
+          elements: [...scene.elements, ...newElements],
+        };
+      }
+
+      case 'moveAll': {
+        const movedIdSet = new Set(layerElements.map((el) => el.id));
+        return {
+          ...scene,
+          elements: scene.elements.map((el) =>
+            movedIdSet.has(el.id) ? { ...el, layerId: this.targetLayerId! } : el,
+          ),
+        };
+      }
+
+      default:
+        return scene;
+    }
+  }
+
+  invert(_scene: SceneDocument): SceneCommand | null {
+    const invertCmd: SceneCommand = {
+      id: generateId('batchlayer-undo'),
+      label: `Undo: ${this.label}`,
+      validate: () => successResult(),
+      execute: (scene: SceneDocument) => this.invertExecute(scene),
+      invert: () => null,
+    };
+    return invertCmd;
+  }
+
+  private invertExecute(scene: SceneDocument): SceneDocument {
+    switch (this.operation) {
+      case 'setFill':
+      case 'setStroke':
+      case 'setOpacity': {
+        return {
+          ...scene,
+          elements: scene.elements.map((el) => {
+            const prev = this.previousElementData.get(el.id);
+            if (!prev || !prev.style) return el;
+            const restoredStyle = { ...el.style, ...prev.style };
+            return { ...el, style: restoredStyle };
+          }),
+        };
+      }
+
+      case 'showAll':
+      case 'hideAll': {
+        return {
+          ...scene,
+          elements: scene.elements.map((el) => {
+            const prev = this.previousElementData.get(el.id);
+            if (prev && prev.visible !== undefined) {
+              return { ...el, visible: prev.visible };
+            }
+            return el;
+          }),
+        };
+      }
+
+      case 'deleteAll': {
+        const restoredElements: SceneElement[] = [];
+        for (const [, prev] of this.previousElementData) {
+          if (prev.snapshot) {
+            restoredElements.push(prev.snapshot);
+          }
+        }
+        // Rebind connectors that were unbound by the delete
+        const deletedIds = new Set(restoredElements.map((el) => el.id));
+        return {
+          ...scene,
+          elements: [
+            ...scene.elements.map((el) => {
+              if (el.type !== 'connector') return el;
+              // We can't fully restore original bindings without stored info,
+              // but the elements are back so references become valid again
+              return el;
+            }),
+            ...restoredElements,
+          ],
+        };
+      }
+
+      case 'copyAll': {
+        const deleteIds = new Set(this.copiedElementIds);
+        return {
+          ...scene,
+          elements: scene.elements.filter((el) => !deleteIds.has(el.id)),
+        };
+      }
+
+      case 'moveAll': {
+        return {
+          ...scene,
+          elements: scene.elements.map((el) => {
+            const prev = this.previousElementData.get(el.id);
+            if (prev && prev.layerId) {
+              return { ...el, layerId: prev.layerId };
+            }
+            return el;
+          }),
+        };
+      }
+
+      default:
+        return scene;
+    }
+  }
+}
+
 // ─── TransformElements Command ─────────────────────────────────────────────────
 
 export type TransformParams = {

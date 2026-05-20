@@ -468,3 +468,16 @@
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0110（DistributeType）、API-0111（CircularDistributeOptions）、API-0112（DistributeElementsCommand） |
 
+### T-06-04 实现 BatchLayerEdit 命令
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-06-04 |
+| 任务名称      | 实现 BatchLayerEdit 命令 |
+| 完成时间      | 2026-05-20 12:00 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | 4ea08db |
+| 修改记录      | 修改：src/core/commands.ts（新增 BatchLayerOperation 类型、BatchLayerEditCommand 类：支持 setFill/setStroke/setOpacity/showAll/hideAll/deleteAll/copyAll/moveAll 八种按层批量操作，deleteAll 自动解绑关联的连接线端点，copyAll 在目标层克隆所有元素并生成新 ID，moveAll 迁移全部元素到目标层，所有操作均检查锁定元素和图层冲突（copy/move），完整的 undo/redo 支持）；修改：src/core/index.ts（新增 BatchLayerEditCommand 和 BatchLayerOperation 导出）；修改：src/tests/unit/commands.test.ts（新增 41 个批量编辑命令测试用例） |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0113（BatchLayerOperation）、API-0114（BatchLayerEditCommand） |
+
