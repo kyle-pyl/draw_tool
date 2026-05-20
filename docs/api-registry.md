@@ -1562,14 +1562,14 @@
 | 所属模块 | commands |
 | 状态 | 活跃 |
 | 创建日期 | 2026-05-19 |
-| 最后修订日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-20 |
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | CreateElementCommand 的元素输入接口。定义创建新元素所需的全部参数，包括 type（必需）、layerId（必需）、transform、style 及各类元素特有字段（shapeKind、text、src 等）。buildElementFromInput 函数据此构建完整的 SceneElement 对象 |
-| 输入参数 | type: ElementType, layerId: string, name?, transform: Transform2D, style: ElementStyle, visible?, locked?, shapeKind?, text?, src?, 等 |
+| 功能描述 | 元素创建输入接口，是 CreateElementCommand 构造函数的参数类型。包含创建任意元素类型所需的平面字段。T-09-03 新增 chart 类型专用字段：dataSourceId、chartType、columnMappings、options、svgContent。 |
+| 输入参数 | type: ElementType（必需）、layerId: string（必需）、transform: Transform2D（必需）、style: ElementStyle（必需）、name?: string、visible?: boolean、locked?: boolean、tags?: string[]、metadata?: Record<string,unknown>、shapeKind?、cornerRadius?、points?、pathCommands?、text?、src?、originalWidth?、originalHeight?、objectFit?、source?、target?、route?、arrowStart?、arrowEnd?、labels?、dataSourceId?: string、chartType?: ChartType、columnMappings?: ColumnMappings、options?: Record<string,unknown>、svgContent?: string |
 | 输出参数 | 无（接口类型） |
 | 典型用例 | `const input: ElementInput = { type: 'shape', layerId: 'l1', shapeKind: 'rect', transform: { x: 0, y: 0, width: 100, height: 50, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#fff', stroke: '#000', strokeWidth: 2, opacity: 1 } }` |
-| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-02）|
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-02）；2026-05-20, OpenCode/deepseek-v4-pro, T-05-06 新增 metadata 字段以支持自定义锚点（通过 metadata.anchors）；2026-05-20, OpenCode/deepseek-v4-pro, T-05-07 新增 cornerRadius 字段以支持圆角矩形绘制；2026-05-20, OpenCode/deepseek-v4-pro, T-05-09 新增 objectFit 字段以支持图片填充模式；2026-05-21, OpenCode/deepseek-v4-pro, T-09-03 新增 chart 专用字段（dataSourceId、chartType、columnMappings、options、svgContent）以支持图表元素创建 |
 
 ### API-0082 CreateElementCommand
 
@@ -2921,4 +2921,42 @@
 | 输入参数 | dataSourceId: string（数据源 ID）、chartType: ChartType（图表类型，bar/line/scatter/boxplot/histogram/heatmap）、columnMappings: { x?: string, y?: string, group?: string, color?: string }（列映射，y 通常必选） |
 | 输出参数 | 无（接口类型） |
 | 典型用例 | const config: ChartConfig = { dataSourceId: 'ds-1', chartType: 'bar', columnMappings: { y: 'Revenue', x: 'Month' } } |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0155 generateChart
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0155 |
+| 名称 | generateChart |
+| 所属系统 | modules |
+| 所属模块 | chart/generator |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 图表生成函数。接收已解析的 CSV 数据（ParsedData）、图表配置（ChartGenerationConfig）、数据源 ID 和图层 ID，生成一个包含渲染 SVG 内容的 ChartElement。Lite 包使用自研 SVG 渲染器支持全部 6 种图表类型（柱状图、折线图、散点图、箱线图、直方图、热图）。自动计算轴刻度、范围、图例和多系列分组。返回的 ChartElement 可通过 CreateElementCommand 添加到场景。 |
+| 输入参数 | data: ParsedData（已解析的 CSV 数据）、config: ChartGenerationConfig（图表类型、列映射、尺寸、标题）、dataSourceId: string（数据源 ID）、layerId: string（目标图层 ID） |
+| 输出参数 | ChartElement - 包含 id（自动生成）、type: 'chart'、layerId、transform（默认 600x400）、style、visible、dataSourceId、chartType、columnMappings、svgContent（渲染的完整 SVG 字符串） |
+| 典型用例 | `const chartEl = generateChart(parsedData, { chartType: 'bar', columnMappings: { x: 'category', y: 'value' }, title: 'Revenue' }, 'ds-1', 'layer-1'); executor.execute(new CreateElementCommand({ type: 'chart', layerId: 'layer-1', transform: chartEl.transform, style: chartEl.style, dataSourceId: chartEl.dataSourceId, chartType: chartEl.chartType, columnMappings: chartEl.columnMappings, svgContent: chartEl.svgContent }));` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0156 ChartGenerationConfig
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0156 |
+| 名称 | ChartGenerationConfig |
+| 所属系统 | modules |
+| 所属模块 | chart/generator |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 图表生成配置接口。定义图表类型、列映射、可选尺寸和标题。作为 generateChart 函数的配置参数。 |
+| 输入参数 | chartType: ChartType（图表类型，必选）、columnMappings: { x?: string, y?: string, group?: string, color?: string }（列到图表维度的映射，y 通常必选）、width?: number（SVG 宽度，默认 600）、height?: number（SVG 高度，默认 400）、title?: string（图表标题） |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const config: ChartGenerationConfig = { chartType: 'bar', columnMappings: { x: 'Month', y: 'Revenue' }, width: 800, height: 500, title: 'Monthly Revenue' }` |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |

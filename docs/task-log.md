@@ -662,3 +662,16 @@
 | 修改记录 | 新建：src/ui/DataPanel.tsx（DataPanel 组件 + ChartConfig 接口，支持数据源列表、列信息表含类型徽章/缺失率/样例值预览、6 种图表类型选择器、列到轴/分组/颜色映射配置、可折叠分区、可关闭面板）、src/tests/unit/data-panel.test.tsx（24 个测试用例覆盖渲染、数据源列表交互、加载/错误状态、列信息/样例值显示、图表类型选择、列映射、生成按钮启用/禁用、面板关闭/重开、空值/空列处理）；修改：src/ui/index.ts（新增 DataPanel 和 ChartConfig 导出） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0153（DataPanel）、API-0154（ChartConfig） |
+
+### T-09-03 实现基础图表生成
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号 | T-09-03 |
+| 任务名称 | 实现基础图表生成 |
+| 完成时间 | 2026-05-21 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| Git Commit | 待提交 |
+| 修改记录 | 新建：src/modules/chart/generator.ts（generateChart 函数 + ChartGenerationConfig 接口 + 6 种图表 SVG 渲染器：bar/line/scatter/boxplot/histogram/heatmap，自动轴刻度、图例、多系列分组、热图矩阵、数据准备函数）、src/modules/chart/index.ts（模块导出）、src/tests/unit/chart-generator.test.ts（39 个测试用例覆盖所有图表类型、边界情况、数据结构、数据绑定）；修改：src/core/commands.ts（ElementInput 新增 dataSourceId/chartType/columnMappings/options/svgContent 字段，buildElementFromInput 新增 'chart' case）、src/modules/index.ts（新增 chart 模块导出） |
+| 发现缺陷 | 无 |
+| 产出接口/函数 | API-0155（generateChart）、API-0156（ChartGenerationConfig）、API-0081（ElementInput 扩展） |

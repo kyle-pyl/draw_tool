@@ -6,3 +6,5 @@ export { registerGeometricTemplates, geometricTemplateDefinitions } from './geom
 export { registerFlowchartTemplates, flowchartTemplateDefinitions } from './flowchart-templates';
 export { registerArchitectureTemplates, architectureTemplateDefinitions } from './architecture-templates';
 export { registerRtlTemplates, rtlTemplateDefinitions } from './rtl-templates';
+export { generateChart } from './chart';
+export type { ChartGenerationConfig } from './chart';

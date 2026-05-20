@@ -158,6 +158,11 @@ export interface ElementInput {
   arrowStart?: import('./types').ArrowStyle;
   arrowEnd?: import('./types').ArrowStyle;
   labels?: import('./types').ConnectorLabel[];
+  dataSourceId?: string;
+  chartType?: import('./types').ChartType;
+  columnMappings?: import('./types').ColumnMappings;
+  options?: Record<string, unknown>;
+  svgContent?: string;
 }
 
 // ─── Collision Helpers ────────────────────────────────────────────────────────
@@ -216,6 +221,16 @@ function buildElementFromInput(input: ElementInput, id: string): SceneElement {
         arrowStart: input.arrowStart,
         arrowEnd: input.arrowEnd,
         labels: input.labels,
+      } as SceneElement;
+    case 'chart':
+      return {
+        ...base,
+        type: 'chart',
+        dataSourceId: input.dataSourceId || '',
+        chartType: input.chartType || 'bar',
+        columnMappings: input.columnMappings || {},
+        options: input.options,
+        svgContent: input.svgContent || '',
       } as SceneElement;
     default:
       return { ...base } as SceneElement;
