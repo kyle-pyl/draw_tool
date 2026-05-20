@@ -33,6 +33,7 @@
 
 ## 接口记录
 
+
 ### API-0001 ElementType
 
 | 字段 | 内容 |
@@ -1078,6 +1079,25 @@
 | 典型用例 | `const vp = new Viewport({ minZoom: 0.1, maxZoom: 10, zoomStep: 1.2 })` |
 | 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-02-01）|
 
+### API-0056 Viewport
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0056 |
+| 名称 | Viewport |
+| 所属系统 | canvas |
+| 所属模块 | viewport |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 视口变换管理类。维护当前缩放比例和平移偏移量，提供屏幕坐标与画布坐标双向转换（screenToCanvas/canvasToScreen），支持缩放（zoomTo/zoomIn/zoomOut）、平移（pan）、适配区域（fitToRect）、重置（reset），返回 SVG transform 矩阵字符串（getTransformMatrix）。缩放范围可配置（默认 0.1 到 10）
+| 输入参数 | constructor(config?: Partial<ViewportConfig>) - 可选配置 { minZoom, maxZoom, zoomStep, initialZoom, initialOffsetX, initialOffsetY }
+| 输出参数 | screenToCanvas(sx, sy): { x, y }; canvasToScreen(cx, cy): { x, y }; pan(dx, dy): void; zoomTo(zoom, cx, cy): void; zoomIn(): void; zoomOut(): void; fitToRect(bbox): void; reset(): void; getTransformMatrix(): string; zoom: number; offsetX: number; offsetY: number
+| 典型用例 | const vp = new Viewport(); const canvasPt = vp.screenToCanvas(mouseX, mouseY); vp.zoomIn();
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-02-01）|
+
 ### API-0057 CanvasView
 
 | 字段 | 内容 |
@@ -1230,6 +1250,44 @@
 | 典型用例 | `const result = await importProjectFromZip(zipFile); if (result.valid) { startEditing(); }` |
 | 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-03-04）|
 
+### API-0065 exportProjectToZip
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0065 |
+| 名称 | exportProjectToZip |
+| 所属系统 | io |
+| 所属模块 | exporters |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 将当前加载的项目导出为 ZIP 归档：序列化当前 scene 为 scene.json，将 ImageElement 的 blob URL 还原为原始资源路径并嵌入对应的图片数据，若有目录句柄则一并导出 data/ 文件。导出结果可被 importProjectFromZip 重新导入 |
+| 输入参数 | 无 |
+| 输出参数 | Promise\<Blob\> - MIME 类型为 application/zip 的 ZIP 压缩包，可直接触发浏览器下载 |
+| 典型用例 | `const blob = await exportProjectToZip(); const url = URL.createObjectURL(blob);` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-03-04）|
+
+### API-0066 saveProject
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0066 |
+| 名称 | saveProject |
+| 所属系统 | io |
+| 所属模块 | exporters |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 保存当前项目。若存在 File System Access API 目录句柄（通过 loadProjectFromDirectory 打开的项目），则直接写入 scene.json 到目录根；否则调用 exportProjectToZip 导出 ZIP 并触发浏览器下载。保存前自动执行 validateScene 校验，校验失败则阻止保存并返回 ValidationResult。保存成功后调用 store.markClean() 重置 isDirty 标志 |
+| 输入参数 | 无 |
+| 输出参数 | Promise\<ValidationResult\> - valid 为 true 表示保存成功且 isDirty 已重置；valid 为 false 时 errors 包含 IO_ERROR（无场景/写入失败）或 SCHEMA_*（校验失败）等错误码 |
+| 典型用例 | `const result = await saveProject(); if (result.valid) { /* saved */ } else { showErrors(result.errors); }` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-03-05）|
+
 ### API-0067 getBBox
 
 | 字段 | 内容 |
@@ -1267,25 +1325,6 @@
 | 输出参数 | GeometryAdapter - 包含 getBBox（已实现）、getGeometry（undefined 占位）、intersects（undefined 占位）的适配器对象 |
 | 典型用例 | `const adapter = createGeometryAdapter(); const bbox = adapter.getBBox(element);` |
 | 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-01）|
-
-### API-0066 saveProject
-
-| 字段 | 内容 |
-|---|---|
-| 序号 | API-0066 |
-| 名称 | saveProject |
-| 所属系统 | io |
-| 所属模块 | exporters |
-| 状态 | 活跃 |
-| 创建日期 | 2026-05-19 |
-| 最后修订日期 | 2026-05-19 |
-| 创建者 | OpenCode/deepseek-v4-pro |
-| 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | 保存当前项目。若存在 File System Access API 目录句柄（通过 loadProjectFromDirectory 打开的项目），则直接写入 scene.json 到目录根；否则调用 exportProjectToZip 导出 ZIP 并触发浏览器下载。保存前自动执行 validateScene 校验，校验失败则阻止保存并返回 ValidationResult。保存成功后调用 store.markClean() 重置 isDirty 标志 |
-| 输入参数 | 无 |
-| 输出参数 | Promise\<ValidationResult\> - valid 为 true 表示保存成功且 isDirty 已重置；valid 为 false 时 errors 包含 IO_ERROR（无场景/写入失败）或 SCHEMA_*（校验失败）等错误码 |
-| 典型用例 | `const result = await saveProject(); if (result.valid) { /* saved */ } else { showErrors(result.errors); }` |
-| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-03-05）|
 
 ### API-0069 checkLayerCollisions
 
@@ -1363,25 +1402,6 @@
 | 典型用例 | `checkLayerCollisions(elements, adapter, { skipHidden: true })` |
 | 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-02）|
 
-### API-0065 exportProjectToZip
-
-| 字段 | 内容 |
-|---|---|
-| 序号 | API-0065 |
-| 名称 | exportProjectToZip |
-| 所属系统 | io |
-| 所属模块 | exporters |
-| 状态 | 活跃 |
-| 创建日期 | 2026-05-19 |
-| 最后修订日期 | 2026-05-19 |
-| 创建者 | OpenCode/deepseek-v4-pro |
-| 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | 将当前加载的项目导出为 ZIP 归档：序列化当前 scene 为 scene.json，将 ImageElement 的 blob URL 还原为原始资源路径并嵌入对应的图片数据，若有目录句柄则一并导出 data/ 文件。导出结果可被 importProjectFromZip 重新导入 |
-| 输入参数 | 无 |
-| 输出参数 | Promise\<Blob\> - MIME 类型为 application/zip 的 ZIP 压缩包，可直接触发浏览器下载 |
-| 典型用例 | `const blob = await exportProjectToZip(); const url = URL.createObjectURL(blob);` |
-| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-03-04）|
-
 ### API-0073 validateGeometryRules
 
 | 字段 | 内容 |
@@ -1419,6 +1439,118 @@
 | 输出参数 | hasConflicts: boolean; conflictingLayerIds: ReadonlySet\<string\>; conflictingElementIds: ReadonlySet\<string\>; getConflicts(): readonly ConflictInfo[]; setCollisions(collisions: CollisionEntry[], elements: SceneElement[], layers: Layer[]): void; clearCollisions(): void; subscribe(listener: () => void): () => void |
 | 典型用例 | `const hl = new ConflictHighlighter(); hl.setCollisions(result.collisions, scene.elements, scene.layers); if (hl.hasConflicts) { showPanel(hl.getConflicts()); }` |
 | 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-05）|
+
+### API-0075 ConflictInfo
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0075 |
+| 名称 | ConflictInfo |
+| 所属系统 | canvas |
+| 所属模块 | conflict |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 单条冲突信息接口，包含冲突 ID（由冲突元素 ID 拼接）、所在图层 ID 和名称、冲突双方的元素 ID 和名称、重叠包围盒、修复建议文本。由 ConflictHighlighter.setCollisions 生成，供 ConflictPanel 渲染和画布冲突叠层查询使用 |
+| 输入参数 | id: string, layerId: string, layerName: string, elementAId: string, elementAName: string, elementBId: string, elementBName: string, overlapBBox: BBox, suggestion: string |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const info: ConflictInfo = { id: 'e1-e2', layerId: 'l1', layerName: 'Layer 1', elementAId: 'e1', elementAName: 'RectA', elementBId: 'e2', elementBName: 'RectB', overlapBBox: { x: 50, y: 50, width: 50, height: 50 }, suggestion: 'Move "RectA" or "RectB" to avoid overlap.' }` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-05）|
+
+### API-0076 ConflictPanel
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0076 |
+| 名称 | ConflictPanel |
+| 所属系统 | ui |
+| 所属模块 | ConflictPanel |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 冲突面板 React 组件。接收 ConflictHighlighter 实例，通过 subscribe 监听冲突变化。当存在冲突时在右下角显示浮动面板，红底白字标题显示冲突数量，列表中每条冲突显示图层名标签、冲突双方元素名、箭头连接符和修复建议。提供关闭按钮临时隐藏面板，新冲突触发时自动重新显示。冲突清除后面板自动消失 |
+| 输入参数 | props: { conflictHighlighter: ConflictHighlighter } |
+| 输出参数 | ReactElement（条件渲染：有冲突且未关闭时显示，否则返回 null） |
+| 典型用例 | `<ConflictPanel conflictHighlighter={conflictHighlighter} />` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-05）|
+
+### API-0077 ConflictPanelProps
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0077 |
+| 名称 | ConflictPanelProps |
+| 所属系统 | ui |
+| 所属模块 | ConflictPanel |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | ConflictPanel 组件的 Props 类型接口，包含一个 ConflictHighlighter 实例引用 |
+| 输入参数 | conflictHighlighter: ConflictHighlighter |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const props: ConflictPanelProps = { conflictHighlighter: highlighter }` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-05）|
+
+### API-0078 SceneCommand
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0078 |
+| 名称 | SceneCommand |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 所有编辑命令的基础接口。定义命令的 id、label、validate（预执行校验，返回非 valid 结果时阻止执行）、execute（纯函数式应用命令到场景，返回新场景）和 invert（生成反向命令用于重做支持，返回 null 表示不可逆）。所有具体命令（CreateElement、MoveElements、UpdateElement、ChangeLayer、TransformElements 等）均实现此接口并通过 CommandExecutor 执行 |
+| 输入参数 | id: string（唯一标识）, label: string（历史记录显示名称）, validate: (scene: SceneDocument) => ValidationResult, execute: (scene: SceneDocument) => SceneDocument, invert: (scene: SceneDocument) => SceneCommand | null |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const cmd: SceneCommand = { id: 'move-1', label: 'Move Elements', validate: (s) => successResult(), execute: (s) => applyMove(s), invert: (s) => reverseMove(s) }` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-01）|
+
+### API-0079 CommandHistoryEntry
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0079 |
+| 名称 | CommandHistoryEntry |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 命令历史记录条目。包含执行的 SceneCommand 和执行前的完整场景快照（SceneDocument）。快照用于 undo 时回滚到命令执行前的状态 |
+| 输入参数 | command: SceneCommand, snapshot: SceneDocument |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const entry: CommandHistoryEntry = { command: cmd, snapshot: preExecScene }` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-01）|
+
+### API-0080 CommandExecutor
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0080 |
+| 名称 | CommandExecutor |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-19 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 命令执行器类，管理命令执行、撤销和重做的完整生命周期。execute 先调用命令的 validate 进行预校验，失败返回 ValidationResult 不改变状态；成功时拍摄执行前快照，通过 store.updateScene 应用命令，压入历史栈（超出 maxHistory 时移除最早记录），清空重做栈。undo 弹出历史栈顶、恢复快照、压入重做栈。redo 弹出重做栈顶、拍新快照、重新执行命令。提供 canUndo/canRedo 状态查询和 getHistory 只读历史访问 |
+| 输入参数 | constructor(maxHistory?: number) - 历史最大条数（默认 100） |
+| 输出参数 | execute(command: SceneCommand): ValidationResult; undo(): boolean; redo(): boolean; canUndo(): boolean; canRedo(): boolean; getHistory(): readonly CommandHistoryEntry[] |
+| 典型用例 | `const executor = new CommandExecutor(50); const result = executor.execute(createCmd); if (result.valid) { /* done */ } else { showErrors(result.errors); }` |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-01）|
 
 ### API-0081 ElementInput
 
@@ -1571,115 +1703,3 @@
 | 输出参数 | implements SceneCommand |
 | 典型用例 | `executor.execute(new TransformElementsCommand(['e1'], { scaleX: 2, rotation: 45 }));` |
 | 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-06）|
-
-
-| 字段 | 内容 |
-|---|---|
-| 序号 | API-0078 |
-| 名称 | SceneCommand |
-| 所属系统 | core |
-| 所属模块 | commands |
-| 状态 | 活跃 |
-| 创建日期 | 2026-05-19 |
-| 最后修订日期 | 2026-05-19 |
-| 创建者 | OpenCode/deepseek-v4-pro |
-| 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | 所有编辑命令的基础接口。定义命令的 id、label、validate（预执行校验，返回非 valid 结果时阻止执行）、execute（纯函数式应用命令到场景，返回新场景）和 invert（生成反向命令用于重做支持，返回 null 表示不可逆）。所有具体命令（CreateElement、MoveElements、UpdateElement、ChangeLayer、TransformElements 等）均实现此接口并通过 CommandExecutor 执行 |
-| 输入参数 | id: string（唯一标识）, label: string（历史记录显示名称）, validate: (scene: SceneDocument) => ValidationResult, execute: (scene: SceneDocument) => SceneDocument, invert: (scene: SceneDocument) => SceneCommand | null |
-| 输出参数 | 无（接口类型） |
-| 典型用例 | `const cmd: SceneCommand = { id: 'move-1', label: 'Move Elements', validate: (s) => successResult(), execute: (s) => applyMove(s), invert: (s) => reverseMove(s) }` |
-| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-01）|
-
-### API-0079 CommandHistoryEntry
-
-| 字段 | 内容 |
-|---|---|
-| 序号 | API-0079 |
-| 名称 | CommandHistoryEntry |
-| 所属系统 | core |
-| 所属模块 | commands |
-| 状态 | 活跃 |
-| 创建日期 | 2026-05-19 |
-| 最后修订日期 | 2026-05-19 |
-| 创建者 | OpenCode/deepseek-v4-pro |
-| 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | 命令历史记录条目。包含执行的 SceneCommand 和执行前的完整场景快照（SceneDocument）。快照用于 undo 时回滚到命令执行前的状态 |
-| 输入参数 | command: SceneCommand, snapshot: SceneDocument |
-| 输出参数 | 无（接口类型） |
-| 典型用例 | `const entry: CommandHistoryEntry = { command: cmd, snapshot: preExecScene }` |
-| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-01）|
-
-### API-0080 CommandExecutor
-
-| 字段 | 内容 |
-|---|---|
-| 序号 | API-0080 |
-| 名称 | CommandExecutor |
-| 所属系统 | core |
-| 所属模块 | commands |
-| 状态 | 活跃 |
-| 创建日期 | 2026-05-19 |
-| 最后修订日期 | 2026-05-19 |
-| 创建者 | OpenCode/deepseek-v4-pro |
-| 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | 命令执行器类，管理命令执行、撤销和重做的完整生命周期。execute 先调用命令的 validate 进行预校验，失败返回 ValidationResult 不改变状态；成功时拍摄执行前快照，通过 store.updateScene 应用命令，压入历史栈（超出 maxHistory 时移除最早记录），清空重做栈。undo 弹出历史栈顶、恢复快照、压入重做栈。redo 弹出重做栈顶、拍新快照、重新执行命令。提供 canUndo/canRedo 状态查询和 getHistory 只读历史访问 |
-| 输入参数 | constructor(maxHistory?: number) - 历史最大条数（默认 100） |
-| 输出参数 | execute(command: SceneCommand): ValidationResult; undo(): boolean; redo(): boolean; canUndo(): boolean; canRedo(): boolean; getHistory(): readonly CommandHistoryEntry[] |
-| 典型用例 | `const executor = new CommandExecutor(50); const result = executor.execute(createCmd); if (result.valid) { /* done */ } else { showErrors(result.errors); }` |
-| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-01）|
-
-
-| 字段 | 内容 |
-|---|---|
-| 序号 | API-0075 |
-| 名称 | ConflictInfo |
-| 所属系统 | canvas |
-| 所属模块 | conflict |
-| 状态 | 活跃 |
-| 创建日期 | 2026-05-19 |
-| 最后修订日期 | 2026-05-19 |
-| 创建者 | OpenCode/deepseek-v4-pro |
-| 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | 单条冲突信息接口，包含冲突 ID（由冲突元素 ID 拼接）、所在图层 ID 和名称、冲突双方的元素 ID 和名称、重叠包围盒、修复建议文本。由 ConflictHighlighter.setCollisions 生成，供 ConflictPanel 渲染和画布冲突叠层查询使用 |
-| 输入参数 | id: string, layerId: string, layerName: string, elementAId: string, elementAName: string, elementBId: string, elementBName: string, overlapBBox: BBox, suggestion: string |
-| 输出参数 | 无（接口类型） |
-| 典型用例 | `const info: ConflictInfo = { id: 'e1-e2', layerId: 'l1', layerName: 'Layer 1', elementAId: 'e1', elementAName: 'RectA', elementBId: 'e2', elementBName: 'RectB', overlapBBox: { x: 50, y: 50, width: 50, height: 50 }, suggestion: 'Move "RectA" or "RectB" to avoid overlap.' }` |
-| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-05）|
-
-### API-0076 ConflictPanel
-
-| 字段 | 内容 |
-|---|---|
-| 序号 | API-0076 |
-| 名称 | ConflictPanel |
-| 所属系统 | ui |
-| 所属模块 | ConflictPanel |
-| 状态 | 活跃 |
-| 创建日期 | 2026-05-19 |
-| 最后修订日期 | 2026-05-19 |
-| 创建者 | OpenCode/deepseek-v4-pro |
-| 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | 冲突面板 React 组件。接收 ConflictHighlighter 实例，通过 subscribe 监听冲突变化。当存在冲突时在右下角显示浮动面板，红底白字标题显示冲突数量，列表中每条冲突显示图层名标签、冲突双方元素名、箭头连接符和修复建议。提供关闭按钮临时隐藏面板，新冲突触发时自动重新显示。冲突清除后面板自动消失 |
-| 输入参数 | props: { conflictHighlighter: ConflictHighlighter } |
-| 输出参数 | ReactElement（条件渲染：有冲突且未关闭时显示，否则返回 null） |
-| 典型用例 | `<ConflictPanel conflictHighlighter={conflictHighlighter} />` |
-| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-05）|
-
-### API-0077 ConflictPanelProps
-
-| 字段 | 内容 |
-|---|---|
-| 序号 | API-0077 |
-| 名称 | ConflictPanelProps |
-| 所属系统 | ui |
-| 所属模块 | ConflictPanel |
-| 状态 | 活跃 |
-| 创建日期 | 2026-05-19 |
-| 最后修订日期 | 2026-05-19 |
-| 创建者 | OpenCode/deepseek-v4-pro |
-| 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | ConflictPanel 组件的 Props 类型接口，包含一个 ConflictHighlighter 实例引用 |
-| 输入参数 | conflictHighlighter: ConflictHighlighter |
-| 输出参数 | 无（接口类型） |
-| 典型用例 | `const props: ConflictPanelProps = { conflictHighlighter: highlighter }` |
-| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-05）|
