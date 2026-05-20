@@ -12,3 +12,5 @@ export { ImageImportButton } from './ImageImportButton';
 export type { ImageImportButtonProps } from './ImageImportButton';
 export { PropertyPanel } from './PropertyPanel';
 export type { PropertyPanelProps } from './PropertyPanel';
+export { TemplatePanel } from './TemplatePanel';
+export type { TemplatePanelProps } from './TemplatePanel';

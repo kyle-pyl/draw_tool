@@ -2770,3 +2770,41 @@
 | 输出参数 | 无（接口类型） |
 | 典型用例 | ports: [{ direction: 'input', bitWidth: 32, portName: 'data_in' }, { direction: 'output', bitWidth: 32, portName: 'data_out' }] |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0147 TemplatePanel
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0147 |
+| 名称 | TemplatePanel |
+| 所属系统 | ui |
+| 所属模块 | TemplatePanel |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 模板面板 React 浮动组件。按分类（基础几何、流程图、架构图、RTL 等）分组展示所有已注册模板。每个模板显示 SVG 缩略图预览和名称。支持搜索框按名称模糊搜索过滤模板。点击模板通过 onTemplateInsert 回调通知父组件插入。面板可折叠各组分类、右上角关闭按钮可临时隐藏面板（显示 Show Templates 按钮恢复） |
+| 输入参数 | props: { onTemplateInsert: (templateId: string) => void } - 模板插入回调，接收被点击模板的 ID |
+| 输出参数 | ReactElement - 按分类分组的模板网格面板，含搜索框和折叠/关闭交互 |
+| 典型用例 | <TemplatePanel onTemplateInsert={(id) => { const els = instantiateTemplate(id, {x: 400, y: 300}, layerId); els.forEach(el => executor.execute(new CreateElementCommand(el))); }} /> |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0148 TemplatePanelProps
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0148 |
+| 名称 | TemplatePanelProps |
+| 所属系统 | ui |
+| 所属模块 | TemplatePanel |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | TemplatePanel 组件的 Props 类型接口 |
+| 输入参数 | onTemplateInsert: (templateId: string) => void |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | const props: TemplatePanelProps = { onTemplateInsert: handleInsert } |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |

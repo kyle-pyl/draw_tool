@@ -623,3 +623,16 @@
 | 修改记录 | 新建：src/modules/rtl-templates.ts（registerRtlTemplates 函数 + 9 个 RTL 模板定义：通用模块 rtl-gen-module、寄存器 rtl-register、多路选择器 rtl-mux、ALU rtl-alu、FSM rtl-fsm、存储器 rtl-memory、流水线级 rtl-pipeline、控制器 rtl-controller、数据通路容器 rtl-datapath，全部归类为'RTL'）；修改：src/core/templates.ts（新增 TemplateRtlPortDef 接口、TemplateElementDef.ports 类型从 never[] 改为 TemplateRtlPortDef[]、buildElement 中 rtlModule case 支持根据端口方向和数量自动计算端口位置——input 在左侧、output 在右侧、inout 在上方）；修改：src/core/index.ts（新增 TemplateRtlPortDef 类型导出）；修改：src/modules/index.ts（新增 registerRtlTemplates 和 rtlTemplateDefinitions 导出）；新建：src/tests/unit/rtl-templates.test.ts（35 个测试用例，覆盖 9 模板注册、实例化、端口数量/名称/位宽/方向、端口位置布局、端口样式颜色、模块样式、Datapath 容器属性、无端口模块、注册函数幂等性、定义导出） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0144（registerRtlTemplates）、API-0145（rtlTemplateDefinitions）、API-0146（TemplateRtlPortDef） |
+
+### T-08-06 实现模板面板 UI
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号 | T-08-06 |
+| 任务名称 | 实现模板面板 UI |
+| 完成时间 | 2026-05-20 23:15 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| Git Commit | 待填写 |
+| 修改记录 | 新建：src/ui/TemplatePanel.tsx（模板面板组件：分类浏览、搜索过滤、SVG缩略图预览、点击插入）、src/tests/unit/template-panel.test.tsx（14个测试用例）；修改：src/ui/index.ts（新增 TemplatePanel 和 TemplatePanelProps 导出） |
+| 发现缺陷 | 无 |
+| 产出接口/函数 | API-0147（TemplatePanel）、API-0148（TemplatePanelProps） |
