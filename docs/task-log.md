@@ -489,7 +489,7 @@
 | 任务名称      | 实现 MoveLayers 命令 |
 | 完成时间      | 2026-05-20 12:25 |
 | 作者/智能体   | OpenCode/deepseek-v4-pro |
-| Git Commit    | （提交后补填） |
+| Git Commit    | 965aa11 |
 | 修改记录      | 修改：src/core/commands.ts（新增 LayerMoveDirection 类型、MoveLayersCommand 类：支持多图层 up/down 移动指定步数，每个选中层独立计算目标位置并跳过非选中层，保持选中层相对顺序，事务式校验——计算移动后最终状态并检查每层内碰撞冲突，任一层冲突则整体回滚，完整 undo/redo 支持）；修改：src/core/index.ts（新增 MoveLayersCommand 和 LayerMoveDirection 导出）；修改：src/tests/unit/commands.test.ts（新增 22 个 MoveLayersCommand 测试用例：基本移动、多步移动、非连续层移动、相对顺序保持、边界校验、冲突检测、undo/redo、事务回滚） |
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0115（LayerMoveDirection）、API-0116（MoveLayersCommand） |
