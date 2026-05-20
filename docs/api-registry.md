@@ -1108,14 +1108,14 @@
 | 所属模块 | CanvasView |
 | 状态 | 活跃 |
 | 创建日期 | 2026-05-19 |
-| 最后修订日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-20 |
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | React SVG 画布渲染组件。接收 SceneDocument 和 Viewport 作为 props，按图层 order 升序渲染所有元素到 SVG。支持渲染 shape（rect、circle、ellipse、polygon、path）、text（含文本样式、背景色、边框渲染）、image（img 引用）、connector（直线/折线路由渲染）。支持滚轮缩放（以鼠标位置为中心）、空格+拖拽平移、中键拖拽平移交互，光标样式自动切换。支持元素单选（点击）、多选（Shift+点击）、空白区域取消选中、锁定元素不可选中、框选（marquee selection）。支持绘制工具（rect/circle/ellipse/line/polygon/text/connector），connector 工具支持悬停元素显示锚点、点击锚点拖拽创建连接线（支持直线路由和元素/自由端点），text 工具点击即创建文本无需拖拽。支持文本元素双击编辑（onTextEditRequest 回调） |
-| 输入参数 | props: { scene: SceneDocument, viewport: Viewport, width?: number | string, height?: number | string, className?: string, onViewportChange?: () => void, selectionManager?: SelectionManager, onSelectionChange?: () => void, conflictHighlighter?: ConflictHighlighter, activeTool?: DrawingToolType, drawingLayerId?: string, onDrawComplete?: (input: ElementInput) => void, onTextEditRequest?: (elementId: string) => void } |
+| 功能描述 | React SVG 画布渲染组件。接收 SceneDocument 和 Viewport 作为 props，按图层 order 升序渲染所有元素到 SVG。支持渲染 shape（rect、circle、ellipse、polygon、path）、text（含文本样式、背景色、边框渲染）、image（img 引用）、connector（直线/折线/orthogonal 路由渲染）。支持滚轮缩放（以鼠标位置为中心）、空格+拖拽平移、中键拖拽平移交互，光标样式自动切换。支持元素单选（点击）、多选（Shift+点击）、空白区域取消选中、锁定元素不可选中、框选（marquee selection）。支持绘制工具（rect/circle/ellipse/line/polygon/text/connector），connector 工具默认使用 orthogonal 路由并计算路径点，支持弯折点渲染和拖拽调整（onConnectorRouteChange 回调）。text 工具点击即创建文本无需拖拽。支持文本元素双击编辑（onTextEditRequest 回调） |
+| 输入参数 | props: { scene: SceneDocument, viewport: Viewport, width?: number | string, height?: number | string, className?: string, onViewportChange?: () => void, selectionManager?: SelectionManager, onSelectionChange?: () => void, conflictHighlighter?: ConflictHighlighter, activeTool?: DrawingToolType, drawingLayerId?: string, onDrawComplete?: (input: ElementInput) => void, onTextEditRequest?: (elementId: string) => void, onConnectorRouteChange?: (connectorId: string, routePoints: { x: number; y: number }[]) => void } |
 | 输出参数 | ReactElement - SVG 元素，包含按图层组织的 `<g>` 元素树、框选矩形和选择覆盖层 |
 | 典型用例 | `<CanvasView scene={scene} viewport={viewport} selectionManager={selectionMgr} onViewportChange={update} onSelectionChange={update} />` |
-| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-02-02）；2026-05-19, OpenCode/deepseek-v4-pro, T-02-03 新增 onViewportChange prop、滚轮缩放、空格/中键拖拽平移和光标样式切换；2026-05-19, OpenCode/deepseek-v4-pro, T-02-04 新增 selectionManager/onSelectionChange props、元素点击选择和多选交互、选择覆盖层渲染；2026-05-19, OpenCode/deepseek-v4-pro, T-02-05 新增框选（marquee selection）功能：空白区域拖拽选区、Shift+框选追加、视口变换适配、锁定/隐藏元素过滤；2026-05-19, OpenCode/deepseek-v4-pro, T-04-04 隐藏图层改为 visibility:hidden（保留 DOM 空间）、锁定图层（layer.locked）元素不响应点击和框选交互、marquee 框选排除锁定图层内元素；2026-05-20, OpenCode/deepseek-v4-pro, T-05-07 新增 activeTool/drawingLayerId/onDrawComplete props、拖拽绘制（rect/circle/ellipse/line）、多边形逐点绘制、实时预览渲染、crosshair 光标；2026-05-20, OpenCode/deepseek-v4-pro, T-05-08 新增 onTextEditRequest prop（文本双击编辑）、text 工具（点击创建文本）、renderTextElement 支持背景色/边框渲染；2026-05-20, OpenCode/deepseek-v4-pro, T-07-02 新增 connector 工具（锚点高亮交互、拖拽锚点创建连接线、直线/折线路由渲染、实时预览线）、connector 渲染从 polyline 改为根据 route.type 选择 line 或 polyline |
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-02-02）；2026-05-19, OpenCode/deepseek-v4-pro, T-02-03 新增 onViewportChange prop、滚轮缩放、空格/中键拖拽平移和光标样式切换；2026-05-19, OpenCode/deepseek-v4-pro, T-02-04 新增 selectionManager/onSelectionChange props、元素点击选择和多选交互、选择覆盖层渲染；2026-05-19, OpenCode/deepseek-v4-pro, T-02-05 新增框选（marquee selection）功能：空白区域拖拽选区、Shift+框选追加、视口变换适配、锁定/隐藏元素过滤；2026-05-19, OpenCode/deepseek-v4-pro, T-04-04 隐藏图层改为 visibility:hidden（保留 DOM 空间）、锁定图层（layer.locked）元素不响应点击和框选交互、marquee 框选排除锁定图层内元素；2026-05-20, OpenCode/deepseek-v4-pro, T-05-07 新增 activeTool/drawingLayerId/onDrawComplete props、拖拽绘制（rect/circle/ellipse/line）、多边形逐点绘制、实时预览渲染、crosshair 光标；2026-05-20, OpenCode/deepseek-v4-pro, T-05-08 新增 onTextEditRequest prop（文本双击编辑）、text 工具（点击创建文本）、renderTextElement 支持背景色/边框渲染；2026-05-20, OpenCode/deepseek-v4-pro, T-07-02 新增 connector 工具（锚点高亮交互、拖拽锚点创建连接线、直线/折线路由渲染、实时预览线）、connector 渲染从 polyline 改为根据 route.type 选择 line 或 polyline；2026-05-20, OpenCode/deepseek-v4-pro, T-07-03 新增箭头和标签渲染；2026-05-20, OpenCode/deepseek-v4-pro, T-07-04 新增 orthogonal 路由支持、弯折点渲染和拖拽交互、onConnectorRouteChange 回调 |
 
 ### API-0058 SelectionManager
 
@@ -2293,3 +2293,80 @@
 | 输出参数 | React.ReactElement[] - SVG marker 元素数组，放在 defs 中使用 |
 | 典型用例 | 在 CanvasView 的 SVG render 中使用 `<defs>{buildArrowMarkers(scene)}</defs>` |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-07-03）|
+
+
+### API-0121 directionToCardinal
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0121 |
+| 名称 | directionToCardinal |
+| 所属系统 | core |
+| 所属模块 | routing |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 将锚点方向角度（弧度）转换为最接近的四个基本方向（up/down/left/right）。使用 45 度象限阈值：right=[0,45)∪[315,360)、down=[45,135)、left=[135,225)、up=[225,315) |
+| 输入参数 | dir: number - 锚点方向弧度值 |
+| 输出参数 | CardinalDirection - 'up' \| 'down' \| 'left' \| 'right' |
+| 典型用例 | `const card = directionToCardinal(Math.PI / 2); // 'down'` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-07-04）|
+
+### API-0122 computeOrthogonalRoute
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0122 |
+| 名称 | computeOrthogonalRoute |
+| 所属系统 | core |
+| 所属模块 | routing |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 计算两个锚定端点之间的正交路由路径点。路由仅由水平和垂直线段组成，路径点选择避免穿过源和目标元素的包围盒。通过 extendPoint 从源向外延伸并从目标向内延伸，然后连接两个延伸点。尝试两种弯曲策略（先水平后垂直 / 先垂直后水平），选择不穿过元素包围盒的策略 |
+| 输入参数 | sourcePos: { x, y } - 源锚点绝对画布坐标；sourceAnchorDir: number - 源锚点方向（弧度）；targetPos: { x, y } - 目标锚点绝对画布坐标；targetAnchorDir: number - 目标锚点方向（弧度）；sourceBBox: BBox - 源元素包围盒；targetBBox: BBox - 目标元素包围盒；margin?: number - 延伸距离（默认 30） |
+| 输出参数 | { x: number; y: number }[] - 中间路径点数组（不包含源/目标端点） |
+| 典型用例 | `const pts = computeOrthogonalRoute(srcPos, 0, tgtPos, Math.PI, srcBBox, tgtBBox);` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-07-04）|
+
+### API-0123 recalculateConnectorRoute
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0123 |
+| 名称 | recalculateConnectorRoute |
+| 所属系统 | core |
+| 所属模块 | routing |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 重新计算单个连接器元素的正交路由路径点。仅当 route.type 为 'orthogonal' 时重新计算。通过 resolveEndpointForRouting 解析端点引用的元素和锚点，获取最新位置和方向，然后调用 computeOrthogonalRoute 生成新路径。同时更新端点坐标为解析后的绝对坐标。若端点引用的元素或锚点不存在则返回原连接器不变 |
+| 输入参数 | connector: ConnectorElement - 要重新计算的连接器元素；elements: SceneDocument['elements'] - 当前场景的元素列表（用于查找源/目标元素） |
+| 输出参数 | ConnectorElement - 更新后的连接器元素，route.points 已重新计算 |
+| 典型用例 | `const updated = recalculateConnectorRoute(conn, scene.elements);` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-07-04）|
+
+### API-0124 recalculateRoutesForElements
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0124 |
+| 名称 | recalculateRoutesForElements |
+| 所属系统 | core |
+| 所属模块 | routing |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 为场景中所有引用指定元素 ID 的连接器重新计算正交路由。遍历 scene.elements，找出所有 source 或 target 端点引用 movedElementIds 中任意 ID 的 connector 元素，对每个调用 recalculateConnectorRoute 更新路由路径点。非正交连接器不受影响。用于 MoveElementsCommand、AlignElementsCommand 等位置变更命令的 execute 方法中自动更新路由 |
+| 输入参数 | scene: SceneDocument - 当前场景文档；movedElementIds: Set<string> - 移动过的元素 ID 集合 |
+| 输出参数 | SceneDocument - 更新后的场景文档，包含重新计算路由的连接器 |
+| 典型用例 | `const newScene = recalculateRoutesForElements(scene, new Set(['e1', 'e2']));` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-07-04）|

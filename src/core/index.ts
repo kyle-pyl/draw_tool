@@ -82,6 +82,9 @@ export { getBBox, createGeometryAdapter } from './geometry';
 
 export { getAnchors, resolveAnchor } from './anchors';
 
+export { directionToCardinal, computeOrthogonalRoute, recalculateConnectorRoute, recalculateRoutesForElements } from './routing';
+export type { CardinalDirection } from './routing';
+
 export { checkLayerCollisions } from './collision';
 export type { CollisionEntry, CollisionResult, CollisionCheckOptions } from './collision';
 

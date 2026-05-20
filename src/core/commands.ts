@@ -14,6 +14,7 @@ import { checkLayerCollisions, type CollisionCheckOptions } from './collision';
 import { createGeometryAdapter } from './geometry';
 import type { GeometryAdapter } from './types';
 import { ErrorCode } from './errors';
+import { recalculateRoutesForElements } from './routing';
 
 export interface SceneCommand {
   /** Unique command identifier */
@@ -712,7 +713,8 @@ export class MoveElementsCommand implements SceneCommand {
       return updated;
     });
 
-    return { ...scene, elements: finalElements };
+    const sceneAfterMove = { ...scene, elements: finalElements };
+    return recalculateRoutesForElements(sceneAfterMove, movedIdSet);
   }
 
   invert(_scene: SceneDocument): SceneCommand | null {
@@ -1296,7 +1298,8 @@ export class AlignElementsCommand implements SceneCommand {
       return updated;
     });
 
-    return { ...scene, elements: finalElements };
+    const sceneAfterAlign = { ...scene, elements: finalElements };
+    return recalculateRoutesForElements(sceneAfterAlign, alignedSet);
   }
 
   invert(_scene: SceneDocument): SceneCommand | null {
@@ -1626,7 +1629,8 @@ export class DistributeElementsCommand implements SceneCommand {
       return updated;
     });
 
-    return { ...scene, elements: finalElements };
+    const sceneAfterDistribute = { ...scene, elements: finalElements };
+    return recalculateRoutesForElements(sceneAfterDistribute, distributedSet);
   }
 
   invert(_scene: SceneDocument): SceneCommand | null {
@@ -2382,7 +2386,8 @@ export class TransformElementsCommand implements SceneCommand {
       };
     });
 
-    return { ...scene, elements: updatedElements };
+    const sceneAfterTransform = { ...scene, elements: updatedElements };
+    return recalculateRoutesForElements(sceneAfterTransform, movedIdSet);
   }
 
   invert(_scene: SceneDocument): SceneCommand | null {

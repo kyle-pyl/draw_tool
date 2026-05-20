@@ -5,6 +5,7 @@ import type { Viewport } from './viewport';
 import type { SelectionManager } from './selection';
 import type { ConflictHighlighter } from './conflict';
 import { getAnchors, resolveAnchor } from '../core/anchors';
+import { computeOrthogonalRoute, getBBox } from '../core';
 
 export type DrawingToolType = 'select' | 'rect' | 'circle' | 'ellipse' | 'line' | 'polygon' | 'text' | 'connector';
 
@@ -30,6 +31,7 @@ interface CanvasViewProps {
   drawingLayerId?: string;
   onDrawComplete?: (input: ElementInput) => void;
   onTextEditRequest?: (elementId: string) => void;
+  onConnectorRouteChange?: (connectorId: string, routePoints: { x: number; y: number }[]) => void;
 }
 
 function getElementBBox(el: SceneElement): BBox {
@@ -487,6 +489,27 @@ function renderConnectorElement(el: ConnectorElement, elements: SceneElement[]) 
     />
   );
 
+  const bendPointMarkup: React.ReactNode[] = [];
+  if (routeType === 'orthogonal' && routePoints.length > 0) {
+    for (let i = 0; i < routePoints.length; i++) {
+      const bp = routePoints[i];
+      bendPointMarkup.push(
+        <circle
+          key={`bp-${i}`}
+          cx={bp.x}
+          cy={bp.y}
+          r={4}
+          fill="#fff"
+          stroke={strokeColor}
+          strokeWidth={1.5}
+          data-bend-point={i}
+          data-connector-id={el.id}
+          style={{ cursor: 'grab' }}
+        />,
+      );
+    }
+  }
+
   const labelMarkup: React.ReactNode[] = [];
   if (el.labels && el.labels.length > 0) {
     for (let i = 0; i < el.labels.length; i++) {
@@ -518,6 +541,7 @@ function renderConnectorElement(el: ConnectorElement, elements: SceneElement[]) 
     <g key={el.id}>
       {lineMarkup}
       {labelMarkup}
+      {bendPointMarkup}
     </g>
   );
 }
@@ -799,7 +823,7 @@ export function renderDrawPreview(tool: DrawingToolType, state: DrawState): Reac
   }
 }
 
-export function CanvasView({ scene, viewport, width, height, className, onViewportChange, selectionManager, onSelectionChange, conflictHighlighter, activeTool, drawingLayerId, onDrawComplete, onTextEditRequest }: CanvasViewProps) {
+export function CanvasView({ scene, viewport, width, height, className, onViewportChange, selectionManager, onSelectionChange, conflictHighlighter, activeTool, drawingLayerId, onDrawComplete, onTextEditRequest, onConnectorRouteChange }: CanvasViewProps) {
   const layersSorted = [...scene.layers].sort((a, b) => a.order - b.order);
   const layerElementMap = new Map<string, SceneElement[]>();
   const layerMap = new Map(scene.layers.map((l) => [l.id, l]));
@@ -847,6 +871,17 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
     currentX: number;
     currentY: number;
   } | null>(null);
+
+  const [bendPointDrag, setBendPointDrag] = useState<{
+    connectorId: string;
+    bendIndex: number;
+  } | null>(null);
+  const bendPointDragRef = useRef<{
+    connectorId: string;
+    bendIndex: number;
+  } | null>(null);
+
+  const [bendPointDragPos, setBendPointDragPos] = useState<{ x: number; y: number } | null>(null);
 
   const selectedElements = selectionManager
     ? selectionManager.getSelectedElements(scene)
@@ -1003,6 +1038,26 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
         return;
       }
 
+      if (e.button === 0) {
+        const target = e.target as Element;
+        const bendPointEl = target.closest('[data-bend-point]');
+        if (bendPointEl) {
+          const bendIndex = parseInt(bendPointEl.getAttribute('data-bend-point') || '0', 10);
+          const connectorId = bendPointEl.getAttribute('data-connector-id') || '';
+          if (connectorId) {
+            e.stopPropagation();
+            e.preventDefault();
+            const rect = e.currentTarget.getBoundingClientRect();
+            const canvasPt = screenToCanvas(e.clientX - rect.left, e.clientY - rect.top);
+            const dragState = { connectorId, bendIndex };
+            bendPointDragRef.current = dragState;
+            setBendPointDrag(dragState);
+            setBendPointDragPos({ x: canvasPt.x, y: canvasPt.y });
+            return;
+          }
+        }
+      }
+
       if (e.button === 0 && isConnectorTool) {
         const target = e.target as Element;
         const elementGroup = target.closest('[data-element-id]');
@@ -1111,6 +1166,13 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
         return;
       }
 
+      if (bendPointDragRef.current) {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const canvasPt = screenToCanvas(e.clientX - rect.left, e.clientY - rect.top);
+        setBendPointDragPos({ x: canvasPt.x, y: canvasPt.y });
+        return;
+      }
+
       if (connectorDrawingRef.current) {
         const rect = e.currentTarget.getBoundingClientRect();
         const canvasPt = screenToCanvas(e.clientX - rect.left, e.clientY - rect.top);
@@ -1173,12 +1235,33 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
       return;
     }
 
+    if (bendPointDragRef.current && onConnectorRouteChange && bendPointDragPos) {
+      const bd = bendPointDragRef.current;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const canvasPt = screenToCanvas(e.clientX - rect.left, e.clientY - rect.top);
+
+      const conn = scene.elements.find((e2) => e2.id === bd.connectorId) as ConnectorElement | undefined;
+      if (conn && conn.type === 'connector' && bd.bendIndex < conn.route.points.length) {
+        const newPoints = conn.route.points.map((p, i) =>
+          i === bd.bendIndex ? { x: canvasPt.x, y: canvasPt.y } : p,
+        );
+        onConnectorRouteChange(bd.connectorId, newPoints);
+      }
+
+      bendPointDragRef.current = null;
+      setBendPointDrag(null);
+      setBendPointDragPos(null);
+      return;
+    }
+
     if (connectorDrawingRef.current && onDrawComplete && drawingLayerId) {
       const cd = connectorDrawingRef.current;
       const target = e.target as Element;
       const elementGroup = target.closest('[data-element-id]');
       let targetElementId: string | undefined;
       let targetAnchorId: string | undefined;
+      let resolvedTargetX = cd.currentX;
+      let resolvedTargetY = cd.currentY;
 
       if (elementGroup) {
         const elId = elementGroup.getAttribute('data-element-id');
@@ -1190,9 +1273,41 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
             if (nearestId) {
               targetElementId = el.id;
               targetAnchorId = nearestId;
+              const r = resolveAnchor(el, nearestId);
+              if (r) {
+                resolvedTargetX = r.x;
+                resolvedTargetY = r.y;
+              }
             }
           }
         }
+      }
+
+      let routeType: 'straight' | 'polyline' | 'orthogonal' | 'curve' = 'orthogonal';
+      let routePoints: { x: number; y: number }[] = [];
+
+      const srcEl = scene.elements.find((e2) => e2.id === cd.sourceElementId);
+      const tgtEl = targetElementId ? scene.elements.find((e2) => e2.id === targetElementId) : undefined;
+
+      if (srcEl && tgtEl && cd.sourceAnchorId && targetAnchorId) {
+        const srcAnchors = getVisibleAnchors(srcEl);
+        const tgtAnchors = getVisibleAnchors(tgtEl);
+        const srcAnchor = srcAnchors.find((a) => a.anchor.id === cd.sourceAnchorId);
+        const tgtAnchor = tgtAnchors.find((a) => a.anchor.id === targetAnchorId);
+        if (srcAnchor && tgtAnchor) {
+          const srcBBox = getBBox(srcEl);
+          const tgtBBox = getBBox(tgtEl);
+          routePoints = computeOrthogonalRoute(
+            { x: cd.sourceX, y: cd.sourceY },
+            srcAnchor.anchor.direction,
+            { x: resolvedTargetX, y: resolvedTargetY },
+            tgtAnchor.anchor.direction,
+            srcBBox,
+            tgtBBox,
+          );
+        }
+      } else {
+        routeType = 'straight';
       }
 
       const input: ElementInput = {
@@ -1209,24 +1324,10 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
         target: {
           elementId: targetElementId,
           anchorId: targetAnchorId,
-          x: targetElementId ? (() => {
-            const tel = scene.elements.find((e2) => e2.id === targetElementId);
-            if (tel && targetAnchorId) {
-              const r = resolveAnchor(tel, targetAnchorId);
-              if (r) return r.x;
-            }
-            return cd.currentX;
-          })() : cd.currentX,
-          y: targetElementId ? (() => {
-            const tel = scene.elements.find((e2) => e2.id === targetElementId);
-            if (tel && targetAnchorId) {
-              const r = resolveAnchor(tel, targetAnchorId);
-              if (r) return r.y;
-            }
-            return cd.currentY;
-          })() : cd.currentY,
+          x: resolvedTargetX,
+          y: resolvedTargetY,
         },
-        route: { type: 'straight', points: [] },
+        route: { type: routeType, points: routePoints },
       };
 
       onDrawComplete(input);
@@ -1276,7 +1377,7 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
     }
 
     setMarquee(null);
-  }, [viewport, marquee, selectionManager, scene, onSelectionChange, activeTool, completeDragDraw, onDrawComplete, drawingLayerId]);
+  }, [viewport, marquee, selectionManager, scene, onSelectionChange, activeTool, completeDragDraw, onDrawComplete, drawingLayerId, onConnectorRouteChange, bendPointDragPos, screenToCanvas]);
 
   const handleContextMenu = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     if (isPanningRef.current) {
@@ -1383,6 +1484,18 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
               cy={connectorDrawing.sourceY}
               r={5}
               fill="#4CAF50"
+            />
+          </g>
+        )}
+        {bendPointDrag && bendPointDragPos && (
+          <g pointerEvents="none">
+            <circle
+              cx={bendPointDragPos.x}
+              cy={bendPointDragPos.y}
+              r={5}
+              fill="#FF9800"
+              stroke="#E65100"
+              strokeWidth={1.5}
             />
           </g>
         )}

@@ -97,6 +97,34 @@ function App() {
     forceUpdate();
   }, [forceUpdate]);
 
+  const handleConnectorRouteChange = useCallback(
+    (connectorId: string, routePoints: { x: number; y: number }[]) => {
+      const scene = useDocumentStore.getState().getScene();
+      if (!scene) return;
+
+      const conn = scene.elements.find((e) => e.type === 'connector' && e.id === connectorId);
+      if (conn && conn.type === 'connector') {
+        const updated = {
+          ...conn,
+          route: { ...conn.route, points: routePoints },
+        };
+        const replaceCmd = {
+          id: `bend-${Date.now()}`,
+          label: 'Move bend point',
+          validate: () => ({ valid: true, errors: [] }),
+          execute: (s: SceneDocument) => ({
+            ...s,
+            elements: s.elements.map((e) => (e.id === connectorId ? updated : e)),
+          }),
+          invert: () => null,
+        };
+        executorRef.current.execute(replaceCmd);
+      }
+      forceUpdate();
+    },
+    [forceUpdate],
+  );
+
   const [isDragOver, setIsDragOver] = useState(false);
 
   const handleImageImport = useCallback(
@@ -233,6 +261,7 @@ function App() {
         drawingLayerId={drawingLayerId}
         onDrawComplete={handleDrawComplete}
         onTextEditRequest={handleTextEditRequest}
+        onConnectorRouteChange={handleConnectorRouteChange}
       />
       <ShapeToolbar activeTool={activeTool} onToolChange={handleToolChange} />
       <ImageImportButton layerId={drawingLayerId} onImport={handleImageImport} />

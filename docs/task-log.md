@@ -533,3 +533,16 @@
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0024（ConnectorElement 修订）、API-0057（CanvasView 修订）、API-0070（UpdateElementCommand/ElementChanges 修订）、API-0119（computePointOnPath）、API-0120（buildArrowMarkers） |
 
+### T-07-04 实现正交路由
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-07-04 |
+| 任务名称      | 实现正交路由 |
+| 完成时间      | 2026-05-20 15:15 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | 290c6d8 |
+| 修改记录      | 新建：src/core/routing.ts（正交路由算法：directionToCardinal、computeOrthogonalRoute、recalculateConnectorRoute、recalculateRoutesForElements）、src/tests/unit/routing.test.ts（23 个测试用例）；修改：src/core/index.ts（新增 routing 导出）、src/core/commands.ts（MoveElementsCommand/AlignElementsCommand/DistributeElementsCommand/TransformElementsCommand 的 execute 方法集成路由自动重算）、src/canvas/CanvasView.tsx（connector 创建默认使用 orthogonal 路由、bend point 拖拽交互支持、新增 onConnectorRouteChange prop）、src/App.tsx（新增 handleConnectorRouteChange 回调） |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0121（directionToCardinal）、API-0122（computeOrthogonalRoute）、API-0123（recalculateConnectorRoute）、API-0124（recalculateRoutesForElements）、API-0057（CanvasView 修订：新增 onConnectorRouteChange prop） |
+
