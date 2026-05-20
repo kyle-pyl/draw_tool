@@ -148,6 +148,7 @@ const gLock = new AsyncRWLock(8000);
 function parseKVTable(lines, startIdx) {
   const record = {};
   let i = startIdx;
+  let lastKey = null;
   // skip header row (| 字段 | 内容 |) and separator (|---|---|)
   if (i < lines.length && lines[i].trim().startsWith("|") && lines[i].includes("|---")) {
     // separator – skip
@@ -158,14 +159,32 @@ function parseKVTable(lines, startIdx) {
     if (i < lines.length && lines[i].trim().startsWith("|") && lines[i].includes("|---")) i++;
   }
   // parse data rows
-  while (i < lines.length && lines[i].trim().startsWith("|")) {
+  while (i < lines.length) {
     const row = lines[i].trim();
     if (row.includes("|---")) { i++; continue; }
-    const m = row.match(/^\|\s*([^|]+?)\s*\|\s*(.*?)\s*\|$/);
-    if (m) {
-      record[m[1].trim()] = m[2].trim();
+
+    // Check if this is a new table row (starts with |)
+    if (row.startsWith("|")) {
+      const m = row.match(/^\|\s*([^|]+?)\s*\|\s*(.*?)\s*\|$/);
+      if (m) {
+        lastKey = m[1].trim();
+        record[lastKey] = m[2].trim();
+      }
+      i++;
+    } else if (row === "") {
+      // Blank line — end of table
+      break;
+    } else if (row.startsWith("### API-") || row.startsWith("### T-")) {
+      // Next entry header — end of table
+      break;
+    } else if (lastKey && row.endsWith("|")) {
+      // Continuation line for the previous cell (multi-line value)
+      record[lastKey] = record[lastKey] + "\n" + row.slice(0, -1).trim();
+      i++;
+    } else {
+      // Unknown line — stop
+      break;
     }
-    i++;
   }
   return { record, endIdx: i };
 }
@@ -185,7 +204,14 @@ function parseApiBlocks(content) {
 
     const number = parseInt(m[1], 10);
     const name = m[2].trim();
-    const { record, endIdx } = parseKVTable(lines, i + 2);
+    const { record } = parseKVTable(lines, i + 2);
+
+    let endIdx = i;
+    while (endIdx < lines.length) {
+      endIdx++;
+      if (endIdx < lines.length && lines[endIdx].startsWith("### API-")) break;
+    }
+
     entries.push({ number, name, fields: record, lineStart: i, lineEnd: endIdx });
     i = endIdx;
   }
