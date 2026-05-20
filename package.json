@@ -15,7 +15,10 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",
-    "format": "prettier --write \"src/**/*.{ts,tsx}\""
+    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
+    "api:validate": "node scripts/api-registry-helper.mjs validate",
+    "api:list": "node scripts/api-registry-helper.mjs list",
+    "api:next": "node scripts/api-registry-helper.mjs next"
   },
   "dependencies": {
     "fflate": "^0.8.3",

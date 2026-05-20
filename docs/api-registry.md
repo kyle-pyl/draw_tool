@@ -2198,6 +2198,25 @@
 | 典型用例 | `const dir: LayerMoveDirection = 'up'` |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-06-05）|
 
+### API-0116 MoveLayersCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0116 |
+| 名称 | MoveLayersCommand |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 多图层整体上移或下移命令。接收 layerIds、direction（up/down）和 steps，将选中图层以指定方向和步数移动。每个选中图层独立计算目标位置：上移时跳过上方非选中图层，下移时跳过下方非选中图层。非连续选中层各层独立移动但保持选中层之间的相对顺序。使用事务式校验：计算所有图层移动后的最终状态（包括连续 order 值重分配），检查每层内元素同层碰撞冲突，检查图层数是否超过 rules.maxLayerCount。任一层冲突则整体操作回滚。冲突时返回详细错误信息（图层 ID、元素 ID、重叠包围盒）。完整支持 undo/redo（通过保存执行前各图层 order 值，撤销时还原） |
+| 输入参数 | constructor(layerIds: string[], direction: LayerMoveDirection, steps?: number, label?: string) - steps 默认 1，最小 1，自动向下取整 |
+| 输出参数 | implements SceneCommand - 可通过 CommandExecutor 执行、撤销和重做 |
+| 典型用例 | `executor.execute(new MoveLayersCommand(['l2', 'l3'], 'up', 2));` / `executor.execute(new MoveLayersCommand(['l1'], 'down'));` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-06-05）|
+
 ### API-0117 getAnchors
 
 | 字段 | 内容 |
@@ -2236,24 +2255,6 @@
 | 典型用例 | `const abs = resolveAnchor(rectElement, 'right'); if (abs) { connector.source.x = abs.x; connector.source.y = abs.y; }` |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-07-01）；2026-05-20, OpenCode/deepseek-v4-pro, T-07-02 CanvasView 连接器工具调用此函数解析锚点绝对坐标用于端点定位 |
 
-### API-0116 MoveLayersCommand
-
-| 字段 | 内容 |
-|---|---|
-| 序号 | API-0116 |
-| 名称 | MoveLayersCommand |
-| 所属系统 | core |
-| 所属模块 | commands |
-| 状态 | 活跃 |
-| 创建日期 | 2026-05-20 |
-| 最后修订日期 | 2026-05-20 |
-| 创建者 | OpenCode/deepseek-v4-pro |
-| 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | 多图层整体上移或下移命令。接收 layerIds、direction（up/down）和 steps，将选中图层以指定方向和步数移动。每个选中图层独立计算目标位置：上移时跳过上方非选中图层，下移时跳过下方非选中图层。非连续选中层各层独立移动但保持选中层之间的相对顺序。使用事务式校验：计算所有图层移动后的最终状态（包括连续 order 值重分配），检查每层内元素同层碰撞冲突，检查图层数是否超过 rules.maxLayerCount。任一层冲突则整体操作回滚。冲突时返回详细错误信息（图层 ID、元素 ID、重叠包围盒）。完整支持 undo/redo（通过保存执行前各图层 order 值，撤销时还原） |
-| 输入参数 | constructor(layerIds: string[], direction: LayerMoveDirection, steps?: number, label?: string) - steps 默认 1，最小 1，自动向下取整 |
-| 输出参数 | implements SceneCommand - 可通过 CommandExecutor 执行、撤销和重做 |
-| 典型用例 | `executor.execute(new MoveLayersCommand(['l2', 'l3'], 'up', 2));` / `executor.execute(new MoveLayersCommand(['l1'], 'down'));` |
-| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-06-05）|
 
 ### API-0119 computePointOnPath
 
