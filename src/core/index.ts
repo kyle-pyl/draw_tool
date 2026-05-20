@@ -115,6 +115,7 @@ export {
 } from './templates';
 export type {
   TemplateElementDef,
+  TemplateRtlPortDef,
   TemplateConnectorDef,
   TemplateDefinition,
 } from './templates';

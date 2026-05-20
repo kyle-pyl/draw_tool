@@ -2421,10 +2421,10 @@
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
 | 功能描述 | 模板元素定义接口。存储单个元素在模板中的蓝图信息，坐标相对于模板锚点（0,0）。实例化时由 instantiateTemplate 创建完整 SceneElement。支持所有元素类型（shape、text、image、connector、container、rtlModule、rtlPort、mindNode、topologyNode、chart），通过 type 字段区分。transform 使用相对坐标，实例化时加上 position 偏移。defaultStyle 优先级低于 element.style |
-| 输入参数 | type: ElementType（必需），transform: Transform2D（必需，相对坐标），style: ElementStyle（必需），name?: string（可选，用作生成 ID 的前缀），visible?: boolean（默认 true），locked?: boolean（默认 false），tags?: string[]，metadata?: Record<string,unknown>，以及各元素类型的特有字段（shapeKind、text、src 等） |
+| 输入参数 | type: ElementType（必需），transform: Transform2D（必需，相对坐标），style: ElementStyle（必需），name?: string（可选，用作生成 ID 的前缀），visible?: boolean（默认 true），locked?: boolean（默认 false），tags?: string[]，metadata?: Record<string,unknown>，ports?: TemplateRtlPortDef[]（可选，rtlModule 类型的端口定义），以及各元素类型的特有字段（shapeKind、text、src 等） |
 | 输出参数 | 无（接口类型） |
 | 典型用例 | const def: TemplateElementDef = { type: 'shape', name: 'rect', shapeKind: 'rect', transform: { x: 0, y: 0, width: 100, height: 60, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#fff', stroke: '#000', strokeWidth: 2, opacity: 1 } } |
-| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建；2026-05-20, OpenCode/deepseek-v4-pro, T-08-05 新增 TemplateRtlPortDef 和 ports 字段支持；ports 类型从 never[] 改为 TemplateRtlPortDef[] |
 ### API-0128 TemplateConnectorDef
 
 | 字段 | 内容 |
@@ -2712,4 +2712,61 @@
 | 输入参数 | 无（常量导出） |
 | 输出参数 | TemplateDefinition[]（8 个架构图模板定义） |
 | 典型用例 | import { architectureTemplateDefinitions } from './modules/architecture-templates'; const dbTpl = architectureTemplateDefinitions.find(t => t.id === 'arch-database'); |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0144 registerRtlTemplates
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0144 |
+| 名称 | registerRtlTemplates |
+| 所属系统 | modules |
+| 所属模块 | rtl-templates |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 注册全部 9 个 RTL 硬件模块连接图专用模板到全局模板注册表：通用模块（rtlModule，80×70，clk/rst/data_in/data_out 端口）、寄存器（rtlModule，80×50，clk/rst/d/q）、多路选择器（rtlModule，80×60，a/b/sel/y）、ALU（rtlModule，90×80，a/b/op/result/zero/carry）、FSM（rtlModule，90×70，clk/rst/in/state/next_state）、存储器（rtlModule，100×80，clk/addr/wdata/wen/rdata）、流水线级（rtlModule，80×60，clk/din/dout）、控制器（rtlModule，90×70，clk/rst/status/ctrl_sigs）、数据通路（container，400×300，虚线边框），全部分类为'RTL'。端口自动按方向分布（input 左侧绿色、output 右侧红色、inout 上方蓝色）。可安全重复调用。 |
+| 输入参数 | 无 |
+| 输出参数 | void |
+| 典型用例 | import { registerRtlTemplates } from './modules/rtl-templates'; registerRtlTemplates(); |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0145 rtlTemplateDefinitions
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0145 |
+| 名称 | rtlTemplateDefinitions |
+| 所属系统 | modules |
+| 所属模块 | rtl-templates |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | RTL 模板定义数组，包含 9 个 TemplateDefinition 对象（rtl-gen-module/rtl-register/rtl-mux/rtl-alu/rtl-fsm/rtl-memory/rtl-pipeline/rtl-controller/rtl-datapath），供模块外引用模板定义数据 |
+| 输入参数 | 无（常量导出） |
+| 输出参数 | TemplateDefinition[]（9 个 RTL 模板定义） |
+| 典型用例 | import { rtlTemplateDefinitions } from './modules/rtl-templates'; const regTpl = rtlTemplateDefinitions.find(t => t.id === 'rtl-register'); |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0146 TemplateRtlPortDef
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0146 |
+| 名称 | TemplateRtlPortDef |
+| 所属系统 | core |
+| 所属模块 | templates |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 模板 RTL 端口定义接口，用于在 TemplateElementDef 的 ports 字段中定义 rtlModule 类型元素的端口。包含信号方向（input/output/inout）、位宽和端口名称。实例化时由 buildElement 根据方向自动计算端口在模块边缘的位置（input 左侧、output 右侧、inout 上方），并生成完整的 RtlPortElement 对象 |
+| 输入参数 | direction: 'input' \| 'output' \| 'inout'（信号方向），bitWidth: number（位宽，如 1 表示单比特、32 表示 32 位总线），portName: string（信号名称） |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | ports: [{ direction: 'input', bitWidth: 32, portName: 'data_in' }, { direction: 'output', bitWidth: 32, portName: 'data_out' }] |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |

@@ -610,3 +610,16 @@
 | 修改记录 | 1. 新建 src/modules/architecture-templates.ts — 注册 8 个架构图模板：服务、数据库（圆柱体路径）、缓存（闪电形状多边形）、消息队列（三叠矩形）、API网关（六边形）、负载均衡（圆+四向箭头）、云区域（容器）、浏览器/客户端（窗口框架+标题栏+红黄绿点+地址栏）。2. 更新 src/modules/index.ts 导出 registerArchitectureTemplates 和 architectureTemplateDefinitions。3. 新建 src/tests/unit/architecture-templates.test.ts — 36 个测试用例，含注册、分类、形状类型、实例化、ID唯一性、三层架构组合场景。全量 949 测试通过，零回归。 |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | registerArchitectureTemplates(), architectureTemplateDefinitions（8 个 TemplateDefinition 对象，分类 '架构图'），模板 ID 列表：arch-service, arch-database, arch-cache, arch-mq, arch-gateway, arch-lb, arch-cloud, arch-client |
+
+### T-08-05 实现 RTL 模块模板
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号 | T-08-05 |
+| 任务名称 | 实现 RTL 模块模板 |
+| 完成时间 | 2026-05-20 18:06 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| Git Commit | 6845071 |
+| 修改记录 | 新建：src/modules/rtl-templates.ts（registerRtlTemplates 函数 + 9 个 RTL 模板定义：通用模块 rtl-gen-module、寄存器 rtl-register、多路选择器 rtl-mux、ALU rtl-alu、FSM rtl-fsm、存储器 rtl-memory、流水线级 rtl-pipeline、控制器 rtl-controller、数据通路容器 rtl-datapath，全部归类为'RTL'）；修改：src/core/templates.ts（新增 TemplateRtlPortDef 接口、TemplateElementDef.ports 类型从 never[] 改为 TemplateRtlPortDef[]、buildElement 中 rtlModule case 支持根据端口方向和数量自动计算端口位置——input 在左侧、output 在右侧、inout 在上方）；修改：src/core/index.ts（新增 TemplateRtlPortDef 类型导出）；修改：src/modules/index.ts（新增 registerRtlTemplates 和 rtlTemplateDefinitions 导出）；新建：src/tests/unit/rtl-templates.test.ts（35 个测试用例，覆盖 9 模板注册、实例化、端口数量/名称/位宽/方向、端口位置布局、端口样式颜色、模块样式、Datapath 容器属性、无端口模块、注册函数幂等性、定义导出） |
+| 发现缺陷 | 无 |
+| 产出接口/函数 | API-0144（registerRtlTemplates）、API-0145（rtlTemplateDefinitions）、API-0146（TemplateRtlPortDef） |

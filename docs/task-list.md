@@ -1248,7 +1248,7 @@
 | 任务编号 | T-08-05 |
 | 任务名称 | 实现 RTL 模块模板 |
 | 前置任务 | T-08-01, T-07-01 |
-| 状态 | 待执行 |
+| 状态 | 已完成 |
 
 **任务说明：** 注册 RTL 硬件模块连接图模板：通用模块、register、mux、ALU、FSM、memory、pipeline stage、controller、datapath。每个模板包含端口锚点。
 

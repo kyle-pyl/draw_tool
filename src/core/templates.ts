@@ -17,6 +17,15 @@ import type {
 } from './types';
 import { generateId } from './utils';
 
+export interface TemplateRtlPortDef {
+  /** Signal direction */
+  direction: 'input' | 'output' | 'inout';
+  /** Bit width of the signal (e.g. 1 for single-bit, 32 for bus) */
+  bitWidth: number;
+  /** Signal name */
+  portName: string;
+}
+
 export interface TemplateElementDef {
   /** Element type */
   type: ElementType;
@@ -55,7 +64,7 @@ export interface TemplateElementDef {
   moduleName?: string;
   instanceName?: string;
   parameters?: Record<string, string | number>;
-  ports?: never[];
+  ports?: TemplateRtlPortDef[];
   collapsed?: boolean;
   // RTL port-specific
   direction?: 'input' | 'output' | 'inout';
@@ -250,16 +259,116 @@ function buildElement(
         type: 'container',
         containerLabel: def.containerLabel,
       } as SceneElement;
-    case 'rtlModule':
+    case 'rtlModule': {
+      const modulePorts: SceneElement[] = [];
+      if (def.ports && def.ports.length > 0) {
+        const { width, height } = transform;
+        const portSize = 10;
+        const portStyle: ElementStyle = {
+          fill: '#333333',
+          stroke: '#000000',
+          strokeWidth: 1,
+          opacity: 1,
+        };
+
+        const inputs = def.ports.filter((p) => p.direction === 'input');
+        const outputs = def.ports.filter((p) => p.direction === 'output');
+        const inouts = def.ports.filter((p) => p.direction === 'inout');
+
+        // Distribute input ports along the left edge
+        const inputSpacing = inputs.length > 1 ? (height - portSize - 4) / (inputs.length - 1) : height / 2;
+        for (let i = 0; i < inputs.length; i++) {
+          const portY = 2 + (inputs.length === 1 ? inputSpacing - portSize / 2 : i * inputSpacing);
+          const portId = generateId('rtlPort');
+          modulePorts.push({
+            id: portId,
+            type: 'rtlPort' as const,
+            layerId,
+            name: inputs[i].portName,
+            transform: {
+              x: transform.x - portSize - 4,
+              y: transform.y + portY,
+              width: portSize,
+              height: portSize,
+              rotation: 0,
+              scaleX: 1,
+              scaleY: 1,
+            },
+            style: { ...portStyle, fill: '#4CAF50' },
+            visible: true,
+            locked: false,
+            direction: inputs[i].direction,
+            bitWidth: inputs[i].bitWidth,
+            portName: inputs[i].portName,
+          } as SceneElement);
+        }
+
+        // Distribute output ports along the right edge
+        const outputSpacing = outputs.length > 1 ? (height - portSize - 4) / (outputs.length - 1) : height / 2;
+        for (let i = 0; i < outputs.length; i++) {
+          const portY = 2 + (outputs.length === 1 ? outputSpacing - portSize / 2 : i * outputSpacing);
+          const portId = generateId('rtlPort');
+          modulePorts.push({
+            id: portId,
+            type: 'rtlPort' as const,
+            layerId,
+            name: outputs[i].portName,
+            transform: {
+              x: transform.x + width + 4,
+              y: transform.y + portY,
+              width: portSize,
+              height: portSize,
+              rotation: 0,
+              scaleX: 1,
+              scaleY: 1,
+            },
+            style: { ...portStyle, fill: '#F44336' },
+            visible: true,
+            locked: false,
+            direction: outputs[i].direction,
+            bitWidth: outputs[i].bitWidth,
+            portName: outputs[i].portName,
+          } as SceneElement);
+        }
+
+        // Distribute inout ports along the top edge (or bottom if many)
+        for (let i = 0; i < inouts.length; i++) {
+          const portX = portSize + 4 + i * (portSize + 8);
+          const portId = generateId('rtlPort');
+          modulePorts.push({
+            id: portId,
+            type: 'rtlPort' as const,
+            layerId,
+            name: inouts[i].portName,
+            transform: {
+              x: transform.x + portX,
+              y: transform.y - portSize - 4,
+              width: portSize,
+              height: portSize,
+              rotation: 0,
+              scaleX: 1,
+              scaleY: 1,
+            },
+            style: { ...portStyle, fill: '#2196F3' },
+            visible: true,
+            locked: false,
+            direction: inouts[i].direction,
+            bitWidth: inouts[i].bitWidth,
+            portName: inouts[i].portName,
+          } as SceneElement);
+        }
+      }
+
       return {
         ...base,
         type: 'rtlModule',
         moduleName: def.moduleName || '',
         instanceName: def.instanceName || '',
         parameters: def.parameters,
-        ports: [],
+        ports: modulePorts.length > 0 ? modulePorts : [],
         collapsed: def.collapsed,
       } as SceneElement;
+    }
     case 'rtlPort':
       return {
         ...base,
