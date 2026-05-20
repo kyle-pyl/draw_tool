@@ -671,7 +671,7 @@
 | 任务名称 | 实现基础图表生成 |
 | 完成时间 | 2026-05-21 |
 | 作者/智能体 | OpenCode/deepseek-v4-pro |
-| Git Commit | 待提交 |
+| Git Commit | 8b15257 |
 | 修改记录 | 新建：src/modules/chart/generator.ts（generateChart 函数 + ChartGenerationConfig 接口 + 6 种图表 SVG 渲染器：bar/line/scatter/boxplot/histogram/heatmap，自动轴刻度、图例、多系列分组、热图矩阵、数据准备函数）、src/modules/chart/index.ts（模块导出）、src/tests/unit/chart-generator.test.ts（39 个测试用例覆盖所有图表类型、边界情况、数据结构、数据绑定）；修改：src/core/commands.ts（ElementInput 新增 dataSourceId/chartType/columnMappings/options/svgContent 字段，buildElementFromInput 新增 'chart' case）、src/modules/index.ts（新增 chart 模块导出） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0155（generateChart）、API-0156（ChartGenerationConfig）、API-0081（ElementInput 扩展） |
