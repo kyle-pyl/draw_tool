@@ -2808,3 +2808,79 @@
 | 输出参数 | 无（接口类型） |
 | 典型用例 | const props: TemplatePanelProps = { onTemplateInsert: handleInsert } |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0149 parseCSV
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0149 |
+| 名称 | parseCSV |
+| 所属系统 | io |
+| 所属模块 | csv-parser |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 使用 PapaParse 解析 CSV 文本内容，返回 ParsedData 结构。自动推断每列的数据类型（number/string/date/boolean），统计缺失率，识别缺失值（空字符串、null、NA、N/A）。支持自定义分隔符、有无表头等选项 |
+| 输入参数 | content: string（CSV 文本内容）, options?: CsvParseOptions（解析选项：header 是否有表头默认 true、skipEmptyLines 是否跳过空行默认 true、delimiter 分隔符自定义） |
+| 输出参数 | ParsedData — 包含 columns（ColumnInfo[] 列名/推断类型/缺失率）、rows（解析后的数据行数组）、rowCount（数据行数）、headers（列名字符串数组）、parseErrors（解析错误信息数组） |
+| 典型用例 | `const result = parseCSV(fileContent); result.columns.forEach(c => console.log(c.name, c.inferredType));` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0150 ParsedData
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0150 |
+| 名称 | ParsedData |
+| 所属系统 | io |
+| 所属模块 | csv-parser |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | CSV 解析结果的数据结构。包含列的元数据信息（类型推断、缺失统计）、解析后的数据行、以及解析过程中的错误信息 |
+| 输入参数 | columns: ColumnInfo[]（列元数据数组）、rows: Record<string, string \| number \| boolean \| null>[]（解析后的数据行）、rowCount: number（数据行数）、headers: string[]（列名数组）、parseErrors: string[]（解析错误信息） |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const data: ParsedData = parseCSV(csvContent);` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0151 ColumnInfo
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0151 |
+| 名称 | ColumnInfo |
+| 所属系统 | io |
+| 所属模块 | csv-parser |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | CSV 解析后单个列的元数据信息，包含列名、自动推断的数据类型和缺失值比率 |
+| 输入参数 | name: string（列名）、inferredType: 'number' \| 'string' \| 'date' \| 'boolean'（推断类型）、missingRate: number（缺失率 0-1） |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `col.inferredType === 'number' && col.missingRate < 0.1` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0152 CsvParseOptions
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0152 |
+| 名称 | CsvParseOptions |
+| 所属系统 | io |
+| 所属模块 | csv-parser |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | parseCSV 函数的可选配置参数 |
+| 输入参数 | header?: boolean（是否有表头，默认 true）、skipEmptyLines?: boolean（是否跳过空行，默认 true）、delimiter?: string（自定义列分隔符） |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `parseCSV(content, { delimiter: ';', header: false })` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |

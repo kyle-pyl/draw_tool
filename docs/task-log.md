@@ -636,3 +636,16 @@
 | 修改记录 | 新建：src/ui/TemplatePanel.tsx（模板面板组件：分类浏览、搜索过滤、SVG缩略图预览、点击插入）、src/tests/unit/template-panel.test.tsx（14个测试用例）；修改：src/ui/index.ts（新增 TemplatePanel 和 TemplatePanelProps 导出） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0147（TemplatePanel）、API-0148（TemplatePanelProps） |
+
+### T-09-01 实现 CSV 解析器
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号 | T-09-01 |
+| 任务名称 | 实现 CSV 解析器 |
+| 完成时间 | 2026-05-20 23:23 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| Git Commit | 待填写 |
+| 修改记录 | 新建：src/io/csv-parser.ts（parseCSV 函数 + ParsedData/ColumnInfo/CsvParseOptions 接口，集成 PapaParse，列类型推断 number/string/date/boolean，缺失值识别 N/A NA null 空串）、src/tests/unit/csv-parser.test.ts（28 个测试用例）；修改：src/io/index.ts（新增 parseCSV/ParsedData/ColumnInfo/CsvParseOptions 导出）、package.json（新增 papaparse @types/papaparse 依赖） |
+| 发现缺陷 | 无 |
+| 产出接口/函数 | API-0149（parseCSV）、API-0150（ParsedData）、API-0151（ColumnInfo）、API-0152（CsvParseOptions） |

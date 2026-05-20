@@ -21,7 +21,9 @@
     "api:next": "node scripts/api-registry-helper.mjs next"
   },
   "dependencies": {
+    "@types/papaparse": "^5.5.2",
     "fflate": "^0.8.3",
+    "papaparse": "^5.5.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "zustand": "^4.5.0"
