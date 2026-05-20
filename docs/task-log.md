@@ -546,3 +546,15 @@
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0121（directionToCardinal）、API-0122（computeOrthogonalRoute）、API-0123（recalculateConnectorRoute）、API-0124（recalculateRoutesForElements）、API-0057（CanvasView 修订：新增 onConnectorRouteChange prop） |
 
+### T-07-05 实现连接线端点校验
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号 | T-07-05 |
+| 任务名称 | 实现连接线端点校验 |
+| 完成时间 | 2026-05-20 16:45 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| Git Commit | a60b7cb |
+| 修改记录 | 新增：src/core/commands.ts（DeleteElementStrategy 类型、findConnectorsReferencingElements 辅助函数、DeleteElementCommand 类）；修改：src/core/index.ts（导出 DeleteElementCommand 和 DeleteElementStrategy）；修改：src/tests/unit/commands.test.ts（新增 18 个 DeleteElementCommand 测试用例：unbind 策略 6 个、cascade 策略 4 个、block 策略 2 个、通用行为 6 个）；更新：docs/api-registry.md（新增 API-0125 DeleteElementStrategy、API-0126 DeleteElementCommand） |
+| 发现缺陷 | 无 |
+| 产出接口/函数 | API-0125 DeleteElementStrategy、API-0126 DeleteElementCommand |

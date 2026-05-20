@@ -99,5 +99,6 @@ export {
   DistributeElementsCommand,
   BatchLayerEditCommand,
   MoveLayersCommand,
+  DeleteElementCommand,
 } from './commands';
-export type { SceneCommand, CommandHistoryEntry, ElementInput, AlignType, DistributeType, CircularDistributeOptions, BatchLayerOperation, LayerMoveDirection } from './commands';
+export type { SceneCommand, CommandHistoryEntry, ElementInput, AlignType, DistributeType, CircularDistributeOptions, BatchLayerOperation, LayerMoveDirection, DeleteElementStrategy } from './commands';

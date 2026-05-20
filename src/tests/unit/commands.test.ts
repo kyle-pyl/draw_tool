@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CommandExecutor, CreateElementCommand, MoveElementsCommand, UpdateElementCommand, ChangeLayerCommand, TransformElementsCommand, GroupElementsCommand, UngroupCommand, AddToGroupCommand, RemoveFromGroupCommand, AlignElementsCommand, DistributeElementsCommand, BatchLayerEditCommand, MoveLayersCommand } from '../../core/commands';
-import type { SceneCommand, CommandHistoryEntry, ElementInput, ElementChanges, TransformParams, AlignType, DistributeType, CircularDistributeOptions, BatchLayerOperation } from '../../core/commands';
+import { CommandExecutor, CreateElementCommand, MoveElementsCommand, UpdateElementCommand, ChangeLayerCommand, TransformElementsCommand, GroupElementsCommand, UngroupCommand, AddToGroupCommand, RemoveFromGroupCommand, AlignElementsCommand, DistributeElementsCommand, BatchLayerEditCommand, MoveLayersCommand, DeleteElementCommand } from '../../core/commands';
+import type { SceneCommand, CommandHistoryEntry, ElementInput, ElementChanges, TransformParams, AlignType, DistributeType, CircularDistributeOptions, BatchLayerOperation, DeleteElementStrategy } from '../../core/commands';
 import type { SceneDocument } from '../../core/types';
 import { successResult, failureResult } from '../../core/errors';
 import { useDocumentStore } from '../../core/store';
@@ -3304,6 +3304,367 @@ describe('MoveLayersCommand', () => {
       // Scene should be unchanged
       const scene = useDocumentStore.getState().getScene()!;
       expect(scene.layers.find((l) => l.id === 'l5')!.order).toBe(5);
+    });
+  });
+});
+
+// ─── T-07-05 DeleteElementCommand Tests ──────────────────────────────────────
+
+describe('DeleteElementCommand', () => {
+  let executor: CommandExecutor;
+
+  function createShape(name: string, x: number, y: number, w = 50, h = 50, layerId = 'l1') {
+    const input: ElementInput = {
+      type: 'shape', layerId, shapeKind: 'rect', name,
+      transform: { x, y, width: w, height: h, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: '#fff', stroke: '#000', strokeWidth: 2, opacity: 1 },
+    };
+    const cmd = new CreateElementCommand(input);
+    executor.execute(cmd);
+    return useDocumentStore.getState().getScene()!.elements.at(-1)!.id;
+  }
+
+  function createText(name: string, x: number, y: number) {
+    const input: ElementInput = {
+      type: 'text', layerId: 'l1', text: name, name,
+      transform: { x, y, width: 80, height: 30, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: '#000', stroke: 'none', strokeWidth: 0, opacity: 1 },
+    };
+    const cmd = new CreateElementCommand(input);
+    executor.execute(cmd);
+    return useDocumentStore.getState().getScene()!.elements.at(-1)!.id;
+  }
+
+  function createConnector(
+    source: { elementId?: string; anchorId?: string; x: number; y: number },
+    target: { elementId?: string; anchorId?: string; x: number; y: number },
+    layerId = 'l1',
+    name = 'Conn',
+  ) {
+    const input: ElementInput = {
+      type: 'connector', layerId, name,
+      transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: 'none', stroke: '#333', strokeWidth: 2, opacity: 1 },
+      source,
+      target,
+      route: { type: 'straight', points: [] },
+    };
+    const cmd = new CreateElementCommand(input);
+    executor.execute(cmd);
+    return useDocumentStore.getState().getScene()!.elements.at(-1)!.id;
+  }
+
+  beforeEach(() => {
+    executor = new CommandExecutor();
+    useDocumentStore.getState().loadScene(structuredClone(makeSceneWithLayers()));
+  });
+
+  describe('unbind strategy (default)', () => {
+    it('deletes an element and unbinds connector references', () => {
+      const shapeId = createShape('Source', 0, 0);
+      const connectorId = createConnector(
+        { elementId: shapeId, anchorId: 'right', x: 50, y: 25 },
+        { x: 200, y: 25 },
+      );
+
+      const cmd = new DeleteElementCommand([shapeId]);
+      const result = executor.execute(cmd);
+
+      expect(result.valid).toBe(true);
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.elements.find((e) => e.id === shapeId)).toBeUndefined();
+      const conn = scene.elements.find((e) => e.id === connectorId) as any;
+      expect(conn).toBeDefined();
+      expect(conn.source.elementId).toBeUndefined();
+      expect(conn.source.anchorId).toBeUndefined();
+      expect(conn.source.x).toBe(50);
+      expect(conn.source.y).toBe(25);
+    });
+
+    it('deletes an element referenced by multiple connectors', () => {
+      const shapeId = createShape('Hub', 100, 100);
+      const c1 = createConnector(
+        { elementId: shapeId, anchorId: 'top', x: 125, y: 100 },
+        { x: 10, y: 10 },
+      );
+      const c2 = createConnector(
+        { x: 300, y: 300 },
+        { elementId: shapeId, anchorId: 'bottom', x: 125, y: 200 },
+      );
+
+      const cmd = new DeleteElementCommand([shapeId]);
+      executor.execute(cmd);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.elements.find((e) => e.id === shapeId)).toBeUndefined();
+      const conn1 = scene.elements.find((e) => e.id === c1) as any;
+      const conn2 = scene.elements.find((e) => e.id === c2) as any;
+      expect(conn1.source.elementId).toBeUndefined();
+      expect(conn2.target.elementId).toBeUndefined();
+    });
+
+    it('preserves free-point connector endpoints (no elementId)', () => {
+      const shapeId = createShape('Shape', 0, 0);
+      const freeConn = createConnector(
+        { x: 10, y: 10 },
+        { x: 100, y: 100 },
+      );
+
+      const cmd = new DeleteElementCommand([shapeId]);
+      executor.execute(cmd);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const conn = scene.elements.find((e) => e.id === freeConn) as any;
+      expect(conn.source.elementId).toBeUndefined();
+      expect(conn.source.x).toBe(10);
+      expect(conn.source.y).toBe(10);
+    });
+
+    it('deletes multiple elements and unbinds all referencing connectors', () => {
+      const aId = createShape('A', 0, 0);
+      const bId = createShape('B', 0, 200);
+      const cId = createConnector(
+        { elementId: aId, anchorId: 'right', x: 50, y: 25 },
+        { elementId: bId, anchorId: 'left', x: 0, y: 225 },
+      );
+
+      const cmd = new DeleteElementCommand([aId, bId]);
+      executor.execute(cmd);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.elements.find((e) => e.id === aId)).toBeUndefined();
+      expect(scene.elements.find((e) => e.id === bId)).toBeUndefined();
+      const conn = scene.elements.find((e) => e.id === cId) as any;
+      expect(conn.source.elementId).toBeUndefined();
+      expect(conn.target.elementId).toBeUndefined();
+    });
+
+    it('undo restores deleted elements and rebinds connectors', () => {
+      const shapeId = createShape('Source', 0, 0);
+      const connectorId = createConnector(
+        { elementId: shapeId, anchorId: 'right', x: 50, y: 25 },
+        { x: 200, y: 25 },
+      );
+
+      const cmd = new DeleteElementCommand([shapeId]);
+      executor.execute(cmd);
+
+      // Undo
+      const undone = executor.undo();
+      expect(undone).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const el = scene.elements.find((e) => e.id === shapeId);
+      expect(el).toBeDefined();
+      const conn = scene.elements.find((e) => e.id === connectorId) as any;
+      expect(conn.source.elementId).toBe(shapeId);
+      expect(conn.source.anchorId).toBe('right');
+    });
+
+    it('redo re-deletes after undo', () => {
+      const shapeId = createShape('Source', 0, 0);
+      createConnector(
+        { elementId: shapeId, anchorId: 'top', x: 25, y: 0 },
+        { x: 200, y: 25 },
+      );
+
+      const cmd = new DeleteElementCommand([shapeId]);
+      executor.execute(cmd);
+      executor.undo();
+      expect(useDocumentStore.getState().getScene()!.elements.find((e) => e.id === shapeId)).toBeDefined();
+
+      const redone = executor.redo();
+      expect(redone).toBe(true);
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.elements.find((e) => e.id === shapeId)).toBeUndefined();
+      // Connector should be unbound again
+      const conn = scene.elements.find((e) => e.type === 'connector') as any;
+      expect(conn.source.elementId).toBeUndefined();
+    });
+  });
+
+  describe('cascade strategy', () => {
+    it('deletes element and all connectors that reference it', () => {
+      const shapeId = createShape('Target', 0, 0);
+      const connId = createConnector(
+        { x: 100, y: 100 },
+        { elementId: shapeId, anchorId: 'left', x: 0, y: 25 },
+      );
+
+      const cmd = new DeleteElementCommand([shapeId], 'cascade');
+      const result = executor.execute(cmd);
+
+      expect(result.valid).toBe(true);
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.elements.find((e) => e.id === shapeId)).toBeUndefined();
+      expect(scene.elements.find((e) => e.id === connId)).toBeUndefined();
+    });
+
+    it('cascade deletes multiple connectors referencing the same element', () => {
+      const shapeId = createShape('Hub', 100, 100);
+      createConnector({ elementId: shapeId, x: 100, y: 100 }, { x: 10, y: 10 });
+      createConnector({ x: 300, y: 300 }, { elementId: shapeId, x: 100, y: 100 });
+
+      const cmd = new DeleteElementCommand([shapeId], 'cascade');
+      executor.execute(cmd);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.elements).toHaveLength(0); // all 3 deleted
+    });
+
+    it('does not delete connectors that reference other elements', () => {
+      const shapeA = createShape('A', 0, 0);
+      const shapeB = createShape('B', 200, 0);
+      const connToB = createConnector(
+        { x: 300, y: 50 },
+        { elementId: shapeB, anchorId: 'left', x: 200, y: 25 },
+      );
+
+      const cmd = new DeleteElementCommand([shapeA], 'cascade');
+      executor.execute(cmd);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.elements.find((e) => e.id === shapeA)).toBeUndefined();
+      expect(scene.elements.find((e) => e.id === shapeB)).toBeDefined();
+      expect(scene.elements.find((e) => e.id === connToB)).toBeDefined();
+    });
+
+    it('undo restores everything from cascade delete', () => {
+      const shapeId = createShape('Target', 0, 0);
+      const connId = createConnector(
+        { x: 100, y: 100 },
+        { elementId: shapeId, x: 0, y: 25 },
+      );
+
+      const cmd = new DeleteElementCommand([shapeId], 'cascade');
+      executor.execute(cmd);
+
+      executor.undo();
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.elements.find((e) => e.id === shapeId)).toBeDefined();
+      expect(scene.elements.find((e) => e.id === connId)).toBeDefined();
+    });
+  });
+
+  describe('block strategy', () => {
+    it('blocks deletion when connectors reference the element', () => {
+      const shapeId = createShape('Target', 0, 0);
+      createConnector(
+        { x: 100, y: 100 },
+        { elementId: shapeId, anchorId: 'left', x: 0, y: 25 },
+      );
+
+      const cmd = new DeleteElementCommand([shapeId], 'block');
+      const result = executor.execute(cmd);
+
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe('REF_CONNECTOR_ENDPOINT_NOT_FOUND');
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.elements.find((e) => e.id === shapeId)).toBeDefined();
+    });
+
+    it('allows deletion when no connectors reference the element', () => {
+      const shapeId = createShape('Isolated', 0, 0);
+
+      const cmd = new DeleteElementCommand([shapeId], 'block');
+      const result = executor.execute(cmd);
+
+      expect(result.valid).toBe(true);
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.elements.find((e) => e.id === shapeId)).toBeUndefined();
+    });
+  });
+
+  describe('general behavior', () => {
+    it('fails when no elements specified', () => {
+      const cmd = new DeleteElementCommand([]);
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(false);
+    });
+
+    it('fails when element does not exist', () => {
+      const cmd = new DeleteElementCommand(['nonexistent']);
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(false);
+    });
+
+    it('fails when element is locked', () => {
+      const shapeId = createShape('Locked', 0, 0);
+      useDocumentStore.getState().updateScene((s) => ({
+        ...s,
+        elements: s.elements.map((el) =>
+          el.id === shapeId ? { ...el, locked: true } : el,
+        ),
+      }));
+
+      const cmd = new DeleteElementCommand([shapeId]);
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe('RULE_LOCKED_ELEMENT_EDITED');
+    });
+
+    it('deletes a text element', () => {
+      const textId = createText('Label', 0, 0);
+      const cmd = new DeleteElementCommand([textId]);
+      const result = executor.execute(cmd);
+
+      expect(result.valid).toBe(true);
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.elements.find((e) => e.id === textId)).toBeUndefined();
+    });
+
+    it('removes deleted elements from groups', () => {
+      const idA = createShape('A', 0, 0);
+      const idB = createShape('B', 100, 0);
+
+      executor.execute(new GroupElementsCommand([idA, idB], 'G1'));
+
+      const cmd = new DeleteElementCommand([idA]);
+      executor.execute(cmd);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const group = scene.groups.find((g) => g.name === 'G1');
+      expect(group).toBeDefined();
+      expect(group!.elementIds).not.toContain(idA);
+      expect(group!.elementIds).toContain(idB);
+    });
+
+    it('connector with free endpoints is deleted normally (unbind)', () => {
+      const connId = createConnector(
+        { x: 0, y: 0 },
+        { x: 100, y: 100 },
+      );
+
+      const cmd = new DeleteElementCommand([connId]);
+      const result = executor.execute(cmd);
+
+      expect(result.valid).toBe(true);
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.elements.find((e) => e.id === connId)).toBeUndefined();
+    });
+
+    it('undo then redo restores correct state with multiple deletes', () => {
+      const a = createShape('A', 0, 0);
+      const b = createShape('B', 100, 0);
+
+      executor.execute(new DeleteElementCommand([a]));
+      expect(useDocumentStore.getState().getScene()!.elements).toHaveLength(1);
+
+      executor.execute(new DeleteElementCommand([b]));
+      expect(useDocumentStore.getState().getScene()!.elements).toHaveLength(0);
+
+      executor.undo();
+      const scene1 = useDocumentStore.getState().getScene()!;
+      expect(scene1.elements).toHaveLength(1);
+      expect(scene1.elements[0].id).toBe(b);
+
+      executor.undo();
+      const scene2 = useDocumentStore.getState().getScene()!;
+      expect(scene2.elements).toHaveLength(2);
+
+      executor.redo();
+      const scene3 = useDocumentStore.getState().getScene()!;
+      expect(scene3.elements).toHaveLength(1);
     });
   });
 });

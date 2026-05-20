@@ -4,7 +4,7 @@
  * CommandExecutor manages the history stacks and coordinates with the Document Store.
  */
 
-import type { SceneDocument, SceneElement, ElementType, Transform2D, ElementStyle, BBox, ElementGroup } from './types';
+import type { SceneDocument, SceneElement, ConnectorElement, ElementType, Transform2D, ElementStyle, BBox, ElementGroup } from './types';
 import type { ValidationResult, ValidationError } from './errors';
 import { successResult, failureResult } from './errors';
 import { useDocumentStore } from './store';
@@ -2392,8 +2392,6 @@ export class TransformElementsCommand implements SceneCommand {
 
   invert(_scene: SceneDocument): SceneCommand | null {
     const reverseParams: TransformParams = {};
-    // Build reverse transform from the first element's original transform
-    // We create individual UpdateElement-like commands for each element
     const elementIds = this.elementIds.filter((id) => this.previousTransforms.has(id));
 
     if (elementIds.length === 0) return null;
@@ -2412,6 +2410,227 @@ export class TransformElementsCommand implements SceneCommand {
             return prevTransform ? { ...el, transform: prevTransform } : el;
           }),
         };
+      },
+      invert: () => null,
+    };
+
+    return invertCmd;
+  }
+}
+
+// ─── DeleteElementStrategy ──────────────────────────────────────────────────────
+
+/**
+ * Strategy for handling connectors that reference elements being deleted.
+ *
+ * - `unbind`: Remove the element binding (elementId + anchorId), keeping the endpoint
+ *   at its current absolute coordinates as a free-floating point. This is the default.
+ * - `cascade`: Also delete any connectors that reference the deleted elements.
+ * - `block`: Refuse the deletion if any connector references the elements.
+ */
+export type DeleteElementStrategy = 'unbind' | 'cascade' | 'block';
+
+function findConnectorsReferencingElements(
+  elementIds: Set<string>,
+  elements: SceneElement[],
+): ConnectorElement[] {
+  return elements.filter(
+    (el): el is ConnectorElement => {
+      if (el.type !== 'connector') return false;
+      const conn = el as ConnectorElement;
+      const srcRef = conn.source?.elementId && elementIds.has(conn.source.elementId);
+      const tgtRef = conn.target?.elementId && elementIds.has(conn.target.elementId);
+      return !!(srcRef || tgtRef);
+    },
+  );
+}
+
+// ─── DeleteElement Command ──────────────────────────────────────────────────────
+
+export class DeleteElementCommand implements SceneCommand {
+  id: string;
+  label: string;
+  private elementIds: string[];
+  private strategy: DeleteElementStrategy;
+  private deletedElements: SceneElement[];
+  private unbindingInfo: Map<string, {
+    source: { elementId?: string; anchorId?: string };
+    target: { elementId?: string; anchorId?: string };
+  }>;
+
+  constructor(elementIds: string[], strategy: DeleteElementStrategy = 'unbind', label?: string) {
+    this.id = generateId('delete');
+    this.elementIds = elementIds;
+    this.strategy = strategy;
+    this.deletedElements = [];
+    this.unbindingInfo = new Map();
+    this.label = label || `Delete ${elementIds.length} element(s)`;
+  }
+
+  validate(scene: SceneDocument): ValidationResult {
+    if (this.elementIds.length === 0) {
+      return failureResult({
+        code: 'SCHEMA_FIELD_TYPE_ERROR',
+        message: 'No elements specified for deletion',
+        severity: 'error',
+        suggestion: 'Select at least one element to delete',
+      });
+    }
+
+    const deleteSet = new Set(this.elementIds);
+
+    for (const elementId of this.elementIds) {
+      const element = scene.elements.find((el) => el.id === elementId);
+      if (!element) {
+        return failureResult({
+          code: ErrorCode.REF_GROUP_NOT_FOUND as string,
+          message: `Element "${elementId}" not found`,
+          severity: 'error',
+          elementIds: [elementId],
+          suggestion: 'The element may have already been deleted',
+        });
+      }
+
+      if (element.locked) {
+        return failureResult({
+          code: ErrorCode.RULE_LOCKED_ELEMENT_EDITED as string,
+          message: `Element "${element.name || element.id}" is locked and cannot be deleted`,
+          severity: 'error',
+          elementIds: [element.id],
+          suggestion: 'Unlock the element before deleting',
+        });
+      }
+    }
+
+    if (this.strategy === 'block') {
+      const referencingConnectors = findConnectorsReferencingElements(deleteSet, scene.elements);
+      if (referencingConnectors.length > 0) {
+        const connNames = referencingConnectors.map((c) => `"${c.name || c.id}"`).join(', ');
+        return failureResult({
+          code: ErrorCode.REF_CONNECTOR_ENDPOINT_NOT_FOUND as string,
+          message: `Cannot delete: ${referencingConnectors.length} connector(s) reference the elements being deleted (${connNames})`,
+          severity: 'error',
+          elementIds: this.elementIds,
+          suggestion: 'Unbind the connectors first, use cascade delete, or change the deletion strategy',
+        });
+      }
+    }
+
+    return successResult();
+  }
+
+  execute(scene: SceneDocument): SceneDocument {
+    const deleteSet = new Set(this.elementIds);
+
+    this.deletedElements = scene.elements.filter((el) => deleteSet.has(el.id));
+
+    let currentElements = scene.elements;
+
+    if (this.strategy === 'cascade') {
+      const referencingConnectors = findConnectorsReferencingElements(deleteSet, scene.elements);
+      const cascadeIds = new Set(referencingConnectors.map((c) => c.id));
+      this.deletedElements.push(...referencingConnectors);
+      const allDeleteIds = new Set([...deleteSet, ...cascadeIds]);
+      currentElements = currentElements.filter((el) => !allDeleteIds.has(el.id));
+    } else if (this.strategy === 'unbind') {
+      currentElements = currentElements.map((el) => {
+        if (el.type !== 'connector') return el;
+        const conn = el as ConnectorElement;
+        let updated = { ...conn } as ConnectorElement;
+        let changed = false;
+
+        if (conn.source?.elementId && deleteSet.has(conn.source.elementId)) {
+          this.unbindingInfo.set(conn.id, {
+            ...(this.unbindingInfo.get(conn.id) || { source: {}, target: {} }),
+            source: { elementId: conn.source.elementId, anchorId: conn.source.anchorId },
+          });
+          updated = {
+            ...updated,
+            source: {
+              ...updated.source,
+              elementId: undefined,
+              anchorId: undefined,
+            },
+          };
+          changed = true;
+        }
+
+        if (conn.target?.elementId && deleteSet.has(conn.target.elementId)) {
+          this.unbindingInfo.set(conn.id, {
+            ...(this.unbindingInfo.get(conn.id) || { source: {}, target: {} }),
+            target: { elementId: conn.target.elementId, anchorId: conn.target.anchorId },
+          });
+          updated = {
+            ...updated,
+            target: {
+              ...updated.target,
+              elementId: undefined,
+              anchorId: undefined,
+            },
+          };
+          changed = true;
+        }
+
+        return changed ? updated : el;
+      });
+    }
+
+    const remainingElements = currentElements.filter((el) => !deleteSet.has(el.id));
+
+    return {
+      ...scene,
+      elements: remainingElements,
+      groups: scene.groups.map((g) => ({
+        ...g,
+        elementIds: g.elementIds.filter((id) => !deleteSet.has(id)),
+      })),
+    };
+  }
+
+  invert(_scene: SceneDocument): SceneCommand | null {
+    const deletedElements = this.deletedElements.map((e) =>
+      JSON.parse(JSON.stringify(e)),
+    ) as SceneElement[];
+    const unbindingInfo = new Map(this.unbindingInfo);
+
+    const invertCmd: SceneCommand = {
+      id: generateId('delete-undo'),
+      label: `Undo: ${this.label}`,
+      validate: () => successResult(),
+      execute: (scene: SceneDocument) => {
+        let elements = [...scene.elements, ...deletedElements] as SceneElement[];
+
+        if (unbindingInfo.size > 0) {
+          elements = elements.map((el) => {
+            if (el.type !== 'connector') return el;
+            const info = unbindingInfo.get(el.id);
+            if (!info) return el;
+            let updated = { ...el } as ConnectorElement;
+            if (info.source.elementId) {
+              updated = {
+                ...updated,
+                source: {
+                  ...updated.source,
+                  elementId: info.source.elementId,
+                  anchorId: info.source.anchorId,
+                },
+              };
+            }
+            if (info.target.elementId) {
+              updated = {
+                ...updated,
+                target: {
+                  ...updated.target,
+                  elementId: info.target.elementId,
+                  anchorId: info.target.anchorId,
+                },
+              };
+            }
+            return updated;
+          });
+        }
+
+        return { ...scene, elements };
       },
       invert: () => null,
     };

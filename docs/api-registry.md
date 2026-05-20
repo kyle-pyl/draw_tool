@@ -2272,8 +2272,8 @@
 | 功能描述 | 根据参数 t（0-1）计算多段路径上的点坐标。按路径总长度比例插值，t=0 返回起点，t=1 返回终点，t=0.5 返回路径中点。用于在连接线路径上定位标签文本 |
 | 输入参数 | points: { x: number, y: number }[] - 路径点数组；t: number - 位置参数（0-1），自动截断到 [0,1] |
 | 输出参数 | { x: number, y: number } - 路径上对应位置的绝对坐标 |
-| 典型用例 | `const pt = computePointOnPath(pathPoints, 0.5);` |
-| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-07-03）|
+| 典型用例 | const pt = computePointOnPath(pathPoints, 0.5); |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-07-03） |
 
 ### API-0120 buildArrowMarkers
 
@@ -2292,7 +2292,7 @@
 | 输入参数 | scene: SceneDocument - 当前场景文档 |
 | 输出参数 | React.ReactElement[] - SVG marker 元素数组，放在 defs 中使用 |
 | 典型用例 | 在 CanvasView 的 SVG render 中使用 `<defs>{buildArrowMarkers(scene)}</defs>` |
-| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-07-03）|
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-07-03） |
 
 
 ### API-0121 directionToCardinal
@@ -2370,3 +2370,40 @@
 | 输出参数 | SceneDocument - 更新后的场景文档，包含重新计算路由的连接器 |
 | 典型用例 | `const newScene = recalculateRoutesForElements(scene, new Set(['e1', 'e2']));` |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-07-04）|
+### API-0125 DeleteElementStrategy
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0125 |
+| 名称 | DeleteElementStrategy |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 删除元素时处理引用该元素的连接线的策略：unbind（解除绑定，保留自由端点），cascade（级联删除连接线），block（阻止删除） |
+| 输入参数 | 无（类型别名：'unbind' | 'cascade' | 'block'） |
+| 输出参数 | DeleteElementStrategy 类型 |
+| 典型用例 | new DeleteElementCommand(['el1', 'el2'], 'unbind') |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+### API-0126 DeleteElementCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0126 |
+| 名称 | DeleteElementCommand |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 删除指定元素并根据策略处理关联连接线：unbind 解除绑定保留自由端点，cascade 级联删除连接线，block 阻止删除；支持撤销/重做，撤销时恢复元素并重新绑定连接线 |
+| 输入参数 | elementIds: string[]（要删除的元素ID列表），strategy: DeleteElementStrategy（可选，默认 'unbind'），label?: string（操作标签） |
+| 输出参数 | SceneCommand 接口实现，execute 返回删除后的 SceneDocument，invert 返回恢复命令 |
+| 典型用例 | executor.execute(new DeleteElementCommand([elementId]))  // 默认 unbind
+executor.execute(new DeleteElementCommand([elementId], 'cascade'))  // 级联 |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
