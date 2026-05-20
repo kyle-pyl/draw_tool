@@ -2046,12 +2046,12 @@
 | 典型用例 | `executor.execute(new AddToGroupCommand('g1', ['e3', 'e4']));` |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-06-01）|
 
-### API-0107 RemoveFromGroupCommand
+### API-0108 AlignType
 
 | 字段 | 内容 |
 |---|---|
-| 序号 | API-0107 |
-| 名称 | RemoveFromGroupCommand |
+| 序号 | API-0108 |
+| 名称 | AlignType |
 | 所属系统 | core |
 | 所属模块 | commands |
 | 状态 | 活跃 |
@@ -2059,8 +2059,27 @@
 | 最后修订日期 | 2026-05-20 |
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | 移除成员命令。接收 groupId 和 elementIds，从已有分组中移除指定元素。validate 检查组存在且元素在组内。execute 从组中移除指定元素（元素本身不被删除）。invert 生成 AddToGroupCommand 用于撤销 |
-| 输入参数 | constructor(groupId: string, elementIds: string[], label?: string) |
-| 输出参数 | implements SceneCommand |
-| 典型用例 | `executor.execute(new RemoveFromGroupCommand('g1', ['e3']));` |
-| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-06-01）|
+| 功能描述 | 对齐类型字面量联合类型。定义七种对齐方式：left（左对齐）、right（右对齐）、top（上对齐）、bottom（下对齐）、centerHorizontal（水平居中）、centerVertical（垂直居中）、center（双向居中） |
+| 输入参数 | 无（类型别名） |
+| 输出参数 | 'left' \| 'right' \| 'top' \| 'bottom' \| 'centerHorizontal' \| 'centerVertical' \| 'center' |
+| 典型用例 | `const align: AlignType = 'left'` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-06-02）|
+
+### API-0109 AlignElementsCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0109 |
+| 名称 | AlignElementsCommand |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 元素对齐命令。接收 elementIds 和 alignType，计算所有选中元素的统一包围盒，按对齐类型移动各元素位置。支持跨图层对齐（元素保持各自所属图层）。validate 检查至少 2 个非 connector 元素存在且未锁定，移动后不与同层非对齐元素重叠。execute 更新元素 transform 位置。连接线端点跟随其锚定元素自动位移。invert 生成逆命令恢复原始位置 |
+| 输入参数 | constructor(elementIds: string[], alignType: AlignType, label?: string) |
+| 输出参数 | implements SceneCommand - 可通过 CommandExecutor 执行、撤销和重做 |
+| 典型用例 | `executor.execute(new AlignElementsCommand(['e1', 'e2', 'e3'], 'centerHorizontal'));` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-06-02）|

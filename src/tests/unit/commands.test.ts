@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CommandExecutor, CreateElementCommand, MoveElementsCommand, UpdateElementCommand, ChangeLayerCommand, TransformElementsCommand, GroupElementsCommand, UngroupCommand, AddToGroupCommand, RemoveFromGroupCommand } from '../../core/commands';
-import type { SceneCommand, CommandHistoryEntry, ElementInput, ElementChanges, TransformParams } from '../../core/commands';
+import { CommandExecutor, CreateElementCommand, MoveElementsCommand, UpdateElementCommand, ChangeLayerCommand, TransformElementsCommand, GroupElementsCommand, UngroupCommand, AddToGroupCommand, RemoveFromGroupCommand, AlignElementsCommand } from '../../core/commands';
+import type { SceneCommand, CommandHistoryEntry, ElementInput, ElementChanges, TransformParams, AlignType } from '../../core/commands';
 import type { SceneDocument } from '../../core/types';
 import { successResult, failureResult } from '../../core/errors';
 import { useDocumentStore } from '../../core/store';
@@ -1423,5 +1423,393 @@ describe('RemoveFromGroupCommand', () => {
 
     executor.redo();
     expect(useDocumentStore.getState().getScene()!.groups[0].elementIds).toHaveLength(1);
+  });
+});
+
+// ─── AlignElements Command ─────────────────────────────────────────────────────
+
+describe('AlignElementsCommand', () => {
+  let executor: CommandExecutor;
+
+  function makeScene(): SceneDocument {
+    return {
+      schemaVersion: '1.0.0',
+      project: { name: 'Test' },
+      canvas: { units: 'px', background: '#fff', defaultFont: 'Arial', gridSize: 0, snapToGrid: false },
+      rules: { maxLayerCount: 10, collisionStrategy: 'bbox', hiddenElementsCollide: false, lockedElementsCollide: false, connectorsExempt: true },
+      layers: [{ id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false }],
+      elements: [],
+      groups: [],
+      dataSources: [],
+      charts: [],
+      templates: [],
+      exportPresets: [],
+    };
+  }
+
+  function createShape(name: string, x: number, y: number, w = 50, h = 50) {
+    const input: ElementInput = {
+      type: 'shape', layerId: 'l1', shapeKind: 'rect', name,
+      transform: { x, y, width: w, height: h, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: '#fff', stroke: '#000', strokeWidth: 2, opacity: 1 },
+    };
+    const cmd = new CreateElementCommand(input);
+    executor.execute(cmd);
+    return useDocumentStore.getState().getScene()!.elements.at(-1)!.id;
+  }
+
+  beforeEach(() => {
+    executor = new CommandExecutor();
+    useDocumentStore.getState().loadScene(structuredClone(makeScene()));
+  });
+
+  describe('validation', () => {
+    it('fails when fewer than 2 elements', () => {
+      const id1 = createShape('A', 0, 0);
+      const cmd = new AlignElementsCommand([id1], 'left');
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].message).toContain('At least 2');
+    });
+
+    it('fails when element does not exist', () => {
+      createShape('A', 0, 0);
+      const cmd = new AlignElementsCommand(['nonexistent', 'also_nonexistent'], 'left');
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe('REF_GROUP_NOT_FOUND');
+    });
+
+    it('fails when element is locked', () => {
+      const id1 = createShape('A', 0, 0);
+      const id2 = createShape('B', 100, 0);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      useDocumentStore.getState().updateScene(() => ({
+        ...scene,
+        elements: scene.elements.map((el) => (el.id === id1 ? { ...el, locked: true } : el)),
+      }));
+
+      const cmd = new AlignElementsCommand([id1, id2], 'left');
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe('RULE_LOCKED_ELEMENT_EDITED');
+    });
+
+    it('fails when only connectors are selected', () => {
+      const scene = useDocumentStore.getState().getScene()!;
+      useDocumentStore.getState().updateScene(() => ({
+        ...scene,
+        elements: [
+          ...scene.elements,
+          {
+            id: 'c1', type: 'connector', layerId: 'l1', name: 'C1',
+            transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: 'none', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            source: { x: 0, y: 0 }, target: { x: 100, y: 100 },
+            route: { type: 'straight', points: [] },
+            visible: true, locked: false,
+          },
+          {
+            id: 'c2', type: 'connector', layerId: 'l1', name: 'C2',
+            transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: 'none', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            source: { x: 0, y: 0 }, target: { x: 100, y: 100 },
+            route: { type: 'straight', points: [] },
+            visible: true, locked: false,
+          },
+        ],
+      }));
+
+      const cmd = new AlignElementsCommand(['c1', 'c2'], 'left');
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].message).toContain('non-connector');
+    });
+
+    it('fails when alignment would cause collision', () => {
+      createShape('A', 0, 100, 50, 50);
+      createShape('B', 200, 0, 50, 50);
+      // Obstacle at (0,0) size 60x40 will collide with left-aligned B at target bbox [0,0,50,50]
+      createShape('Obstacle', 0, 0, 60, 40);
+
+      const allIds = useDocumentStore.getState().getScene()!.elements.map((e) => e.id);
+      const aId = allIds[0];
+      const bId = allIds[1];
+
+      const cmd = new AlignElementsCommand([aId, bId], 'left');
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe('GEO_MOVE_TARGET_CONFLICT');
+    });
+  });
+
+  describe('left alignment', () => {
+    it('aligns left edges to the leftmost element', () => {
+      const id1 = createShape('A', 0, 50);      // leftmost
+      const id2 = createShape('B', 100, 100);
+      const id3 = createShape('C', 200, 150);
+
+      const cmd = new AlignElementsCommand([id1, id2, id3], 'left');
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const el1 = scene.elements.find((e) => e.id === id1)!;
+      const el2 = scene.elements.find((e) => e.id === id2)!;
+      const el3 = scene.elements.find((e) => e.id === id3)!;
+
+      expect(el1.transform.x).toBe(0);    // already at left edge
+      expect(el2.transform.x).toBe(0);    // moved to align
+      expect(el3.transform.x).toBe(0);    // moved to align
+      expect(el1.transform.y).toBe(50);   // y unchanged
+      expect(el2.transform.y).toBe(100);  // y unchanged
+      expect(el3.transform.y).toBe(150);  // y unchanged
+    });
+  });
+
+  describe('right alignment', () => {
+    it('aligns right edges to the rightmost element', () => {
+      const id1 = createShape('A', 0, 50, 30, 30);    // right edge at 30
+      const id2 = createShape('B', 100, 100, 60, 60);  // right edge at 160
+      const id3 = createShape('C', 200, 150, 40, 40);  // right edge at 240 (rightmost)
+
+      const cmd = new AlignElementsCommand([id1, id2, id3], 'right');
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const el1 = scene.elements.find((e) => e.id === id1)!;
+      const el2 = scene.elements.find((e) => e.id === id2)!;
+      const el3 = scene.elements.find((e) => e.id === id3)!;
+
+      // Rightmost edge = 240. For each element, right edge should be 240.
+      // x = rightEdge - width
+      expect(el3.transform.x).toBe(200);  // 200 + 40 = 240, already rightmost
+      expect(el2.transform.x).toBe(180);  // 180 + 60 = 240
+      expect(el1.transform.x).toBe(210);  // 210 + 30 = 240
+    });
+  });
+
+  describe('top alignment', () => {
+    it('aligns top edges to the topmost element', () => {
+      const id1 = createShape('A', 60, 50);   // topmost at y=50
+      const id2 = createShape('B', 10, 100);
+      const id3 = createShape('C', 150, 200);
+
+      const cmd = new AlignElementsCommand([id1, id2, id3], 'top');
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const el1 = scene.elements.find((e) => e.id === id1)!;
+      const el2 = scene.elements.find((e) => e.id === id2)!;
+      const el3 = scene.elements.find((e) => e.id === id3)!;
+
+      expect(el1.transform.y).toBe(50);
+      expect(el2.transform.y).toBe(50);
+      expect(el3.transform.y).toBe(50);
+      // x positions unchanged
+      expect(el1.transform.x).toBe(60);
+      expect(el2.transform.x).toBe(10);
+      expect(el3.transform.x).toBe(150);
+    });
+  });
+
+  describe('bottom alignment', () => {
+    it('aligns bottom edges to the bottommost element', () => {
+      const id1 = createShape('A', 10, 0, 40, 30);     // bottom at 30
+      const id2 = createShape('B', 130, 50, 40, 60);   // bottom at 110
+      const id3 = createShape('C', 60, 200, 40, 50);   // bottom at 250 (bottommost)
+
+      const cmd = new AlignElementsCommand([id1, id2, id3], 'bottom');
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const el1 = scene.elements.find((e) => e.id === id1)!;
+      const el2 = scene.elements.find((e) => e.id === id2)!;
+      const el3 = scene.elements.find((e) => e.id === id3)!;
+
+      // Bottommost edge = 250. For each: y = 250 - height
+      expect(el3.transform.y).toBe(200);  // 200 + 50 = 250
+      expect(el2.transform.y).toBe(190);  // 190 + 60 = 250
+      expect(el1.transform.y).toBe(220);  // 220 + 30 = 250
+    });
+  });
+
+  describe('center horizontal alignment', () => {
+    it('aligns horizontal centers', () => {
+      const id1 = createShape('A', 0, 50, 80, 50);    // centerX = 40
+      const id2 = createShape('B', 200, 100, 60, 50);  // centerX = 230
+      const id3 = createShape('C', 100, 150, 40, 50);  // centerX = 120
+
+      const cmd = new AlignElementsCommand([id1, id2, id3], 'centerHorizontal');
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const el1 = scene.elements.find((e) => e.id === id1)!;
+      const el2 = scene.elements.find((e) => e.id === id2)!;
+      const el3 = scene.elements.find((e) => e.id === id3)!;
+
+      // Unified bbox: minX=0, maxX=260, centerX=130
+      // For each: x = centerX - width/2
+      expect(el1.transform.x).toBe(90);   // 130 - 40 = 90
+      expect(el2.transform.x).toBe(100);  // 130 - 30 = 100
+      expect(el3.transform.x).toBe(110);  // 130 - 20 = 110
+      // y unchanged
+      expect(el1.transform.y).toBe(50);
+      expect(el2.transform.y).toBe(100);
+      expect(el3.transform.y).toBe(150);
+    });
+  });
+
+  describe('center vertical alignment', () => {
+    it('aligns vertical centers', () => {
+      const id1 = createShape('A', 30, 0, 50, 40);     // centerY = 20
+      const id2 = createShape('B', 100, 200, 50, 80);  // centerY = 240
+
+      const cmd = new AlignElementsCommand([id1, id2], 'centerVertical');
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const el1 = scene.elements.find((e) => e.id === id1)!;
+      const el2 = scene.elements.find((e) => e.id === id2)!;
+
+      // Unified bbox: minY=0, maxY=280, centerY=140
+      // For each: y = centerY - height/2
+      expect(el1.transform.y).toBe(120);  // 140 - 20 = 120
+      expect(el2.transform.y).toBe(100);  // 140 - 40 = 100
+    });
+  });
+
+  describe('center alignment (both axes)', () => {
+    it('aligns both horizontal and vertical centers', () => {
+      const id1 = createShape('A', 0, 0, 60, 40);
+      const id2 = createShape('B', 200, 200, 40, 80);
+
+      const cmd = new AlignElementsCommand([id1, id2], 'center');
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const el1 = scene.elements.find((e) => e.id === id1)!;
+      const el2 = scene.elements.find((e) => e.id === id2)!;
+
+      // Unified bbox: minX=0, maxX=240, centerX=120
+      // Unified bbox: minY=0, maxY=280, centerY=140
+      expect(el1.transform.x).toBe(90);   // 120 - 30 = 90
+      expect(el1.transform.y).toBe(120);  // 140 - 20 = 120
+      expect(el2.transform.x).toBe(100);  // 120 - 20 = 100
+      expect(el2.transform.y).toBe(100);  // 140 - 40 = 100
+    });
+  });
+
+  describe('undo / redo', () => {
+    it('undo restores original positions', () => {
+      const id1 = createShape('A', 10, 20, 50, 50);
+      const id2 = createShape('B', 100, 200, 50, 50);
+
+      executor.execute(new AlignElementsCommand([id1, id2], 'left'));
+
+      const sceneAfter = useDocumentStore.getState().getScene()!;
+      const el1After = sceneAfter.elements.find((e) => e.id === id1)!;
+      expect(el1After.transform.x).toBe(10);  // leftmost
+
+      executor.undo();
+
+      const sceneUndo = useDocumentStore.getState().getScene()!;
+      const el1Undo = sceneUndo.elements.find((e) => e.id === id1)!;
+      const el2Undo = sceneUndo.elements.find((e) => e.id === id2)!;
+      expect(el1Undo.transform.x).toBe(10);
+      expect(el1Undo.transform.y).toBe(20);
+      expect(el2Undo.transform.x).toBe(100);
+      expect(el2Undo.transform.y).toBe(200);
+    });
+
+    it('redo reapplies alignment after undo', () => {
+      const id1 = createShape('A', 10, 20, 50, 50);
+      const id2 = createShape('B', 100, 200, 50, 50);
+
+      executor.execute(new AlignElementsCommand([id1, id2], 'left'));
+      executor.undo();
+      const sceneUndo = useDocumentStore.getState().getScene()!;
+      expect(sceneUndo.elements.find((e) => e.id === id2)!.transform.x).toBe(100);
+
+      executor.redo();
+      const sceneRedo = useDocumentStore.getState().getScene()!;
+      expect(sceneRedo.elements.find((e) => e.id === id2)!.transform.x).toBe(10);
+    });
+  });
+
+  describe('connector endpoint following', () => {
+    it('moves connector endpoints when aligned element has attached connector', () => {
+      const id2 = createShape('B', 400, 100, 50, 50);
+      const id1 = createShape('A', 100, 100, 50, 50);
+
+      // Create a connector attached to id1
+      const scene = useDocumentStore.getState().getScene()!;
+      useDocumentStore.getState().updateScene(() => ({
+        ...scene,
+        elements: [
+          ...scene.elements,
+          {
+            id: 'conn1', type: 'connector' as const, layerId: 'l1', name: 'Conn',
+            transform: { x: 0, y: 0, width: 0, height: 0, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: 'none', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            source: { elementId: id2, anchorId: 'right', x: 450, y: 125 },
+            target: { x: 600, y: 125 },
+            route: { type: 'straight', points: [] },
+            visible: true, locked: false,
+          },
+        ],
+      }));
+
+      executor.execute(new AlignElementsCommand([id1, id2], 'left'));
+
+      const finalScene = useDocumentStore.getState().getScene()!;
+      const conn = finalScene.elements.find((e) => e.id === 'conn1')!;
+      expect(conn.type).toBe('connector');
+      if (conn.type === 'connector') {
+        // id2 moves from x=400 to x=100 (left-align). source.x was 450, now 450 - 300 = 150
+        expect(conn.source.x).toBe(150);
+      }
+    });
+  });
+
+  describe('cross-layer alignment', () => {
+    it('aligns elements across different layers', () => {
+      const scene = useDocumentStore.getState().getScene()!;
+      useDocumentStore.getState().updateScene(() => ({
+        ...scene,
+        layers: [
+          ...scene.layers,
+          { id: 'l2', name: 'Layer 2', order: 2, visible: true, locked: false },
+        ],
+      }));
+
+      const id1 = createShape('A', 0, 50, 50, 50); // layer l1
+
+      const input2: ElementInput = {
+        type: 'shape', layerId: 'l2', shapeKind: 'rect', name: 'B',
+        transform: { x: 200, y: 100, width: 60, height: 60, rotation: 0, scaleX: 1, scaleY: 1 },
+        style: { fill: '#fff', stroke: '#000', strokeWidth: 2, opacity: 1 },
+      };
+      const cmd2 = new CreateElementCommand(input2);
+      executor.execute(cmd2);
+      const id2 = useDocumentStore.getState().getScene()!.elements.at(-1)!.id;
+
+      executor.execute(new AlignElementsCommand([id1, id2], 'left'));
+
+      const finalScene = useDocumentStore.getState().getScene()!;
+      const el1 = finalScene.elements.find((e) => e.id === id1)!;
+      const el2 = finalScene.elements.find((e) => e.id === id2)!;
+      expect(el1.transform.x).toBe(0);
+      expect(el2.transform.x).toBe(0);
+      expect(el1.layerId).toBe('l1');
+      expect(el2.layerId).toBe('l2');
+    });
   });
 });

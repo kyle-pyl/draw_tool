@@ -442,16 +442,16 @@
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0102（PropertyPanel）、API-0103（PropertyPanelProps） |
 
-### T-06-01 实现分组命令
+### T-06-02 实现对齐命令
 
 | 字段          | 内容 |
 | ------------- | ---- |
-| 任务编号      | T-06-01 |
-| 任务名称      | 实现分组命令 |
-| 完成时间      | 2026-05-20 11:00 |
+| 任务编号      | T-06-02 |
+| 任务名称      | 实现对齐命令 |
+| 完成时间      | 2026-05-20 11:25 |
 | 作者/智能体   | OpenCode/deepseek-v4-pro |
-| Git Commit    | cbe839f |
-| 修改记录      | 修改：src/core/commands.ts（新增 GroupElementsCommand、UngroupCommand、AddToGroupCommand、RemoveFromGroupCommand 四个命令类）、src/canvas/selection.ts（新增 selectGroup、selectGroupByName、getGroupsForSelected 方法）、src/core/index.ts（新增四个分组命令的导出）、src/tests/unit/commands.test.ts（新增 22 个分组命令测试用例）、src/tests/unit/selection.test.ts（新增 6 个分组选择测试用例） |
+| Git Commit    | c5d547a |
+| 修改记录      | 修改：src/core/commands.ts（新增 AlignType 类型、AlignElementsCommand 类：支持 left/right/top/bottom/centerHorizontal/centerVertical/center 七种对齐方式，计算统一包围盒，移动后检查图层冲突，连接线端点跟随）；修改：src/core/index.ts（新增 AlignElementsCommand 和 AlignType 导出）；修改：src/tests/unit/commands.test.ts（新增 12 个对齐命令测试用例） |
 | 发现缺陷      | 无 |
-| 产出接口/函数 | API-0104（GroupElementsCommand）、API-0105（UngroupCommand）、API-0106（AddToGroupCommand）、API-0107（RemoveFromGroupCommand）、API-0058（SelectionManager 修订：新增 selectGroup/selectGroupByName/getGroupsForSelected 方法） |
+| 产出接口/函数 | API-0108（AlignType）、API-0109（AlignElementsCommand） |
 

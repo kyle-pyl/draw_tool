@@ -1040,6 +1040,274 @@ export class ChangeLayerCommand implements SceneCommand {
   }
 }
 
+// ─── AlignElements Command ─────────────────────────────────────────────────────
+
+export type AlignType = 'left' | 'right' | 'top' | 'bottom' | 'centerHorizontal' | 'centerVertical' | 'center';
+
+export class AlignElementsCommand implements SceneCommand {
+  id: string;
+  label: string;
+  private elementIds: string[];
+  private alignType: AlignType;
+  private previousPositions: Map<string, { x: number; y: number }>;
+
+  constructor(elementIds: string[], alignType: AlignType, label?: string) {
+    this.id = generateId('align');
+    this.elementIds = elementIds;
+    this.alignType = alignType;
+    this.label = label || `Align ${alignType}`;
+    this.previousPositions = new Map();
+  }
+
+  validate(scene: SceneDocument): ValidationResult {
+    if (this.elementIds.length < 2) {
+      return failureResult({
+        code: 'SCHEMA_FIELD_TYPE_ERROR',
+        message: 'At least 2 elements are required for alignment',
+        severity: 'error',
+        suggestion: 'Select at least 2 elements to align',
+      });
+    }
+
+    const geometryAdapter = createGeometryAdapter();
+    const alignedSet = new Set(this.elementIds);
+
+    for (const elementId of this.elementIds) {
+      const element = scene.elements.find((el) => el.id === elementId);
+      if (!element) {
+        return failureResult({
+          code: ErrorCode.REF_GROUP_NOT_FOUND as string,
+          message: `Element "${elementId}" not found`,
+          severity: 'error',
+          elementIds: [elementId],
+          suggestion: 'The element may have been deleted',
+        });
+      }
+
+      if (element.locked) {
+        return failureResult({
+          code: ErrorCode.RULE_LOCKED_ELEMENT_EDITED as string,
+          message: `Element "${element.name || element.id}" is locked and cannot be aligned`,
+          severity: 'error',
+          elementIds: [element.id],
+          suggestion: 'Unlock the element before aligning',
+        });
+      }
+    }
+
+    const rawElements = this.elementIds
+      .map((id) => scene.elements.find((el) => el.id === id)!)
+      .filter((el) => el.type !== 'connector');
+
+    if (rawElements.length < 2) {
+      return failureResult({
+        code: 'SCHEMA_FIELD_TYPE_ERROR',
+        message: 'At least 2 non-connector elements are required for alignment',
+        severity: 'error',
+        suggestion: 'Connector elements cannot be aligned independently',
+      });
+    }
+
+    const deltas = this.computeDeltas(rawElements, geometryAdapter);
+
+    for (const element of rawElements) {
+      const delta = deltas.get(element.id);
+      if (!delta) continue;
+
+      const prospectiveTransform = {
+        ...element.transform,
+        x: element.transform.x + delta.dx,
+        y: element.transform.y + delta.dy,
+      };
+      const prospectiveElement = { ...element, transform: prospectiveTransform };
+      const prospectiveBBox = geometryAdapter.getBBox(prospectiveElement);
+
+      const layerElements = scene.elements.filter(
+        (el) =>
+          el.layerId === element.layerId &&
+          el.type !== 'connector' &&
+          !alignedSet.has(el.id),
+      );
+
+      for (const other of layerElements) {
+        const otherBBox = geometryAdapter.getBBox(other);
+        if (bboxesOverlap(prospectiveBBox, otherBBox)) {
+          const overlapX = Math.max(prospectiveBBox.x, otherBBox.x);
+          const overlapY = Math.max(prospectiveBBox.y, otherBBox.y);
+          const overlapW =
+            Math.min(prospectiveBBox.x + prospectiveBBox.width, otherBBox.x + otherBBox.width) - overlapX;
+          const overlapH =
+            Math.min(prospectiveBBox.y + prospectiveBBox.height, otherBBox.y + otherBBox.height) - overlapY;
+
+          return failureResult({
+            code: ErrorCode.GEO_MOVE_TARGET_CONFLICT as string,
+            message: `Aligning "${element.name || element.id}" would overlap with "${other.name || other.id}" in layer "${element.layerId}"`,
+            severity: 'error',
+            layerIds: [element.layerId],
+            elementIds: [element.id, other.id],
+            bboxes: [{ x: overlapX, y: overlapY, width: overlapW, height: overlapH }],
+            suggestion: 'Move non-aligned elements away or use a different layer',
+          });
+        }
+      }
+    }
+
+    return successResult();
+  }
+
+  private computeDeltas(
+    elements: SceneElement[],
+    geometryAdapter: GeometryAdapter,
+  ): Map<string, { dx: number; dy: number }> {
+    const deltas = new Map<string, { dx: number; dy: number }>();
+
+    if (elements.length === 0) return deltas;
+
+    const bboxes = elements.map((el) => ({ el, bbox: geometryAdapter.getBBox(el) }));
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    for (const { bbox } of bboxes) {
+      if (bbox.x < minX) minX = bbox.x;
+      if (bbox.y < minY) minY = bbox.y;
+      if (bbox.x + bbox.width > maxX) maxX = bbox.x + bbox.width;
+      if (bbox.y + bbox.height > maxY) maxY = bbox.y + bbox.height;
+    }
+
+    const centerX = minX + (maxX - minX) / 2;
+    const centerY = minY + (maxY - minY) / 2;
+
+    for (const { el, bbox } of bboxes) {
+      const elW = bbox.width;
+      const elH = bbox.height;
+      const elCenterX = bbox.x + elW / 2;
+      const elCenterY = bbox.y + elH / 2;
+
+      let targetX = bbox.x;
+      let targetY = bbox.y;
+
+      switch (this.alignType) {
+        case 'left':
+          targetX = minX;
+          break;
+        case 'right':
+          targetX = maxX - elW;
+          break;
+        case 'top':
+          targetY = minY;
+          break;
+        case 'bottom':
+          targetY = maxY - elH;
+          break;
+        case 'centerHorizontal':
+          targetX = centerX - elW / 2;
+          break;
+        case 'centerVertical':
+          targetY = centerY - elH / 2;
+          break;
+        case 'center':
+          targetX = centerX - elW / 2;
+          targetY = centerY - elH / 2;
+          break;
+      }
+
+      const dx = targetX - bbox.x;
+      const dy = targetY - bbox.y;
+
+      if (dx !== 0 || dy !== 0) {
+        deltas.set(el.id, { dx, dy });
+      }
+    }
+
+    return deltas;
+  }
+
+  execute(scene: SceneDocument): SceneDocument {
+    const alignedSet = new Set(this.elementIds);
+    const geometryAdapter = createGeometryAdapter();
+    const rawElements = this.elementIds
+      .map((id) => scene.elements.find((el) => el.id === id)!)
+      .filter((el): el is SceneElement => !!el && el.type !== 'connector');
+
+    const deltas = this.computeDeltas(rawElements, geometryAdapter);
+
+    const updatedElements = scene.elements.map((el) => {
+      const delta = deltas.get(el.id);
+      if (!delta) return el;
+
+      this.previousPositions.set(el.id, { x: el.transform.x, y: el.transform.y });
+
+      return {
+        ...el,
+        transform: {
+          ...el.transform,
+          x: el.transform.x + delta.dx,
+          y: el.transform.y + delta.dy,
+        },
+      };
+    });
+
+    const finalElements = updatedElements.map((el) => {
+      if (el.type !== 'connector') return el;
+
+      let updated = { ...el };
+
+      if (el.source?.elementId && alignedSet.has(el.source.elementId)) {
+        const delta = deltas.get(el.source.elementId);
+        if (delta) {
+          updated = {
+            ...updated,
+            source: { ...updated.source, x: updated.source.x + delta.dx, y: updated.source.y + delta.dy },
+          };
+        }
+      }
+
+      if (el.target?.elementId && alignedSet.has(el.target.elementId)) {
+        const delta = deltas.get(el.target.elementId);
+        if (delta) {
+          updated = {
+            ...updated,
+            target: { ...updated.target, x: updated.target.x + delta.dx, y: updated.target.y + delta.dy },
+          };
+        }
+      }
+
+      return updated;
+    });
+
+    return { ...scene, elements: finalElements };
+  }
+
+  invert(_scene: SceneDocument): SceneCommand | null {
+    const elementIds = this.elementIds.filter((id) => this.previousPositions.has(id));
+
+    if (elementIds.length === 0) return null;
+
+    const invertCmd: SceneCommand = {
+      id: generateId('align-undo'),
+      label: `Undo: ${this.label}`,
+      validate: () => successResult(),
+      execute: (scene: SceneDocument) => {
+        const movedSet = new Set(elementIds);
+        return {
+          ...scene,
+          elements: scene.elements.map((el) => {
+            if (!movedSet.has(el.id)) return el;
+            const prevPos = this.previousPositions.get(el.id);
+            return prevPos ? { ...el, transform: { ...el.transform, x: prevPos.x, y: prevPos.y } } : el;
+          }),
+        };
+      },
+      invert: () => null,
+    };
+
+    return invertCmd;
+  }
+}
+
 // ─── TransformElements Command ─────────────────────────────────────────────────
 
 export type TransformParams = {

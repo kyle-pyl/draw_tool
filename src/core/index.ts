@@ -90,5 +90,6 @@ export {
   UngroupCommand,
   AddToGroupCommand,
   RemoveFromGroupCommand,
+  AlignElementsCommand,
 } from './commands';
-export type { SceneCommand, CommandHistoryEntry, ElementInput } from './commands';
+export type { SceneCommand, CommandHistoryEntry, ElementInput, AlignType } from './commands';
