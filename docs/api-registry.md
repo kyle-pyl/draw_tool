@@ -2198,6 +2198,44 @@
 | 典型用例 | `const dir: LayerMoveDirection = 'up'` |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-06-05）|
 
+### API-0117 getAnchors
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0117 |
+| 名称 | getAnchors |
+| 所属系统 | core |
+| 所属模块 | anchors |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 返回元素的可用连接锚点列表。默认返回 9 个标准锚点（top、bottom、left、right、center、top-left、top-right、bottom-left、bottom-right），每个锚点包含 id、相对位置（0-1 范围相对于元素左上角）和法线方向（弧度，指向外侧）。对于 shape 类型元素，若 metadata.anchors 存在且为非空数组，则返回自定义锚点替代默认锚点。其他元素类型始终使用默认锚点 |
+| 输入参数 | element: SceneElement - 需要获取锚点的场景元素 |
+| 输出参数 | AnchorPoint[] - 锚点数组，每个包含 id（唯一标识）、position（{ x: number, y: number } 相对坐标 0-1）、direction（弧度） |
+| 典型用例 | `const anchors = getAnchors(shapeElement); anchors.forEach(a => console.log(a.id, a.position));` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-07-01）|
+
+### API-0118 resolveAnchor
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0118 |
+| 名称 | resolveAnchor |
+| 所属系统 | core |
+| 所属模块 | anchors |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 将元素的指定锚点解析为画布中的绝对坐标。先调用 getAnchors 查找锚点，再根据锚点的相对位置（0-1）和元素的 transform（x、y、width、height）计算画布绝对坐标。若元素有旋转，则以元素中心为原点进行旋转计算。返回 null 表示锚点 ID 不存在 |
+| 输入参数 | element: SceneElement - 所属元素；anchorId: string - 要解析的锚点 ID |
+| 输出参数 | { x: number, y: number } | null - 锚点在画布中的绝对坐标，锚点不存在时返回 null |
+| 典型用例 | `const abs = resolveAnchor(rectElement, 'right'); if (abs) { connector.source.x = abs.x; connector.source.y = abs.y; }` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-07-01）|
+
 ### API-0116 MoveLayersCommand
 
 | 字段 | 内容 |

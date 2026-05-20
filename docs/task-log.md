@@ -494,3 +494,16 @@
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0115（LayerMoveDirection）、API-0116（MoveLayersCommand） |
 
+### T-07-01 实现锚点系统
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-07-01 |
+| 任务名称      | 实现锚点系统 |
+| 完成时间      | 2026-05-20 12:40 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | c150208 |
+| 修改记录      | 新建：src/core/anchors.ts（getAnchors + resolveAnchor 函数，9 个默认锚点，shape 自定义锚点支持，旋转坐标计算）、src/tests/unit/anchors.test.ts（26 个测试用例）；修改：src/core/index.ts（新增 getAnchors 和 resolveAnchor 导出） |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0117（getAnchors）、API-0118（resolveAnchor） |
+
