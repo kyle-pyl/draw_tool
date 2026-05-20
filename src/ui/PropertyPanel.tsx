@@ -1,12 +1,16 @@
 import { useState, useCallback, useEffect } from 'react';
-import type { SceneDocument, SceneElement, TextElement, ConnectorElement, ConnectorLabel } from '../core/types';
+import type { SceneDocument, SceneElement, TextElement, ConnectorElement, ConnectorLabel, ChartElement } from '../core/types';
 import type { SelectionManager } from '../canvas/selection';
+import { CHART_COLOR_SCHEMES, generateChart } from '../modules/chart';
+import type { ChartGenerationConfig, LegendPosition } from '../modules/chart';
+import type { ParsedData } from '../io/csv-parser';
 
 export interface PropertyPanelProps {
   scene: SceneDocument;
   selectionManager: SelectionManager;
   onPropertyChange: (elementIds: string[], changes: Record<string, unknown>) => void;
   onLayerChange: (elementIds: string[], targetLayerId: string) => void;
+  parsedDataMap?: Map<string, ParsedData>;
 }
 
 const panelStyle: React.CSSProperties = {
@@ -131,9 +135,9 @@ function getElementName(el: SceneElement): string {
   return el.name || el.id;
 }
 
-type Section = 'position' | 'style' | 'text' | 'connector' | 'layer';
+type Section = 'position' | 'style' | 'text' | 'connector' | 'chart' | 'layer';
 
-export function PropertyPanel({ scene, selectionManager, onPropertyChange, onLayerChange }: PropertyPanelProps) {
+export function PropertyPanel({ scene, selectionManager, onPropertyChange, onLayerChange, parsedDataMap }: PropertyPanelProps) {
   const [collapsed, setCollapsed] = useState<Set<Section>>(new Set());
   const [dismissed, setDismissed] = useState(false);
 
@@ -220,6 +224,10 @@ export function PropertyPanel({ scene, selectionManager, onPropertyChange, onLay
   const bgColorValues = allText ? els.map((el) => (el as TextElement).backgroundColor) : [];
   const borderColorValues = allText ? els.map((el) => (el as TextElement).borderColor) : [];
   const borderWidthValues = allText ? els.map((el) => (el as TextElement).borderWidth) : [];
+
+  // Chart-specific
+  const allChart = els.every((el) => el.type === 'chart');
+  const singleChart = single && allChart;
 
   // Visible / Locked
   const visValues = els.map((el) => el.visible);
@@ -668,6 +676,149 @@ export function PropertyPanel({ scene, selectionManager, onPropertyChange, onLay
                     >
                       + Add Label
                     </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* Chart Style (only for chart elements) */}
+        {singleChart && (() => {
+          const chart = els[0] as ChartElement;
+          const opts = (chart.options || {}) as Record<string, unknown>;
+          const title = (opts.title as string) || chart.name || '';
+          const xAxisLabel = (opts.xAxisLabel as string) || '';
+          const yAxisLabel = (opts.yAxisLabel as string) || '';
+          const colorScheme = (opts.colorScheme as string) || 'default';
+          const legendPosition = (opts.legendPosition as string) || 'bottom';
+          const showGrid = opts.showGrid !== false;
+
+          const legendPositions: { value: string; label: string }[] = [
+            { value: 'bottom', label: 'Bottom' },
+            { value: 'right', label: 'Right' },
+            { value: 'top', label: 'Top' },
+            { value: 'none', label: 'None' },
+          ];
+
+          const regenerateChart = (newOptions: Record<string, unknown>) => {
+            if (parsedDataMap) {
+              const data = parsedDataMap.get(chart.dataSourceId);
+              if (data) {
+                const genConfig: ChartGenerationConfig = {
+                  chartType: chart.chartType,
+                  columnMappings: chart.columnMappings,
+                  title: (newOptions.title as string) || chart.name,
+                  showGrid: newOptions.showGrid !== false,
+                  colorScheme: (newOptions.colorScheme as string) || 'default',
+                  legendPosition: (newOptions.legendPosition as LegendPosition) || 'bottom',
+                  xAxisLabel: (newOptions.xAxisLabel as string) || '',
+                  yAxisLabel: (newOptions.yAxisLabel as string) || '',
+                };
+                const updated = generateChart(data, genConfig, chart.dataSourceId, chart.layerId, newOptions);
+                onPropertyChange(selectedIds, { options: newOptions, svgContent: updated.svgContent });
+                return;
+              }
+            }
+            onPropertyChange(selectedIds, { options: newOptions });
+          };
+
+          const handleChartTitleChange = (value: string) => {
+            regenerateChart({ ...opts, title: value });
+          };
+
+          const handleChartXLabelChange = (value: string) => {
+            regenerateChart({ ...opts, xAxisLabel: value });
+          };
+
+          const handleChartYLabelChange = (value: string) => {
+            regenerateChart({ ...opts, yAxisLabel: value });
+          };
+
+          const handleColorSchemeChange = (value: string) => {
+            regenerateChart({ ...opts, colorScheme: value });
+          };
+
+          const handleLegendPositionChange = (value: string) => {
+            regenerateChart({ ...opts, legendPosition: value });
+          };
+
+          const handleShowGridChange = (checked: boolean) => {
+            regenerateChart({ ...opts, showGrid: checked });
+          };
+
+          return (
+            <div>
+              <div style={sectionHeaderStyle} onClick={() => toggleSection('chart')}>
+                <span>Chart Style</span>
+                <span style={{ fontSize: 10 }}>{collapsed.has('chart') ? '+' : '-'}</span>
+              </div>
+              {!collapsed.has('chart') && (
+                <div>
+                  <div style={rowStyle}>
+                    <span style={labelStyle}>Title</span>
+                    <input
+                      type="text"
+                      style={{ ...inputStyle, flex: 1 }}
+                      value={title}
+                      placeholder="Chart title"
+                      onChange={(e) => handleChartTitleChange(e.target.value)}
+                    />
+                  </div>
+                  <div style={rowStyle}>
+                    <span style={labelStyle}>X Label</span>
+                    <input
+                      type="text"
+                      style={{ ...inputStyle, flex: 1 }}
+                      value={xAxisLabel}
+                      placeholder="X axis label"
+                      onChange={(e) => handleChartXLabelChange(e.target.value)}
+                    />
+                  </div>
+                  <div style={rowStyle}>
+                    <span style={labelStyle}>Y Label</span>
+                    <input
+                      type="text"
+                      style={{ ...inputStyle, flex: 1 }}
+                      value={yAxisLabel}
+                      placeholder="Y axis label"
+                      onChange={(e) => handleChartYLabelChange(e.target.value)}
+                    />
+                  </div>
+                  <div style={rowStyle}>
+                    <span style={labelStyle}>Colors</span>
+                    <select
+                      style={selectStyle}
+                      value={colorScheme}
+                      onChange={(e) => handleColorSchemeChange(e.target.value)}
+                    >
+                      {CHART_COLOR_SCHEMES.map((s) => (
+                        <option key={s.name} value={s.name}>{s.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={rowStyle}>
+                    <span style={labelStyle}>Legend</span>
+                    <select
+                      style={selectStyle}
+                      value={legendPosition}
+                      onChange={(e) => handleLegendPositionChange(e.target.value)}
+                    >
+                      {legendPositions.map((p) => (
+                        <option key={p.value} value={p.value}>{p.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={toggleRowStyle}>
+                    <input
+                      type="checkbox"
+                      id="chart-grid"
+                      checked={showGrid}
+                      onChange={(e) => handleShowGridChange(e.target.checked)}
+                    />
+                    <label htmlFor="chart-grid" style={checkboxLabelStyle}>
+                      Show Grid
+                    </label>
                   </div>
                 </div>
               )}

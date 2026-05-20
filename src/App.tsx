@@ -271,6 +271,7 @@ function App() {
         selectionManager={selectionManager}
         onPropertyChange={handlePropertyChange}
         onLayerChange={handleLayerChange}
+        parsedDataMap={undefined}
       />
       {editingElement && (
         <TextEditor

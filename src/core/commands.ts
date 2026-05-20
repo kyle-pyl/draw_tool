@@ -762,6 +762,11 @@ export type ElementChanges = Partial<{
   arrowStart: import('./types').ArrowStyle | null;
   arrowEnd: import('./types').ArrowStyle | null;
   labels: import('./types').ConnectorLabel[];
+  dataSourceId: string;
+  chartType: import('./types').ChartType;
+  columnMappings: import('./types').ColumnMappings;
+  options: Record<string, unknown>;
+  svgContent: string;
 }>;
 
 export class UpdateElementCommand implements SceneCommand {
@@ -916,6 +921,21 @@ export class UpdateElementCommand implements SceneCommand {
       }
       if (this.changes.labels !== undefined) {
         updated.labels = this.changes.labels;
+      }
+      if (this.changes.dataSourceId !== undefined) {
+        updated.dataSourceId = this.changes.dataSourceId;
+      }
+      if (this.changes.chartType !== undefined) {
+        updated.chartType = this.changes.chartType;
+      }
+      if (this.changes.columnMappings !== undefined) {
+        updated.columnMappings = this.changes.columnMappings;
+      }
+      if (this.changes.options !== undefined) {
+        updated.options = this.changes.options;
+      }
+      if (this.changes.svgContent !== undefined) {
+        updated.svgContent = this.changes.svgContent;
       }
 
       return updated as SceneElement;

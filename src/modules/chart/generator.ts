@@ -2,6 +2,22 @@ import type { ParsedData, ColumnInfo } from '../../io/csv-parser';
 import type { ChartElement, ChartType, ColumnMappings, Transform2D, ElementStyle } from '../../core/types';
 import { generateId } from '../../core/utils';
 
+export type LegendPosition = 'bottom' | 'right' | 'top' | 'none';
+
+export interface ChartColorScheme {
+  name: string;
+  colors: string[];
+}
+
+export const CHART_COLOR_SCHEMES: ChartColorScheme[] = [
+  { name: 'default', colors: ['#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f', '#edc949', '#af7aa1', '#ff9da7', '#9c755f', '#bab0ab'] },
+  { name: 'pastel', colors: ['#a8d4f0', '#f5c6d0', '#c1e1c1', '#fdfd96', '#d4b8d9', '#ffd8b1', '#b5e3d8', '#f0c5a8', '#c4e0e5', '#e0c3c3'] },
+  { name: 'vivid', colors: ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4'] },
+  { name: 'monochrome', colors: ['#1a1a1a', '#4d4d4d', '#808080', '#a6a6a6', '#cccccc', '#696969', '#8c8c8c', '#b8b8b8', '#3b3b3b', '#616161'] },
+  { name: 'warm', colors: ['#d32f2f', '#f57c00', '#fbc02d', '#e64a19', '#ff7043', '#ff5252', '#ffab40', '#ffd740', '#c2185b', '#ff4081'] },
+  { name: 'cool', colors: ['#1976d2', '#0097a7', '#00796b', '#388e3c', '#0288d1', '#26c6da', '#00acc1', '#4db6ac', '#81c784', '#64b5f6'] },
+];
+
 export interface ChartGenerationConfig {
   chartType: ChartType;
   columnMappings: {
@@ -13,6 +29,11 @@ export interface ChartGenerationConfig {
   width?: number;
   height?: number;
   title?: string;
+  showGrid?: boolean;
+  colorScheme?: string;
+  legendPosition?: LegendPosition;
+  xAxisLabel?: string;
+  yAxisLabel?: string;
 }
 
 interface NumericColumnData {
@@ -73,7 +94,7 @@ interface HeatmapData {
   valueMax: number;
 }
 
-const COLORS = ['#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f', '#edc949', '#af7aa1', '#ff9da7', '#9c755f', '#bab0ab'];
+const DEFAULT_COLORS = CHART_COLOR_SCHEMES[0].colors;
 
 function tag(tagName: string, attrs: Record<string, string | number>, content?: string): string {
   const attrStr = Object.entries(attrs)
@@ -93,10 +114,11 @@ function tagLines(tagName: string, attrs: Record<string, string | number>, lines
 function computeLayout(config: ChartGenerationConfig): RenderContext {
   const width = config.width || 600;
   const height = config.height || 400;
+  const legendOnRight = config.legendPosition === 'right';
   const padLeft = 70;
-  const padRight = 30;
+  const padRight = legendOnRight ? 130 : 30;
   const padTop = 50;
-  const padBottom = 60;
+  const padBottom = config.legendPosition === 'bottom' ? 80 : 60;
   return {
     width,
     height,
@@ -109,9 +131,15 @@ function computeLayout(config: ChartGenerationConfig): RenderContext {
     chartW: width - padLeft - padRight,
     chartH: height - padTop - padBottom,
     title: config.title || '',
-    xLabel: config.columnMappings.x || '',
-    yLabel: config.columnMappings.y || '',
+    xLabel: config.xAxisLabel || config.columnMappings.x || '',
+    yLabel: config.yAxisLabel || config.columnMappings.y || '',
   };
+}
+
+function resolveColors(config: ChartGenerationConfig): string[] {
+  const schemeName = config.colorScheme || 'default';
+  const scheme = CHART_COLOR_SCHEMES.find((s) => s.name === schemeName);
+  return scheme ? scheme.colors : CHART_COLOR_SCHEMES[0].colors;
 }
 
 function selectColumn(columns: ColumnInfo[], key?: string): ColumnInfo | undefined {
@@ -184,13 +212,15 @@ function svgWrap(ctx: RenderContext, bodyLines: string[], legendLines?: string[]
   const lines = [
     tag('rect', { x: 0, y: 0, width: ctx.width, height: ctx.height, fill: '#fff' }),
     ...(ctx.title ? [tag('text', { x: ctx.width / 2, y: 28, 'text-anchor': 'middle', 'font-size': '15', 'font-weight': 'bold', 'font-family': 'sans-serif', fill: '#222' }, ctx.title)] : []),
+    ...(ctx.xLabel ? [tag('text', { x: ctx.padLeft + ctx.chartW / 2, y: ctx.height - 10, 'text-anchor': 'middle', 'font-size': '12', 'font-family': 'sans-serif', fill: '#555' }, ctx.xLabel)] : []),
+    ...(ctx.yLabel ? [tag('text', { x: 14, y: ctx.padTop + ctx.chartH / 2, 'text-anchor': 'middle', 'font-size': '12', 'font-family': 'sans-serif', fill: '#555', transform: `rotate(-90, 14, ${ctx.padTop + ctx.chartH / 2})` }, ctx.yLabel)] : []),
     ...bodyLines,
     ...(legendLines || []),
   ];
   return tagLines('svg', { xmlns: 'http://www.w3.org/2000/svg', viewBox: `0 0 ${ctx.width} ${ctx.height}` }, lines);
 }
 
-function axes(ctx: RenderContext, xMin: number, xMax: number, yMin: number, yMax: number): string[] {
+function axes(ctx: RenderContext, xMin: number, xMax: number, yMin: number, yMax: number, showGrid?: boolean): string[] {
   const lines: string[] = [];
   lines.push(tag('line', { x1: ctx.chartX, y1: ctx.chartY, x2: ctx.chartX, y2: ctx.chartY + ctx.chartH, stroke: '#333', 'stroke-width': '1' }));
   lines.push(tag('line', { x1: ctx.chartX, y1: ctx.chartY + ctx.chartH, x2: ctx.chartX + ctx.chartW, y2: ctx.chartY + ctx.chartH, stroke: '#333', 'stroke-width': '1' }));
@@ -199,7 +229,9 @@ function axes(ctx: RenderContext, xMin: number, xMax: number, yMin: number, yMax
   for (const t of yTicks) {
     const y = ctx.chartY + ctx.chartH - ((t - yMin) / (yMax - yMin)) * ctx.chartH;
     lines.push(tag('line', { x1: ctx.chartX - 4, y1: Math.round(y), x2: ctx.chartX, y2: Math.round(y), stroke: '#999', 'stroke-width': '1' }));
-    lines.push(tag('line', { x1: ctx.chartX, y1: Math.round(y), x2: ctx.chartX + ctx.chartW, y2: Math.round(y), stroke: '#e0e0e0', 'stroke-width': '0.5' }));
+    if (showGrid !== false) {
+      lines.push(tag('line', { x1: ctx.chartX, y1: Math.round(y), x2: ctx.chartX + ctx.chartW, y2: Math.round(y), stroke: '#e0e0e0', 'stroke-width': '0.5' }));
+    }
     lines.push(tag('text', { x: ctx.chartX - 8, y: Math.round(y) + 4, 'text-anchor': 'end', 'font-size': '11', 'font-family': 'sans-serif', fill: '#555' }, formatTick(t)));
   }
 
@@ -235,7 +267,7 @@ function renderBarChart(data: BarChartData, config: ChartGenerationConfig): stri
   const [yMin, yMax] = numericExtent(allValues.flatMap((v) => [v]));
 
   const bodyLines: string[] = [];
-  bodyLines.push(...axes(ctx, 0, 1, yMin, yMax));
+  bodyLines.push(...axes(ctx, 0, 1, yMin, yMax, config.showGrid));
   bodyLines.push(...axesXCategories(ctx, data.categories));
 
   const catCount = data.categories.length;
@@ -259,7 +291,7 @@ function renderBarChart(data: BarChartData, config: ChartGenerationConfig): stri
     }
   }
 
-  const legendLines = data.series.length > 1 ? renderLegend(ctx, data.series.map((s) => ({ name: s.name, color: s.color }))) : undefined;
+  const legendLines = data.series.length > 1 ? renderLegend(ctx, data.series.map((s) => ({ name: s.name, color: s.color })), config.legendPosition) : undefined;
   return svgWrap(ctx, bodyLines, legendLines);
 }
 
@@ -273,7 +305,7 @@ function renderLineChart(data: LineChartData, config: ChartGenerationConfig): st
   const [yMin, yMax] = numericExtent(allValues);
 
   const bodyLines: string[] = [];
-  bodyLines.push(...axes(ctx, 0, 1, yMin, yMax));
+  bodyLines.push(...axes(ctx, 0, 1, yMin, yMax, config.showGrid));
   bodyLines.push(...axesXCategories(ctx, data.categories));
 
   const catCount = data.categories.length;
@@ -297,7 +329,7 @@ function renderLineChart(data: LineChartData, config: ChartGenerationConfig): st
     }
   }
 
-  const legendLines = data.series.length > 1 ? renderLegend(ctx, data.series.map((s) => ({ name: s.name, color: s.color }))) : undefined;
+  const legendLines = data.series.length > 1 ? renderLegend(ctx, data.series.map((s) => ({ name: s.name, color: s.color })), config.legendPosition) : undefined;
   return svgWrap(ctx, bodyLines, legendLines);
 }
 
@@ -307,7 +339,7 @@ function renderScatterChart(data: ScatterChartData, config: ChartGenerationConfi
   if (allPoints.length === 0) return maybeEmptySvg(ctx);
 
   const bodyLines: string[] = [];
-  bodyLines.push(...axes(ctx, data.xMin, data.xMax, data.yMin, data.yMax));
+  bodyLines.push(...axes(ctx, data.xMin, data.xMax, data.yMin, data.yMax, config.showGrid));
   bodyLines.push(...axesXCategories(ctx, []));
 
   for (const series of data.series) {
@@ -318,7 +350,7 @@ function renderScatterChart(data: ScatterChartData, config: ChartGenerationConfi
     }
   }
 
-  const legendLines = data.series.length > 1 ? renderLegend(ctx, data.series.map((s) => ({ name: s.name, color: s.color }))) : undefined;
+  const legendLines = data.series.length > 1 ? renderLegend(ctx, data.series.map((s) => ({ name: s.name, color: s.color })), config.legendPosition) : undefined;
   return svgWrap(ctx, bodyLines, legendLines);
 }
 
@@ -330,7 +362,7 @@ function renderBoxplotChart(data: BoxplotData, config: ChartGenerationConfig): s
   const [yMin, yMax] = numericExtent(allVals);
 
   const bodyLines: string[] = [];
-  bodyLines.push(...axes(ctx, 0, 1, yMin, yMax));
+  bodyLines.push(...axes(ctx, 0, 1, yMin, yMax, config.showGrid));
   bodyLines.push(...axesXCategories(ctx, data.categories));
 
   const catCount = data.boxes.length;
@@ -357,7 +389,7 @@ function renderBoxplotChart(data: BoxplotData, config: ChartGenerationConfig): s
     bodyLines.push(tag('line', { x1: Math.round(cx - boxW / 2), y1: Math.round(yMed), x2: Math.round(cx + boxW / 2), y2: Math.round(yMed), stroke: '#222', 'stroke-width': '2' }));
   }
 
-  const legendLines = data.boxes.length > 1 ? renderLegend(ctx, data.boxes.map((b, i) => ({ name: b.name, color: b.color }))) : undefined;
+  const legendLines = data.boxes.length > 1 ? renderLegend(ctx, data.boxes.map((b, i) => ({ name: b.name, color: b.color })), config.legendPosition) : undefined;
   return svgWrap(ctx, bodyLines, legendLines);
 }
 
@@ -367,9 +399,10 @@ function renderHistogramChart(data: HistogramData, config: ChartGenerationConfig
 
   const counts = data.bins.map((b) => b.count);
   const [yMin, yMax] = numericExtent(counts);
+  const colors = resolveColors(config);
 
   const bodyLines: string[] = [];
-  bodyLines.push(...axes(ctx, 0, 1, 0, yMax));
+  bodyLines.push(...axes(ctx, 0, 1, 0, yMax, config.showGrid));
   bodyLines.push(...axesXCategories(ctx, data.bins.map((b) => b.label)));
 
   const binCount = data.bins.length;
@@ -383,7 +416,7 @@ function renderHistogramChart(data: HistogramData, config: ChartGenerationConfig
     const barH = (bin.count / yMax) * ctx.chartH;
     const y = ctx.chartY + ctx.chartH - barH;
     const rw = barW - barGap * 2;
-    bodyLines.push(tag('rect', { x: Math.round(x), y: Math.round(y), width: Math.round(rw), height: Math.round(barH), fill: COLORS[0], stroke: '#fff', 'stroke-width': '0.5' }));
+    bodyLines.push(tag('rect', { x: Math.round(x), y: Math.round(y), width: Math.round(rw), height: Math.round(barH), fill: colors[0], stroke: '#fff', 'stroke-width': '0.5' }));
   }
 
   return svgWrap(ctx, bodyLines);
@@ -427,7 +460,35 @@ function renderHeatmapChart(data: HeatmapData, config: ChartGenerationConfig): s
   return svgWrap(ctx, bodyLines);
 }
 
-function renderLegend(ctx: RenderContext, items: { name: string; color: string }[]): string[] {
+function renderLegend(ctx: RenderContext, items: { name: string; color: string }[], position?: string): string[] {
+  if (position === 'none' || items.length === 0) return [];
+
+  if (position === 'right') {
+    const startX = ctx.padLeft + ctx.chartW + 20;
+    const startY = ctx.padTop + 10;
+    return items.map((item, i) => {
+      const y = startY + i * 20;
+      return [
+        tag('rect', { x: Math.round(startX), y: Math.round(y - 8), width: '10', height: '10', fill: item.color }),
+        tag('text', { x: Math.round(startX + 16), y: Math.round(y), 'font-size': '11', 'font-family': 'sans-serif', fill: '#555' }, item.name),
+      ].join('');
+    });
+  }
+
+  if (position === 'top') {
+    const itemW = 100;
+    const totalW = items.length * itemW;
+    const startX = (ctx.width - totalW) / 2;
+    const legendY = ctx.padTop - 24;
+    return items.map((item, i) => {
+      const x = startX + i * itemW;
+      return [
+        tag('rect', { x: Math.round(x), y: Math.round(legendY - 4), width: '10', height: '10', fill: item.color }),
+        tag('text', { x: Math.round(x + 14), y: Math.round(legendY + 4), 'font-size': '11', 'font-family': 'sans-serif', fill: '#555' }, item.name),
+      ].join('');
+    });
+  }
+
   const itemW = 100;
   const totalW = items.length * itemW;
   const startX = (ctx.width - totalW) / 2;
@@ -446,6 +507,7 @@ function prepareBarData(data: ParsedData, config: ChartGenerationConfig): BarCha
   const xCol = columnMappings.x;
   const yCol = columnMappings.y;
   const groupCol = columnMappings.group;
+  const colors = resolveColors(config);
 
   if (!yCol) {
     const firstNum = data.columns.find((c) => c.inferredType === 'number');
@@ -482,7 +544,7 @@ function prepareBarData(data: ParsedData, config: ChartGenerationConfig): BarCha
       series.push({ name: gName, values: vals.length === categories.length ? vals : categories.map((cat) => {
         const idx = data.rows.findIndex((r, ri) => String(r[groupCol] ?? '') === gName && String(r[xCol] ?? '') === cat);
         return idx >= 0 ? yValues[idx] : null;
-      }), color: COLORS[ci % COLORS.length] });
+      }), color: colors[ci % colors.length] });
       ci++;
     }
     return { categories, series };
@@ -492,14 +554,14 @@ function prepareBarData(data: ParsedData, config: ChartGenerationConfig): BarCha
     const categories = getStrings(data.rows, xCol);
     return {
       categories,
-      series: [{ name: yCol, values: yValues, color: COLORS[0] }],
+      series: [{ name: yCol, values: yValues, color: colors[0] }],
     };
   }
 
   const categories = data.rows.map((_, i) => `${i + 1}`);
   return {
     categories,
-    series: [{ name: yCol, values: yValues, color: COLORS[0] }],
+    series: [{ name: yCol, values: yValues, color: colors[0] }],
   };
 }
 
@@ -513,6 +575,7 @@ function prepareScatterData(data: ParsedData, config: ChartGenerationConfig): Sc
   const xCol = columnMappings.x;
   const yCol = columnMappings.y;
   const groupCol = columnMappings.group;
+  const colors = resolveColors(config);
 
   const numCols = data.columns.filter((c) => c.inferredType === 'number');
   const effectiveX = xCol || numCols[0]?.name || '';
@@ -549,13 +612,13 @@ function prepareScatterData(data: ParsedData, config: ChartGenerationConfig): Sc
     const series = Array.from(groups).map(([name, pts], i) => ({
       name,
       points: pts,
-      color: COLORS[i % COLORS.length],
+      color: colors[i % colors.length],
     }));
     return { series, xMin, xMax, yMin, yMax };
   }
 
   return {
-    series: [{ name: `${effectiveX} vs ${effectiveY}`, points, color: COLORS[0] }],
+    series: [{ name: `${effectiveX} vs ${effectiveY}`, points, color: colors[0] }],
     xMin,
     xMax,
     yMin,
@@ -567,6 +630,7 @@ function prepareBoxplotData(data: ParsedData, config: ChartGenerationConfig): Bo
   const { columnMappings } = config;
   const yCol = columnMappings.y || data.columns.find((c) => c.inferredType === 'number')?.name;
   const xCol = columnMappings.x || data.columns.find((c) => c.inferredType === 'string')?.name;
+  const colors = resolveColors(config);
 
   if (!yCol) return { categories: [], boxes: [] };
 
@@ -590,7 +654,7 @@ function prepareBoxplotData(data: ParsedData, config: ChartGenerationConfig): Bo
       const median = vals[Math.floor(n * 0.5)];
       const q3 = vals[Math.floor(n * 0.75)];
       categories.push(name);
-      boxes.push({ name, min: vals[0], q1, median, q3, max: vals[n - 1], color: COLORS[ci % COLORS.length] });
+      boxes.push({ name, min: vals[0], q1, median, q3, max: vals[n - 1], color: colors[ci % colors.length] });
       ci++;
     }
     return { categories, boxes };
@@ -602,7 +666,7 @@ function prepareBoxplotData(data: ParsedData, config: ChartGenerationConfig): Bo
   if (n === 0) return { categories: [], boxes: [] };
   return {
     categories: [yCol],
-    boxes: [{ name: yCol, min: vals[0], q1: vals[Math.floor(n * 0.25)], median: vals[Math.floor(n * 0.5)], q3: vals[Math.floor(n * 0.75)], max: vals[n - 1], color: COLORS[0] }],
+    boxes: [{ name: yCol, min: vals[0], q1: vals[Math.floor(n * 0.25)], median: vals[Math.floor(n * 0.5)], q3: vals[Math.floor(n * 0.75)], max: vals[n - 1], color: colors[0] }],
   };
 }
 
@@ -663,9 +727,14 @@ export function generateChart(
   config: ChartGenerationConfig,
   dataSourceId: string,
   layerId: string,
+  existingOptions?: Record<string, unknown>,
 ): ChartElement {
-  const width = config.width || 600;
-  const height = config.height || 400;
+  const mergedConfig: ChartGenerationConfig = existingOptions
+    ? { ...config, ...(existingOptions as unknown as Partial<ChartGenerationConfig>) }
+    : config;
+
+  const width = mergedConfig.width || 600;
+  const height = mergedConfig.height || 400;
   const baseTransform: Transform2D = { x: 0, y: 0, width, height, rotation: 0, scaleX: 1, scaleY: 1 };
   const baseStyle: ElementStyle = {
     fill: '#ffffff',
@@ -676,55 +745,63 @@ export function generateChart(
 
   let svgContent: string;
 
-  switch (config.chartType) {
+  switch (mergedConfig.chartType) {
     case 'bar': {
-      const barData = prepareBarData(data, config);
-      svgContent = renderBarChart(barData, config);
+      const barData = prepareBarData(data, mergedConfig);
+      svgContent = renderBarChart(barData, mergedConfig);
       break;
     }
     case 'line': {
-      const lineData = prepareLineData(data, config);
-      svgContent = renderLineChart(lineData, config);
+      const lineData = prepareLineData(data, mergedConfig);
+      svgContent = renderLineChart(lineData, mergedConfig);
       break;
     }
     case 'scatter': {
-      const scatterData = prepareScatterData(data, config);
-      svgContent = renderScatterChart(scatterData, config);
+      const scatterData = prepareScatterData(data, mergedConfig);
+      svgContent = renderScatterChart(scatterData, mergedConfig);
       break;
     }
     case 'boxplot': {
-      const boxplotData = prepareBoxplotData(data, config);
-      svgContent = renderBoxplotChart(boxplotData, config);
+      const boxplotData = prepareBoxplotData(data, mergedConfig);
+      svgContent = renderBoxplotChart(boxplotData, mergedConfig);
       break;
     }
     case 'histogram': {
-      const histData = prepareHistogramData(data, config);
-      svgContent = renderHistogramChart(histData, config);
+      const histData = prepareHistogramData(data, mergedConfig);
+      svgContent = renderHistogramChart(histData, mergedConfig);
       break;
     }
     case 'heatmap': {
-      const heatmapData = prepareHeatmapData(data, config);
-      svgContent = renderHeatmapChart(heatmapData, config);
+      const heatmapData = prepareHeatmapData(data, mergedConfig);
+      svgContent = renderHeatmapChart(heatmapData, mergedConfig);
       break;
     }
     default: {
-      const barData = prepareBarData(data, { ...config, chartType: 'bar' });
-      svgContent = renderBarChart(barData, { ...config, chartType: 'bar' });
+      const barData = prepareBarData(data, { ...mergedConfig, chartType: 'bar' });
+      svgContent = renderBarChart(barData, { ...mergedConfig, chartType: 'bar' });
     }
   }
+
+  const styleOptions: Record<string, unknown> = {};
+  if (mergedConfig.showGrid !== undefined) styleOptions.showGrid = mergedConfig.showGrid;
+  if (mergedConfig.colorScheme) styleOptions.colorScheme = mergedConfig.colorScheme;
+  if (mergedConfig.legendPosition) styleOptions.legendPosition = mergedConfig.legendPosition;
+  if (mergedConfig.xAxisLabel) styleOptions.xAxisLabel = mergedConfig.xAxisLabel;
+  if (mergedConfig.yAxisLabel) styleOptions.yAxisLabel = mergedConfig.yAxisLabel;
 
   return {
     id: generateId('chart'),
     type: 'chart',
     layerId,
-    name: config.title || config.chartType,
+    name: mergedConfig.title || mergedConfig.chartType,
     transform: baseTransform,
     style: baseStyle,
     visible: true,
     locked: false,
     dataSourceId,
-    chartType: config.chartType,
-    columnMappings: config.columnMappings,
+    chartType: mergedConfig.chartType,
+    columnMappings: mergedConfig.columnMappings,
+    options: Object.keys(styleOptions).length > 0 ? styleOptions : undefined,
     svgContent,
   };
 }

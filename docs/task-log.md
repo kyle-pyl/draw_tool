@@ -675,3 +675,16 @@
 | 修改记录 | 新建：src/modules/chart/generator.ts（generateChart 函数 + ChartGenerationConfig 接口 + 6 种图表 SVG 渲染器：bar/line/scatter/boxplot/histogram/heatmap，自动轴刻度、图例、多系列分组、热图矩阵、数据准备函数）、src/modules/chart/index.ts（模块导出）、src/tests/unit/chart-generator.test.ts（39 个测试用例覆盖所有图表类型、边界情况、数据结构、数据绑定）；修改：src/core/commands.ts（ElementInput 新增 dataSourceId/chartType/columnMappings/options/svgContent 字段，buildElementFromInput 新增 'chart' case）、src/modules/index.ts（新增 chart 模块导出） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0155（generateChart）、API-0156（ChartGenerationConfig）、API-0081（ElementInput 扩展） |
+
+### T-09-04 实现图表样式编辑
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号 | T-09-04 |
+| 任务名称 | 实现图表样式编辑 |
+| 完成时间 | 2026-05-21 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| Git Commit | eddbb49 |
+| 修改记录 | 修改：src/modules/chart/generator.ts（ChartGenerationConfig 新增 showGrid/colorScheme/legendPosition/xAxisLabel/yAxisLabel 字段；新增 LegendPosition 类型、ChartColorScheme 接口、CHART_COLOR_SCHEMES 常量（6 种配色方案）、resolveColors 函数；renderBarChart/renderLineChart/renderScatterChart/renderBoxplotChart 支持 config.showGrid/config.legendPosition；renderHistogramChart 使用 resolveColors；renderLegend 支持 bottom/right/top/none 位置；svgWrap 支持 xLabel/yLabel 轴标签文本；computeLayout 使用 xAxisLabel/yAxisLabel 选项；generateChart 新增 existingOptions 参数支持样式合并；所有 prepare* 函数使用 resolveColors）、src/modules/chart/index.ts（新增导出 CHART_COLOR_SCHEMES/LegendPosition/ChartColorScheme）、src/modules/index.ts（新增导出）、src/core/commands.ts（ElementChanges 新增 dataSourceId/chartType/columnMappings/options/svgContent 字段；UpdateElementCommand.execute 处理这 5 个新字段）、src/ui/PropertyPanel.tsx（新增 'chart' Section、allChart/singleChart 检测、Chart Style 编辑区：标题/X轴标签/Y轴标签输入框、配色方案下拉、图例位置下拉、网格线开关；新增 parsedDataMap prop 支持 chart SVG 重新生成）、src/App.tsx（传递 parsedDataMap prop） |
+| 发现缺陷 | 无 |
+| 产出接口/函数 | API-0157（ChartColorScheme）、API-0158（CHART_COLOR_SCHEMES）、API-0159（LegendPosition）、API-0156 更新（ChartGenerationConfig 扩展 5 字段）、API-0155 更新（generateChart 新增 existingOptions）、API-0083 更新（ElementChanges 扩展 5 字段）、API-0105 更新（PropertyPanel 新增图表样式编辑和 parsedDataMap） |

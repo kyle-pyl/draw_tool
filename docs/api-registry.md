@@ -1619,14 +1619,15 @@
 | 所属模块 | commands |
 | 状态 | 活跃 |
 | 创建日期 | 2026-05-19 |
-| 最后修订日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-20 |
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | UpdateElementCommand 的变更参数类型。支持修改元素的 style、transform、visible、locked、name、text、shapeKind 等部分属性。修改 transform（位置/尺寸）时触发碰撞检测 |
-| 输入参数 | Partial<{ style: Partial<ElementStyle>, transform: Partial<Transform2D>, visible, locked, name, text, ... }> |
+| 功能描述 | UpdateElementCommand 的变更参数类型。支持修改元素的 style、transform、visible、locked、name、text、shapeKind 等部分属性。修改 transform（位置/尺寸）时触发碰撞检测。新增图表相关字段：dataSourceId（数据源 ID）、chartType（图表类型）、columnMappings（列映射）、options（样式选项，如 title/showGrid/colorScheme/legendPosition/xAxisLabel/yAxisLabel）、svgContent（渲染后的 SVG 内容） |
+| 输入参数 | Partial<{ style, transform, visible, locked, name, text, shapeKind, labels, dataSourceId, chartType, columnMappings, options, svgContent, ... }> |
 | 输出参数 | 无（类型别名） |
 | 典型用例 | `const changes: ElementChanges = { style: { fill: '#f00' }, visible: false }` |
-| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-04）|
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-05-04）
+2026-05-21, OpenCode/deepseek-v4-pro, 新增 dataSourceId/chartType/columnMappings/options/svgContent 图表字段；2026-05-20, OpenCode/deepseek-v4-pro, 修订 |
 
 ### API-0085 UpdateElementCommand
 
@@ -1964,11 +1965,12 @@
 | 最后修订日期 | 2026-05-20 |
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | 属性面板 React 组件。选中单个元素时显示所有可编辑属性，选中多个元素时显示公共属性。属性分组为：位置/尺寸（x、y、width、height、rotation）、填充/描边（fill、stroke、strokeWidth、opacity）、文本样式（fontSize、fontFamily、fontWeight、backgroundColor、borderColor、borderWidth，仅文本元素）、图层（当前图层名、移动到其他图层）、可见性/锁定（visible、locked）。多选时不同属性值显示为 "mixed"，可见性/锁定显示为 indeterminate 复选框。修改通过 onPropertyChange 回调触发，图层变更通过 onLayerChange 回调触发。面板可折叠分组，右上角关闭按钮可临时隐藏面板（显示 "Show Properties" 按钮恢复） |
-| 输入参数 | props: { scene: SceneDocument, selectionManager: SelectionManager, onPropertyChange: (elementIds: string[], changes: Record<string, unknown>) => void, onLayerChange: (elementIds: string[], targetLayerId: string) => void } |
+| 功能描述 | 属性面板 React 组件。选中元素时显示可编辑属性，多选显示公共属性。属性分组：位置/尺寸、填充/描边、文本样式（仅文本元素）、连接线样式（仅连接线元素）、图表样式（仅图表元素：标题/X轴标签/Y轴标签、配色方案选择、图例位置、网格线开关）、图层、可见性/锁定。图表样式编辑支持 SVG 重新生成（当提供 parsedDataMap 时）。新增 parsedDataMap 可选 prop 用于传递已解析的 CSV 数据，支持图表选项变更时自动重新渲染 SVG。 |
+| 输入参数 | props: { scene, selectionManager, onPropertyChange, onLayerChange, parsedDataMap?: Map<string, ParsedData> } |
 | 输出参数 | ReactElement（有选中元素时显示浮动属性面板，无选中元素返回 null，关闭后显示小恢复按钮） |
-| 典型用例 | `<PropertyPanel scene={scene} selectionManager={selectionMgr} onPropertyChange={handleChange} onLayerChange={handleLayerChange} />` |
-| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-10）|
+| 典型用例 | <PropertyPanel scene={scene} selectionManager={selectionMgr} onPropertyChange={handleChange} onLayerChange={handleLayerChange} parsedDataMap={parsedDataMap} /> |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-10）
+2026-05-21, OpenCode/deepseek-v4-pro, 新增图表样式编辑区、parsedDataMap prop、图表 SVG 重新生成功能 |
 
 ### API-0103 PropertyPanelProps
 
@@ -2936,11 +2938,12 @@
 | 最后修订日期 | 2026-05-20 |
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | 图表生成函数。接收已解析的 CSV 数据（ParsedData）、图表配置（ChartGenerationConfig）、数据源 ID 和图层 ID，生成一个包含渲染 SVG 内容的 ChartElement。Lite 包使用自研 SVG 渲染器支持全部 6 种图表类型（柱状图、折线图、散点图、箱线图、直方图、热图）。自动计算轴刻度、范围、图例和多系列分组。返回的 ChartElement 可通过 CreateElementCommand 添加到场景。 |
-| 输入参数 | data: ParsedData（已解析的 CSV 数据）、config: ChartGenerationConfig（图表类型、列映射、尺寸、标题）、dataSourceId: string（数据源 ID）、layerId: string（目标图层 ID） |
+| 功能描述 | 图表生成函数。接收已解析的 CSV 数据（ParsedData）、图表配置（ChartGenerationConfig）、数据源 ID、图层 ID 和可选的已有样式选项（existingOptions），生成包含渲染 SVG 内容的 ChartElement。Lite 包使用自研 SVG 渲染器支持全部 6 种图表类型。支持配色方案（colorScheme）、网格线开关（showGrid）、图例位置（legendPosition）、轴标签（xAxisLabel/yAxisLabel）等样式选项。自动合并已有选项与传入配置。 |
+| 输入参数 | data: ParsedData、config: ChartGenerationConfig、dataSourceId: string、layerId: string、existingOptions?: Record<string, unknown>（可选的已有样式选项，用于重新生成时保留样式） |
 | 输出参数 | ChartElement - 包含 id（自动生成）、type: 'chart'、layerId、transform（默认 600x400）、style、visible、dataSourceId、chartType、columnMappings、svgContent（渲染的完整 SVG 字符串） |
-| 典型用例 | `const chartEl = generateChart(parsedData, { chartType: 'bar', columnMappings: { x: 'category', y: 'value' }, title: 'Revenue' }, 'ds-1', 'layer-1'); executor.execute(new CreateElementCommand({ type: 'chart', layerId: 'layer-1', transform: chartEl.transform, style: chartEl.style, dataSourceId: chartEl.dataSourceId, chartType: chartEl.chartType, columnMappings: chartEl.columnMappings, svgContent: chartEl.svgContent }));` |
-| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+| 典型用例 | const chartEl = generateChart(parsedData, { chartType: 'bar', columnMappings: { x: 'category', y: 'value' }, title: 'Revenue', showGrid: true, colorScheme: 'pastel', legendPosition: 'bottom' }, 'ds-1', 'layer-1'); |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建
+2026-05-21, OpenCode/deepseek-v4-pro, 新增 existingOptions 参数支持样式合并和图表重新生成 |
 
 ### API-0156 ChartGenerationConfig
 
@@ -2955,8 +2958,66 @@
 | 最后修订日期 | 2026-05-20 |
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | 图表生成配置接口。定义图表类型、列映射、可选尺寸和标题。作为 generateChart 函数的配置参数。 |
-| 输入参数 | chartType: ChartType（图表类型，必选）、columnMappings: { x?: string, y?: string, group?: string, color?: string }（列到图表维度的映射，y 通常必选）、width?: number（SVG 宽度，默认 600）、height?: number（SVG 高度，默认 400）、title?: string（图表标题） |
+| 功能描述 | 图表生成配置接口。定义图表类型、列映射、尺寸、标题和样式选项。新增 5 个样式字段：showGrid（是否显示网格线，默认 true）、colorScheme（配色方案名称，如 default/pastel/vivid/monochrome/warm/cool）、legendPosition（图例位置：bottom/right/top/none）、xAxisLabel（X 轴标签文本）、yAxisLabel（Y 轴标签文本）。 |
+| 输入参数 | chartType: ChartType、columnMappings: { x?, y?, group?, color? }、width?: number（默认 600）、height?: number（默认 400）、title?: string、showGrid?: boolean（默认 true）、colorScheme?: string、legendPosition?: LegendPosition、xAxisLabel?: string、yAxisLabel?: string |
 | 输出参数 | 无（接口类型） |
-| 典型用例 | `const config: ChartGenerationConfig = { chartType: 'bar', columnMappings: { x: 'Month', y: 'Revenue' }, width: 800, height: 500, title: 'Monthly Revenue' }` |
+| 典型用例 | const config: ChartGenerationConfig = { chartType: 'bar', columnMappings: { x: 'Month', y: 'Revenue' }, width: 800, height: 500, title: 'Monthly Revenue', colorScheme: 'warm', showGrid: true, legendPosition: 'bottom' } |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建
+2026-05-21, OpenCode/deepseek-v4-pro, 新增 5 个样式字段：showGrid/colorScheme/legendPosition/xAxisLabel/yAxisLabel |
+
+### API-0157 ChartColorScheme
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0157 |
+| 名称 | ChartColorScheme |
+| 所属系统 | modules |
+| 所属模块 | chart/generator |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 配色方案接口。定义图表配色方案的名称和颜色数组。name 为方案标识名（如 default/pastel/vivid/monochrome/warm/cool），colors 为 hex 颜色字符串数组（10 个颜色）。用于 ChartGenerationConfig.colorScheme 字段和 CHART_COLOR_SCHEMES 常量 |
+| 输入参数 | name: string（方案名称）、colors: string[]（颜色数组，hex 格式） |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | const scheme: ChartColorScheme = { name: 'pastel', colors: ['#a8d4f0', '#f5c6d0'] } |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0158 CHART_COLOR_SCHEMES
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0158 |
+| 名称 | CHART_COLOR_SCHEMES |
+| 所属系统 | modules |
+| 所属模块 | chart/generator |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 预定义图表配色方案常量数组。包含 6 种配色方案：default（默认蓝橙红基调）、pastel（柔和粉彩色系）、vivid（鲜艳高饱和色系）、monochrome（黑白灰单色系）、warm（暖色系）、cool（冷色系）。每种方案包含 10 个 hex 颜色值。在图表渲染时通过 resolveColors(config) 根据 ChartGenerationConfig.colorScheme 选择对应方案。供 PropertyPanel 图表样式编辑区的配色方案下拉菜单直接引用 |
+| 输入参数 | 无（常量导出） |
+| 输出参数 | ChartColorScheme[]（6 个配色方案对象） |
+| 典型用例 | import { CHART_COLOR_SCHEMES } from './modules/chart'; const names = CHART_COLOR_SCHEMES.map(s => s.name); |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0159 LegendPosition
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0159 |
+| 名称 | LegendPosition |
+| 所属系统 | modules |
+| 所属模块 | chart/generator |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 图例位置类型。字符串字面量联合类型，定义图表图例的显示位置：'bottom'（底部居中，默认）、'right'（右侧垂直排列）、'top'（标题下方水平排列）、'none'（不显示图例）。在 ChartGenerationConfig.legendPosition 字段中使用，renderLegend 函数根据此值定位图例 |
+| 输入参数 | 'bottom' | 'right' | 'top' | 'none' |
+| 输出参数 | 无（类型别名） |
+| 典型用例 | const cfg: ChartGenerationConfig = { ..., legendPosition: 'right' } |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
