@@ -515,7 +515,7 @@
 | 任务名称      | 实现连接线创建和渲染 |
 | 完成时间      | 2026-05-20 13:10 |
 | 作者/智能体   | OpenCode/deepseek-v4-pro |
-| Git Commit    | （待提交） |
+| Git Commit    | 8dcef8b |
 | 修改记录      | 修改：src/canvas/CanvasView.tsx（DrawingToolType 新增 'connector'、新增 getVisibleAnchors/findElementAtPoint/findNearestAnchor 辅助函数、新增 connector 工具交互：悬停显示锚点高亮、点击锚点拖拽创建连接线、实时预览线渲染、鼠标事件处理、getCursor 支持 crosshair、connector 渲染按 route.type 使用 line 或 polyline 元素）；修改：src/ui/ShapeToolbar.tsx（新增 connector 工具按钮和图标）；修改：src/tests/unit/canvas-view.test.tsx（修正 straight 路由 connector 测试：line 替代 polyline、新增 2 个 connector 渲染测试）；修改：src/tests/unit/shape-toolbar.test.tsx（按钮数量从 7 更新为 8）；修改：src/tests/unit/commands.test.ts（新增 4 个 connector 创建测试：锚点绑定、碰撞豁免、polyline 路由、自由端点）；修改：docs/api-registry.md（更新 API-0057/API-0089/API-0117/API-0118 记录） |
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0057（CanvasView 修订）、API-0089（DrawingToolType 修订）、API-0117（getAnchors 修订）、API-0118（resolveAnchor 修订） |
