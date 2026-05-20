@@ -450,7 +450,7 @@
 | 任务名称      | 实现对齐命令 |
 | 完成时间      | 2026-05-20 11:25 |
 | 作者/智能体   | OpenCode/deepseek-v4-pro |
-| Git Commit    | c5d547a |
+| Git Commit    | 6790f93 |
 | 修改记录      | 修改：src/core/commands.ts（新增 AlignType 类型、AlignElementsCommand 类：支持 left/right/top/bottom/centerHorizontal/centerVertical/center 七种对齐方式，计算统一包围盒，移动后检查图层冲突，连接线端点跟随）；修改：src/core/index.ts（新增 AlignElementsCommand 和 AlignType 导出）；修改：src/tests/unit/commands.test.ts（新增 12 个对齐命令测试用例） |
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0108（AlignType）、API-0109（AlignElementsCommand） |
