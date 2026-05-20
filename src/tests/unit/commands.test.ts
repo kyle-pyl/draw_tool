@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CommandExecutor, CreateElementCommand, MoveElementsCommand, UpdateElementCommand, ChangeLayerCommand, TransformElementsCommand, GroupElementsCommand, UngroupCommand, AddToGroupCommand, RemoveFromGroupCommand, AlignElementsCommand, DistributeElementsCommand, BatchLayerEditCommand } from '../../core/commands';
+import { CommandExecutor, CreateElementCommand, MoveElementsCommand, UpdateElementCommand, ChangeLayerCommand, TransformElementsCommand, GroupElementsCommand, UngroupCommand, AddToGroupCommand, RemoveFromGroupCommand, AlignElementsCommand, DistributeElementsCommand, BatchLayerEditCommand, MoveLayersCommand } from '../../core/commands';
 import type { SceneCommand, CommandHistoryEntry, ElementInput, ElementChanges, TransformParams, AlignType, DistributeType, CircularDistributeOptions, BatchLayerOperation } from '../../core/commands';
 import type { SceneDocument } from '../../core/types';
 import { successResult, failureResult } from '../../core/errors';
@@ -2771,9 +2771,316 @@ describe('BatchLayerEditCommand', () => {
 
     it('copyAll obeys max layer count validation', () => {
       createShape('A', 0, 0);
-      // copyAll doesn't check maxLayerCount explicitly in validate(), but the scene rules exist
       const cmd = new BatchLayerEditCommand('l1', 'copyAll', undefined, 'l2');
       expect(cmd.validate(useDocumentStore.getState().getScene()!).valid).toBe(true);
+    });
+  });
+});
+
+// ─── MoveLayersCommand tests ───────────────────────────────────────────────────
+
+describe('MoveLayersCommand', () => {
+  let executor: CommandExecutor;
+
+  function makeScene(): SceneDocument {
+    return {
+      schemaVersion: '1.0.0',
+      project: { name: 'Test' },
+      canvas: { units: 'px', background: '#fff', defaultFont: 'Arial', gridSize: 0, snapToGrid: false },
+      rules: { maxLayerCount: 10, collisionStrategy: 'bbox', hiddenElementsCollide: false, lockedElementsCollide: false, connectorsExempt: true },
+      layers: [
+        { id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false },
+        { id: 'l2', name: 'Layer 2', order: 2, visible: true, locked: false },
+        { id: 'l3', name: 'Layer 3', order: 3, visible: true, locked: false },
+        { id: 'l4', name: 'Layer 4', order: 4, visible: true, locked: false },
+        { id: 'l5', name: 'Layer 5', order: 5, visible: true, locked: false },
+      ],
+      elements: [],
+      groups: [],
+      dataSources: [],
+      charts: [],
+      templates: [],
+      exportPresets: [],
+    };
+  }
+
+  function createShape(name: string, x: number, y: number, w = 50, h = 50, layerId = 'l1') {
+    const input: ElementInput = {
+      type: 'shape', layerId, shapeKind: 'rect', name,
+      transform: { x, y, width: w, height: h, rotation: 0, scaleX: 1, scaleY: 1 },
+      style: { fill: '#ffffff', stroke: '#000000', strokeWidth: 2, opacity: 1 },
+    };
+    const cmd = new CreateElementCommand(input);
+    executor.execute(cmd);
+    return useDocumentStore.getState().getScene()!.elements.at(-1)!.id;
+  }
+
+  beforeEach(() => {
+    executor = new CommandExecutor();
+    useDocumentStore.getState().loadScene(structuredClone(makeScene()));
+  });
+
+  describe('basic movement', () => {
+    it('moves a single layer up by 1 step', () => {
+      const cmd = new MoveLayersCommand(['l2'], 'up', 1);
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const l2 = scene.layers.find((l) => l.id === 'l2')!;
+      const l3 = scene.layers.find((l) => l.id === 'l3')!;
+      expect(l2.order).toBe(3);
+      expect(l3.order).toBe(2);
+    });
+
+    it('moves a single layer down by 1 step', () => {
+      const cmd = new MoveLayersCommand(['l3'], 'down', 1);
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const l3 = scene.layers.find((l) => l.id === 'l3')!;
+      const l2 = scene.layers.find((l) => l.id === 'l2')!;
+      expect(l3.order).toBe(2);
+      expect(l2.order).toBe(3);
+    });
+
+    it('moves multiple layers up and preserves relative order', () => {
+      const cmd = new MoveLayersCommand(['l2', 'l3'], 'up', 2);
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      // l2 and l3 should be above l4 and l5 (moved up 2 steps)
+      const l2 = scene.layers.find((l) => l.id === 'l2')!;
+      const l3 = scene.layers.find((l) => l.id === 'l3')!;
+      const l4 = scene.layers.find((l) => l.id === 'l4')!;
+      const l5 = scene.layers.find((l) => l.id === 'l5')!;
+      expect(l2.order).toBe(4);
+      expect(l3.order).toBe(5);
+      expect(l4.order).toBe(2);
+      expect(l5.order).toBe(3);
+    });
+
+    it('moves multiple layers down and preserves relative order', () => {
+      const cmd = new MoveLayersCommand(['l3', 'l4'], 'down', 2);
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const l1 = scene.layers.find((l) => l.id === 'l1')!;
+      const l2 = scene.layers.find((l) => l.id === 'l2')!;
+      const l3 = scene.layers.find((l) => l.id === 'l3')!;
+      const l4 = scene.layers.find((l) => l.id === 'l4')!;
+      expect(l3.order).toBe(1);
+      expect(l4.order).toBe(2);
+      expect(l1.order).toBe(3);
+      expect(l2.order).toBe(4);
+    });
+
+    it('moves non-contiguous layers up together', () => {
+      const cmd = new MoveLayersCommand(['l1', 'l3'], 'up', 1);
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const l1 = scene.layers.find((l) => l.id === 'l1')!;
+      const l3 = scene.layers.find((l) => l.id === 'l3')!;
+      const l2 = scene.layers.find((l) => l.id === 'l2')!;
+      const l4 = scene.layers.find((l) => l.id === 'l4')!;
+      // l1 was at order 1, l3 at order 3. Moving up 1: they go after l2 and l4
+      // l1 passes l2, l3 passes l4
+      expect(l1.order).toBe(2);
+      expect(l3.order).toBe(4);
+      expect(l2.order).toBe(1);
+      expect(l4.order).toBe(3);
+    });
+  });
+
+  describe('steps', () => {
+    it('moves layer up by multiple steps', () => {
+      const cmd = new MoveLayersCommand(['l1'], 'up', 3);
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const l1 = scene.layers.find((l) => l.id === 'l1')!;
+      const l4 = scene.layers.find((l) => l.id === 'l4')!;
+      const l5 = scene.layers.find((l) => l.id === 'l5')!;
+      // l1 moves past l2, l3, l4 (3 steps). New order: l1=4
+      expect(l1.order).toBe(4);
+      expect(l4.order).toBe(3);
+      expect(l5.order).toBe(5);
+    });
+
+    it('moves layer down by multiple steps', () => {
+      const cmd = new MoveLayersCommand(['l5'], 'down', 3);
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(true);
+
+      const scene = useDocumentStore.getState().getScene()!;
+      const l5 = scene.layers.find((l) => l.id === 'l5')!;
+      const l2 = scene.layers.find((l) => l.id === 'l2')!;
+      // l5 moves past l4, l3, l2 (3 steps). New order: l5=2
+      expect(l5.order).toBe(2);
+      expect(l2.order).toBe(3);
+    });
+
+    it('steps is floored to integer', () => {
+      const cmd = new MoveLayersCommand(['l1'], 'up', 2.7);
+      expect(cmd.validate(useDocumentStore.getState().getScene()!).valid).toBe(true);
+      executor.execute(cmd);
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.layers.find((l) => l.id === 'l1')!.order).toBe(3); // moved up 2 steps
+    });
+
+    it('minimum steps is 1', () => {
+      const cmd = new MoveLayersCommand(['l1'], 'up', 0);
+      expect(cmd.validate(useDocumentStore.getState().getScene()!).valid).toBe(true);
+      executor.execute(cmd);
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.layers.find((l) => l.id === 'l1')!.order).toBe(2); // minimum 1 step
+    });
+  });
+
+  describe('validation errors', () => {
+    it('fails when layer does not exist', () => {
+      const cmd = new MoveLayersCommand(['nonexistent'], 'up', 1);
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe('REF_LAYER_NOT_FOUND');
+    });
+
+    it('fails when moving up at the top', () => {
+      const cmd = new MoveLayersCommand(['l5'], 'up', 1);
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe('RULE_MAX_LAYER_EXCEEDED');
+      expect(result.errors[0].message).toContain('top');
+    });
+
+    it('fails when moving down at the bottom', () => {
+      const cmd = new MoveLayersCommand(['l1'], 'down', 1);
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe('RULE_MAX_LAYER_EXCEEDED');
+      expect(result.errors[0].message).toContain('bottom');
+    });
+
+    it('passes when single layer in scene', () => {
+      const scene = useDocumentStore.getState().getScene()!;
+      useDocumentStore.getState().updateScene(() => ({
+        ...scene,
+        layers: [{ id: 'l1', name: 'Layer 1', order: 1, visible: true, locked: false }],
+      }));
+      const cmd = new MoveLayersCommand(['l1'], 'up', 1);
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(true);
+    });
+
+    it('fails with same-layer overlapping elements', () => {
+      const scene = useDocumentStore.getState().getScene()!;
+      // Add overlapping elements in l2
+      useDocumentStore.getState().updateScene(() => ({
+        ...scene,
+        elements: [
+          {
+            id: 'e1', type: 'shape', layerId: 'l2', shapeKind: 'rect', name: 'A',
+            transform: { x: 0, y: 0, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            visible: true, locked: false,
+          },
+          {
+            id: 'e2', type: 'shape', layerId: 'l2', shapeKind: 'rect', name: 'B',
+            transform: { x: 50, y: 50, width: 100, height: 100, rotation: 0, scaleX: 1, scaleY: 1 },
+            style: { fill: '#fff', stroke: '#000', strokeWidth: 1, opacity: 1 },
+            visible: true, locked: false,
+          },
+        ],
+      }));
+
+      const cmd = new MoveLayersCommand(['l1'], 'up', 1);
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+      expect(result.errors[0].code).toBe('GEO_SAME_LAYER_OVERLAP');
+      expect(result.errors[0].layerIds).toContain('l2');
+    });
+  });
+
+  describe('undo and redo', () => {
+    it('undo restores original layer orders', () => {
+      const cmd = new MoveLayersCommand(['l2'], 'up', 1);
+      executor.execute(cmd);
+      executor.undo();
+
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.layers.find((l) => l.id === 'l2')!.order).toBe(2);
+      expect(scene.layers.find((l) => l.id === 'l3')!.order).toBe(3);
+    });
+
+    it('redo reapplies the move', () => {
+      const cmd = new MoveLayersCommand(['l2'], 'up', 1);
+      executor.execute(cmd);
+      executor.undo();
+      executor.redo();
+
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.layers.find((l) => l.id === 'l2')!.order).toBe(3);
+    });
+
+    it('multi-layer undo restores all orders', () => {
+      const cmd = new MoveLayersCommand(['l1', 'l2'], 'up', 2);
+      executor.execute(cmd);
+      executor.undo();
+
+      const scene = useDocumentStore.getState().getScene()!;
+      for (const layer of scene.layers) {
+        const origOrder = [1, 2, 3, 4, 5][['l1', 'l2', 'l3', 'l4', 'l5'].indexOf(layer.id)];
+        expect(layer.order).toBe(origOrder);
+      }
+    });
+  });
+
+  describe('command structure', () => {
+    it('has a descriptive label', () => {
+      const cmd = new MoveLayersCommand(['l1', 'l2'], 'up', 2);
+      expect(cmd.label).toContain('Move 2 layer(s) up');
+    });
+
+    it('has a unique id', () => {
+      const cmd = new MoveLayersCommand(['l1'], 'down', 1);
+      expect(cmd.id).toBeTruthy();
+    });
+
+    it('provides invert for redo support', () => {
+      const cmd = new MoveLayersCommand(['l2'], 'up', 1);
+      const scene = useDocumentStore.getState().getScene()!;
+      const inverse = cmd.invert(scene);
+      expect(inverse).not.toBeNull();
+      expect(inverse!.label).toContain('Undo');
+    });
+  });
+
+  describe('transactional validation', () => {
+    it('does not apply changes when validation fails', () => {
+      const cmd = new MoveLayersCommand(['l5'], 'up', 1); // l5 is at top
+      // validate directly returns failure
+      const result = cmd.validate(useDocumentStore.getState().getScene()!);
+      expect(result.valid).toBe(false);
+
+      // Scene layers should be unchanged (execute was not called via executor, but let's ensure order)
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.layers.find((l) => l.id === 'l5')!.order).toBe(5);
+    });
+
+    it('validates before executing via executor', () => {
+      const cmd = new MoveLayersCommand(['l5'], 'up', 1); // invalid
+      const result = executor.execute(cmd);
+      expect(result.valid).toBe(false);
+
+      // Scene should be unchanged
+      const scene = useDocumentStore.getState().getScene()!;
+      expect(scene.layers.find((l) => l.id === 'l5')!.order).toBe(5);
     });
   });
 });

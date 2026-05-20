@@ -2068,6 +2068,195 @@ export class BatchLayerEditCommand implements SceneCommand {
   }
 }
 
+// ─── MoveLayers Command ───────────────────────────────────────────────────────
+
+export type LayerMoveDirection = 'up' | 'down';
+
+export class MoveLayersCommand implements SceneCommand {
+  id: string;
+  label: string;
+  private layerIds: string[];
+  private direction: LayerMoveDirection;
+  private steps: number;
+  private previousOrders: Map<string, number>;
+
+  constructor(layerIds: string[], direction: LayerMoveDirection, steps = 1, label?: string) {
+    this.id = generateId('movelayers');
+    this.layerIds = layerIds;
+    this.direction = direction;
+    this.steps = Math.max(1, Math.floor(steps));
+    this.label = label || `Move ${layerIds.length} layer(s) ${direction}`;
+    this.previousOrders = new Map();
+  }
+
+  private computeNewOrders(scene: SceneDocument): Map<string, number> | null {
+    const selectedIdSet = new Set(this.layerIds);
+    const sortedLayers = [...scene.layers].sort((a, b) => a.order - b.order);
+    const otherLayers = sortedLayers.filter((l) => !selectedIdSet.has(l.id));
+    const selectedLayers = sortedLayers.filter((l) => selectedIdSet.has(l.id));
+
+    if (selectedLayers.length === 0 || otherLayers.length === 0) return null;
+
+    const insertPositions = new Map<string, number>();
+
+    for (const sl of selectedLayers) {
+      const origIdx = sortedLayers.indexOf(sl);
+      const belowCount = sortedLayers
+        .slice(0, origIdx)
+        .filter((l) => !selectedIdSet.has(l.id)).length;
+
+      if (this.direction === 'up') {
+        const aboveCount = sortedLayers
+          .slice(origIdx + 1)
+          .filter((l) => !selectedIdSet.has(l.id)).length;
+        const moveBy = Math.min(this.steps, aboveCount);
+        if (moveBy === 0) return null;
+        insertPositions.set(sl.id, belowCount + moveBy);
+      } else {
+        const moveBy = Math.min(this.steps, belowCount);
+        if (moveBy === 0) return null;
+        insertPositions.set(sl.id, belowCount - moveBy);
+      }
+    }
+
+    const sortedByPos = [...insertPositions.entries()]
+      .sort((a, b) => a[1] - b[1] || selectedLayers.findIndex((l) => l.id === a[0]) - selectedLayers.findIndex((l) => l.id === b[0]));
+
+    const result = otherLayers.map((l) => l.id);
+
+    for (let i = sortedByPos.length - 1; i >= 0; i--) {
+      const [layerId, pos] = sortedByPos[i];
+      const clampedPos = Math.min(pos, result.length);
+      result.splice(clampedPos, 0, layerId);
+    }
+
+    const newOrders = new Map<string, number>();
+    result.forEach((id, idx) => { newOrders.set(id, idx + 1); });
+
+    return newOrders;
+  }
+
+  validate(scene: SceneDocument): ValidationResult {
+    const selectedIdSet = new Set(this.layerIds);
+
+    for (const layerId of this.layerIds) {
+      if (!scene.layers.some((l) => l.id === layerId)) {
+        return failureResult({
+          code: ErrorCode.REF_LAYER_NOT_FOUND as string,
+          message: `Layer "${layerId}" does not exist`,
+          severity: 'error',
+          layerIds: [layerId],
+          suggestion: 'The layer may have been deleted',
+        });
+      }
+    }
+
+    if (scene.layers.length <= 1) return successResult();
+
+    const newOrders = this.computeNewOrders(scene);
+    if (newOrders === null) {
+      const dirLabel = this.direction === 'up' ? 'top' : 'bottom';
+      return failureResult({
+        code: 'RULE_MAX_LAYER_EXCEEDED',
+        message: `Cannot move layers ${this.direction}: selected layers are already at the ${dirLabel}`,
+        severity: 'error',
+        layerIds: this.layerIds,
+        suggestion: `The selected layers have no layers to move past`,
+      });
+    }
+
+    const newScene = {
+      ...scene,
+      layers: scene.layers.map((l) => {
+        const newOrder = newOrders.get(l.id);
+        return newOrder !== undefined ? { ...l, order: newOrder } : l;
+      }),
+    };
+
+    const geometryAdapter = createGeometryAdapter();
+    const collisionErrors: ValidationError[] = [];
+
+    for (const layer of newScene.layers) {
+      const layerElements = newScene.elements.filter(
+        (el) => el.layerId === layer.id && el.type !== 'connector',
+      );
+      if (layerElements.length < 2) continue;
+
+      const options: CollisionCheckOptions = {};
+      if (newScene.rules.hiddenElementsCollide === false) options.skipHidden = true;
+      if (newScene.rules.lockedElementsCollide === false) options.skipLocked = true;
+
+      const collisionResult = checkLayerCollisions(layerElements, geometryAdapter, options);
+
+      if (collisionResult.hasCollision) {
+        for (const collision of collisionResult.collisions) {
+          collisionErrors.push({
+            code: ErrorCode.GEO_SAME_LAYER_OVERLAP as string,
+            message: `Layer "${layer.name || layer.id}" has overlapping elements: "${collision.elementA}" and "${collision.elementB}"`,
+            severity: 'error',
+            layerIds: [layer.id],
+            elementIds: [collision.elementA, collision.elementB],
+            bboxes: [collision.overlapBBox],
+            suggestion: 'Move one of the elements to a different position or layer to resolve the overlap before reordering layers',
+          });
+        }
+      }
+    }
+
+    if (collisionErrors.length > 0) {
+      return failureResult(...collisionErrors);
+    }
+
+    if (newScene.layers.length > newScene.rules.maxLayerCount) {
+      return failureResult({
+        code: ErrorCode.RULE_MAX_LAYER_EXCEEDED as string,
+        message: `Layer count (${newScene.layers.length}) exceeds maximum (${newScene.rules.maxLayerCount})`,
+        severity: 'error',
+        layerIds: newScene.layers.map((l) => l.id),
+        suggestion: 'Reduce the number of layers or increase rules.maxLayerCount',
+      });
+    }
+
+    return successResult();
+  }
+
+  execute(scene: SceneDocument): SceneDocument {
+    for (const layer of scene.layers) {
+      this.previousOrders.set(layer.id, layer.order);
+    }
+
+    const newOrders = this.computeNewOrders(scene);
+    if (newOrders === null) return scene;
+
+    return {
+      ...scene,
+      layers: scene.layers.map((l) => {
+        const newOrder = newOrders.get(l.id);
+        return newOrder !== undefined ? { ...l, order: newOrder } : l;
+      }),
+    };
+  }
+
+  invert(_scene: SceneDocument): SceneCommand | null {
+    const invertCmd: SceneCommand = {
+      id: generateId('movelayers-undo'),
+      label: `Undo: ${this.label}`,
+      validate: () => successResult(),
+      execute: (scene: SceneDocument) => {
+        return {
+          ...scene,
+          layers: scene.layers.map((l) => {
+            const prevOrder = this.previousOrders.get(l.id);
+            return prevOrder !== undefined ? { ...l, order: prevOrder } : l;
+          }),
+        };
+      },
+      invert: () => null,
+    };
+    return invertCmd;
+  }
+}
+
 // ─── TransformElements Command ─────────────────────────────────────────────────
 
 export type TransformParams = {
