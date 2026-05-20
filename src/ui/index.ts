@@ -10,3 +10,5 @@ export { TextEditor } from './TextEditor';
 export type { TextEditorProps } from './TextEditor';
 export { ImageImportButton } from './ImageImportButton';
 export type { ImageImportButtonProps } from './ImageImportButton';
+export { PropertyPanel } from './PropertyPanel';
+export type { PropertyPanelProps } from './PropertyPanel';

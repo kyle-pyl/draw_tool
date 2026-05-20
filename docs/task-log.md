@@ -429,3 +429,16 @@
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0096（sanitizeSvg）、API-0097（sanitizeSvgToBlob）、API-0098（isSupportedImageFile）、API-0099（importImageFromFile）、API-0100（ImageImportButton）、API-0101（ImageImportButtonProps） |
 
+### T-05-10 实现属性面板
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-05-10 |
+| 任务名称      | 实现属性面板 |
+| 完成时间      | 2026-05-20 10:40 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | ff99f6a |
+| 修改记录      | 新建：src/ui/PropertyPanel.tsx、src/tests/unit/property-panel.test.tsx（27 个测试用例）；修改：src/ui/index.ts（新增 PropertyPanel/PropertyPanelProps 导出）、src/App.tsx（集成 PropertyPanel、handlePropertyChange/handleLayerChange 回调、ChangeLayerCommand 导入）、docs/api-registry.md（新增 API-0102/API-0103）、docs/task-list.md（T-05-10 状态改为已完成）、README.md（更新测试计数和功能描述） |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0102（PropertyPanel）、API-0103（PropertyPanelProps） |
+

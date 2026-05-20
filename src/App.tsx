@@ -1,12 +1,12 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { CanvasView, Viewport, SelectionManager, ConflictHighlighter } from './canvas';
 import type { DrawingToolType } from './canvas';
-import { ShapeToolbar, ConflictPanel, TextEditor, ImageImportButton } from './ui';
+import { ShapeToolbar, ConflictPanel, TextEditor, ImageImportButton, PropertyPanel } from './ui';
 import { createGeometryAdapter } from './core/geometry';
 import { checkLayerCollisions } from './core/collision';
 import { useDocumentStore } from './core/store';
-import { CommandExecutor, CreateElementCommand, UpdateElementCommand } from './core/commands';
-import type { ElementInput } from './core/commands';
+import { CommandExecutor, CreateElementCommand, UpdateElementCommand, ChangeLayerCommand } from './core/commands';
+import type { ElementInput, ElementChanges } from './core/commands';
 import type { ElementStyle } from './core/types';
 import exampleScene from '../examples/basic/scene.json';
 import type { SceneDocument, TextElement } from './core/types';
@@ -164,6 +164,32 @@ function App() {
     forceUpdate();
   }, [selectionManager, forceUpdate]);
 
+  const handlePropertyChange = useCallback(
+    (elementIds: string[], changes: Record<string, unknown>) => {
+      for (const elementId of elementIds) {
+        const cmd = new UpdateElementCommand(elementId, changes as ElementChanges);
+        const result = executorRef.current.execute(cmd);
+        if (!result.valid) {
+          console.warn('Property change failed:', result.errors.map((e) => e.message).join('\n'));
+        }
+      }
+      forceUpdate();
+    },
+    [forceUpdate],
+  );
+
+  const handleLayerChange = useCallback(
+    (elementIds: string[], targetLayerId: string) => {
+      const cmd = new ChangeLayerCommand(elementIds, targetLayerId);
+      const result = executorRef.current.execute(cmd);
+      if (!result.valid) {
+        console.warn('Layer change failed:', result.errors.map((e) => e.message).join('\n'));
+      }
+      forceUpdate();
+    },
+    [forceUpdate],
+  );
+
   const checkConflicts = useCallback(() => {
     const adapter = createGeometryAdapter();
     const conflictsByLayer = new Map<string, typeof currentScene.elements>();
@@ -211,6 +237,12 @@ function App() {
       <ShapeToolbar activeTool={activeTool} onToolChange={handleToolChange} />
       <ImageImportButton layerId={drawingLayerId} onImport={handleImageImport} />
       <ConflictPanel conflictHighlighter={conflictHighlighter} />
+      <PropertyPanel
+        scene={currentScene}
+        selectionManager={selectionManager}
+        onPropertyChange={handlePropertyChange}
+        onLayerChange={handleLayerChange}
+      />
       {editingElement && (
         <TextEditor
           element={editingElement}

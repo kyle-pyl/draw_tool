@@ -1950,3 +1950,41 @@
 | 输出参数 | 无（接口类型） |
 | 典型用例 | `const props: ImageImportButtonProps = { layerId: 'l1', onImport: handleImport, onError: handleError }` |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-09）|
+
+### API-0102 PropertyPanel
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0102 |
+| 名称 | PropertyPanel |
+| 所属系统 | ui |
+| 所属模块 | PropertyPanel |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 属性面板 React 组件。选中单个元素时显示所有可编辑属性，选中多个元素时显示公共属性。属性分组为：位置/尺寸（x、y、width、height、rotation）、填充/描边（fill、stroke、strokeWidth、opacity）、文本样式（fontSize、fontFamily、fontWeight、backgroundColor、borderColor、borderWidth，仅文本元素）、图层（当前图层名、移动到其他图层）、可见性/锁定（visible、locked）。多选时不同属性值显示为 "mixed"，可见性/锁定显示为 indeterminate 复选框。修改通过 onPropertyChange 回调触发，图层变更通过 onLayerChange 回调触发。面板可折叠分组，右上角关闭按钮可临时隐藏面板（显示 "Show Properties" 按钮恢复） |
+| 输入参数 | props: { scene: SceneDocument, selectionManager: SelectionManager, onPropertyChange: (elementIds: string[], changes: Record<string, unknown>) => void, onLayerChange: (elementIds: string[], targetLayerId: string) => void } |
+| 输出参数 | ReactElement（有选中元素时显示浮动属性面板，无选中元素返回 null，关闭后显示小恢复按钮） |
+| 典型用例 | `<PropertyPanel scene={scene} selectionManager={selectionMgr} onPropertyChange={handleChange} onLayerChange={handleLayerChange} />` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-10）|
+
+### API-0103 PropertyPanelProps
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0103 |
+| 名称 | PropertyPanelProps |
+| 所属系统 | ui |
+| 所属模块 | PropertyPanel |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | PropertyPanel 组件的 Props 类型接口 |
+| 输入参数 | scene: SceneDocument, selectionManager: SelectionManager, onPropertyChange: (elementIds: string[], changes: Record<string, unknown>) => void, onLayerChange: (elementIds: string[], targetLayerId: string) => void |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const props: PropertyPanelProps = { scene, selectionManager, onPropertyChange, onLayerChange }` |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-05-10）|
