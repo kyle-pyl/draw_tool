@@ -2677,3 +2677,39 @@
 | 输出参数 | TemplateDefinition[]（7 个流程图模板定义） |
 | 典型用例 | import { flowchartTemplateDefinitions } from './modules/flowchart-templates'; const decisionTpl = flowchartTemplateDefinitions.find(t => t.id === 'fc-decision'); |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+### API-0142 registerArchitectureTemplates
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0142 |
+| 名称 | registerArchitectureTemplates |
+| 所属系统 | modules |
+| 所属模块 | architecture-templates |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 注册全部 8 个架构图专用模板到全局模板注册表：服务（矩形，蓝色）、数据库（圆柱体路径形状）、缓存（闪电形状多边形，橙色）、消息队列（三叠矩形，黄色）、API网关（六边形，紫色）、负载均衡（圆形+四向白色箭头，绿色）、云区域（容器，虚线边框，浅蓝半透明）、浏览器/客户端（窗口框架+标题栏+红黄绿三点+地址栏，灰色），全部分类为'架构图'。可安全重复调用。 |
+| 输入参数 | 无 |
+| 输出参数 | void |
+| 典型用例 | import { registerArchitectureTemplates } from './modules/architecture-templates'; registerArchitectureTemplates(); |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+### API-0143 architectureTemplateDefinitions
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0143 |
+| 名称 | architectureTemplateDefinitions |
+| 所属系统 | modules |
+| 所属模块 | architecture-templates |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 架构图模板定义数组，包含 8 个 TemplateDefinition 对象（arch-service/arch-database/arch-cache/arch-mq/arch-gateway/arch-lb/arch-cloud/arch-client），供模块外引用模板定义数据 |
+| 输入参数 | 无（常量导出） |
+| 输出参数 | TemplateDefinition[]（8 个架构图模板定义） |
+| 典型用例 | import { architectureTemplateDefinitions } from './modules/architecture-templates'; const dbTpl = architectureTemplateDefinitions.find(t => t.id === 'arch-database'); |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |

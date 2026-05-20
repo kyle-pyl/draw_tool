@@ -597,3 +597,16 @@
 | 修改记录 | 新建：src/modules/flowchart-templates.ts（registerFlowchartTemplates 函数 + 7 个流程图专用模板定义：开始/结束（圆角矩形 fc-terminator）、处理（矩形 fc-process）、判断（菱形 fc-decision，含 是/否 标注锚点）、输入输出（平行四边形 fc-io）、子流程（双边框矩形 fc-subprocess，外框+内框两元素）、泳道（容器 fc-swimlane）、注释（文本 fc-annotation，虚线边框））；修改：src/modules/index.ts（新增 registerFlowchartTemplates 和 flowchartTemplateDefinitions 导出）；修改：src/tests/unit/templates.test.ts（新增 27 个流程图模板测试用例：覆盖 7 模板数量/ID/分类验证、各模板实例化、判断节点是/否锚点、子流程双元素偏移、容器/文本属性、注册函数幂等性） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0140（registerFlowchartTemplates）、API-0141（flowchartTemplateDefinitions） |
+
+### T-08-04 实现架构图模板
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号 | T-08-04 |
+| 任务名称 | 实现架构图模板 |
+| 完成时间 | 2026-05-20 |
+| 作者/智能体 | Claude |
+| Git Commit | 7d77231 |
+| 修改记录 | 1. 新建 src/modules/architecture-templates.ts — 注册 8 个架构图模板：服务、数据库（圆柱体路径）、缓存（闪电形状多边形）、消息队列（三叠矩形）、API网关（六边形）、负载均衡（圆+四向箭头）、云区域（容器）、浏览器/客户端（窗口框架+标题栏+红黄绿点+地址栏）。2. 更新 src/modules/index.ts 导出 registerArchitectureTemplates 和 architectureTemplateDefinitions。3. 新建 src/tests/unit/architecture-templates.test.ts — 36 个测试用例，含注册、分类、形状类型、实例化、ID唯一性、三层架构组合场景。全量 949 测试通过，零回归。 |
+| 发现缺陷 | 无 |
+| 产出接口/函数 | registerArchitectureTemplates(), architectureTemplateDefinitions（8 个 TemplateDefinition 对象，分类 '架构图'），模板 ID 列表：arch-service, arch-database, arch-cache, arch-mq, arch-gateway, arch-lb, arch-cloud, arch-client |
