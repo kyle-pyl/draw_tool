@@ -102,3 +102,19 @@ export {
   DeleteElementCommand,
 } from './commands';
 export type { SceneCommand, CommandHistoryEntry, ElementInput, AlignType, DistributeType, CircularDistributeOptions, BatchLayerOperation, LayerMoveDirection, DeleteElementStrategy } from './commands';
+
+export {
+  registerTemplate,
+  getTemplate,
+  getAllTemplates,
+  getTemplatesByCategory,
+  unregisterTemplate,
+  clearTemplates,
+  instantiateTemplate,
+  createTemplateInstance,
+} from './templates';
+export type {
+  TemplateElementDef,
+  TemplateConnectorDef,
+  TemplateDefinition,
+} from './templates';

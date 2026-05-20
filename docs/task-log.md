@@ -558,3 +558,15 @@
 | 修改记录 | 新增：src/core/commands.ts（DeleteElementStrategy 类型、findConnectorsReferencingElements 辅助函数、DeleteElementCommand 类）；修改：src/core/index.ts（导出 DeleteElementCommand 和 DeleteElementStrategy）；修改：src/tests/unit/commands.test.ts（新增 18 个 DeleteElementCommand 测试用例：unbind 策略 6 个、cascade 策略 4 个、block 策略 2 个、通用行为 6 个）；更新：docs/api-registry.md（新增 API-0125 DeleteElementStrategy、API-0126 DeleteElementCommand） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0125 DeleteElementStrategy、API-0126 DeleteElementCommand |
+
+### T-08-01 实现模板系统框架
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号 | T-08-01 |
+| 任务名称 | 实现模板系统框架 |
+| 完成时间 | 2026-05-20 16:50 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| 修改记录 | 新建：src/core/templates.ts（TemplateElementDef、TemplateConnectorDef、TemplateDefinition 接口，registerTemplate/getTemplate/getAllTemplates/getTemplatesByCategory/unregisterTemplate/clearTemplates/instantiateTemplate/createTemplateInstance 函数）；修改：src/core/index.ts（导出所有新类型和函数）；新建：src/tests/unit/templates.test.ts（29 个测试用例，覆盖注册/查找/分类/移除/实例化/连接线/坐标偏移与默认样式） |
+| 发现缺陷 | 无 |
+| 产出接口/函数 | API-0127～API-0137（TemplateElementDef、TemplateConnectorDef、TemplateDefinition、registerTemplate、getTemplate、getAllTemplates、getTemplatesByCategory、unregisterTemplate、clearTemplates、instantiateTemplate、createTemplateInstance） |

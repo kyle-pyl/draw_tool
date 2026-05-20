@@ -2404,6 +2404,204 @@
 | 功能描述 | 删除指定元素并根据策略处理关联连接线：unbind 解除绑定保留自由端点，cascade 级联删除连接线，block 阻止删除；支持撤销/重做，撤销时恢复元素并重新绑定连接线 |
 | 输入参数 | elementIds: string[]（要删除的元素ID列表），strategy: DeleteElementStrategy（可选，默认 'unbind'），label?: string（操作标签） |
 | 输出参数 | SceneCommand 接口实现，execute 返回删除后的 SceneDocument，invert 返回恢复命令 |
-| 典型用例 | executor.execute(new DeleteElementCommand([elementId]))  // 默认 unbind
-executor.execute(new DeleteElementCommand([elementId], 'cascade'))  // 级联 |
+| 典型用例 | executor.execute(new DeleteElementCommand([elementId]))  // 默认 unbind<br>executor.execute(new DeleteElementCommand([elementId], 'cascade'))  // 级联 |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0127 TemplateElementDef
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0127 |
+| 名称 | TemplateElementDef |
+| 所属系统 | core |
+| 所属模块 | templates |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 模板元素定义接口。存储单个元素在模板中的蓝图信息，坐标相对于模板锚点（0,0）。实例化时由 instantiateTemplate 创建完整 SceneElement。支持所有元素类型（shape、text、image、connector、container、rtlModule、rtlPort、mindNode、topologyNode、chart），通过 type 字段区分。transform 使用相对坐标，实例化时加上 position 偏移。defaultStyle 优先级低于 element.style |
+| 输入参数 | type: ElementType（必需），transform: Transform2D（必需，相对坐标），style: ElementStyle（必需），name?: string（可选，用作生成 ID 的前缀），visible?: boolean（默认 true），locked?: boolean（默认 false），tags?: string[]，metadata?: Record<string,unknown>，以及各元素类型的特有字段（shapeKind、text、src 等） |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | const def: TemplateElementDef = { type: 'shape', name: 'rect', shapeKind: 'rect', transform: { x: 0, y: 0, width: 100, height: 60, rotation: 0, scaleX: 1, scaleY: 1 }, style: { fill: '#fff', stroke: '#000', strokeWidth: 2, opacity: 1 } } |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+### API-0128 TemplateConnectorDef
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0128 |
+| 名称 | TemplateConnectorDef |
+| 所属系统 | core |
+| 所属模块 | templates |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 模板连接线定义接口。描述模板内部元素之间的连接关系。通过 sourceElementIndex/targetElementIndex（基于0的数组索引）引用模板中的元素。实例化时自动关联到实际生成的元素 ID。支持设置路由、箭头样式、标签和语义分类 |
+| 输入参数 | sourceElementIndex: number（源元素在 template.elements 中的索引，0-based），targetElementIndex: number（目标元素索引），sourceAnchorId?: string（源锚点 ID），targetAnchorId?: string（目标锚点 ID），route?: ConnectorRoute（路由定义，坐标相对），arrowStart?: ArrowStyle，arrowEnd?: ArrowStyle，labels?: ConnectorLabel[]，semanticKind?: ConnectorSemanticKind |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | const cd: TemplateConnectorDef = { sourceElementIndex: 0, targetElementIndex: 1, sourceAnchorId: 'right', targetAnchorId: 'left', arrowEnd: { type: 'triangle' } } |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+### API-0129 TemplateDefinition
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0129 |
+| 名称 | TemplateDefinition |
+| 所属系统 | core |
+| 所属模块 | templates |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 完整的模板定义接口。包含 id、name、category 用于注册和查找，elements 数组存储模板元素蓝图（相对坐标），connectors 数组存储内部连接关系，defaultStyle 在实例化时合并到每个元素的样式（element.style 优先级更高）。模板在 TemplateRegistry 中注册后可通过 instantiateTemplate 在指定位置和图层创建场景元素 |
+| 输入参数 | id: string（唯一标识），name: string（显示名称），category: string（分类，用于 UI 分组），defaultStyle?: Partial<ElementStyle>（默认样式），elements: TemplateElementDef[]（模板元素蓝图），connectors?: TemplateConnectorDef[]（内部连接线） |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | const tpl: TemplateDefinition = { id: 'simple-rect', name: 'Simple Rect', category: '基础几何', elements: [{ type: 'shape', shapeKind: 'rect', transform: {...}, style: {...} }] } |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+### API-0130 registerTemplate
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0130 |
+| 名称 | registerTemplate |
+| 所属系统 | core |
+| 所属模块 | templates |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 将模板定义注册到全局模板注册表。若模板 id 已存在则覆盖旧模板。注册后的模板可通过 getTemplate 查找，并可通过 instantiateTemplate 在画布上实例化 |
+| 输入参数 | template: TemplateDefinition - 要注册的模板定义 |
+| 输出参数 | void |
+| 典型用例 | registerTemplate({ id: 'my-tpl', name: 'My Template', category: '基础几何', elements: [...] }) |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+### API-0131 getTemplate
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0131 |
+| 名称 | getTemplate |
+| 所属系统 | core |
+| 所属模块 | templates |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 按 ID 查找已注册的模板定义。若模板不存在返回 undefined |
+| 输入参数 | id: string - 模板唯一标识 |
+| 输出参数 | TemplateDefinition | undefined - 找到返回模板定义，未找到返回 undefined |
+| 典型用例 | const tpl = getTemplate('simple-rect'); if (tpl) { instantiateTemplate(tpl.id, pos, layerId) } |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+### API-0132 getAllTemplates
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0132 |
+| 名称 | getAllTemplates |
+| 所属系统 | core |
+| 所属模块 | templates |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 返回所有已注册模板的只读列表 |
+| 输入参数 | 无 |
+| 输出参数 | TemplateDefinition[] - 注册表中所有模板的副本数组 |
+| 典型用例 | const all = getAllTemplates(); all.forEach(tpl => console.log(tpl.name)) |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+### API-0133 getTemplatesByCategory
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0133 |
+| 名称 | getTemplatesByCategory |
+| 所属系统 | core |
+| 所属模块 | templates |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 按分类筛选已注册模板，返回匹配分类的所有模板 |
+| 输入参数 | category: string - 分类名称（如 '基础几何'、'流程图'、'架构图'、'RTL'） |
+| 输出参数 | TemplateDefinition[] - 匹配分类的模板数组 |
+| 典型用例 | const flowTpls = getTemplatesByCategory('流程图'); renderTemplatePanel(flowTpls) |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+### API-0134 unregisterTemplate
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0134 |
+| 名称 | unregisterTemplate |
+| 所属系统 | core |
+| 所属模块 | templates |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 从注册表中移除指定模板。返回 true 表示成功移除，false 表示模板不存在 |
+| 输入参数 | id: string - 要移除的模板标识 |
+| 输出参数 | boolean - 模板存在并被移除返回 true，不存在返回 false |
+| 典型用例 | if (unregisterTemplate('old-tpl')) { console.log('Template removed') } |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+### API-0135 clearTemplates
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0135 |
+| 名称 | clearTemplates |
+| 所属系统 | core |
+| 所属模块 | templates |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 清空全局模板注册表，移除所有已注册模板 |
+| 输入参数 | 无 |
+| 输出参数 | void |
+| 典型用例 | clearTemplates(); // 重置所有模板供测试使用 |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+### API-0136 instantiateTemplate
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0136 |
+| 名称 | instantiateTemplate |
+| 所属系统 | core |
+| 所属模块 | templates |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 在画布指定位置和图层实例化模板，返回创建的 SceneElement 数组。元素坐标由模板相对坐标加上 position 偏移得到。所有元素分配新 ID（以元素 name 为前缀调用 generateId）。模板内连接线自动关联到对应的新元素 ID。连接线路由坐标同样应用 position 偏移。实例化后的元素为普通场景元素可自由编辑。若模板 id 不存在则抛出错误 |
+| 输入参数 | templateId: string（模板标识），position: { x: number, y: number }（模板锚点在画布中的绝对位置），layerId: string（目标图层 ID） |
+| 输出参数 | SceneElement[] - 创建的完整场景元素数组（包含模板元素和连接线），每个元素有独立 ID 和正确的 layerId |
+| 典型用例 | const elements = instantiateTemplate('simple-rect', { x: 100, y: 200 }, 'l1'); elements.forEach(el => scene.elements.push(el)) |
+| 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+### API-0137 createTemplateInstance
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0137 |
+| 名称 | createTemplateInstance |
+| 所属系统 | core |
+| 所属模块 | templates |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-20 |
+| 最后修订日期 | 2026-05-20 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 从实例化参数创建 TemplateInstance 记录。记录包含 templateId、position、layerId、可选 params 和创建的元素 ID 列表。返回的记录可存入 scene.templates 数组以跟踪模板使用情况 |
+| 输入参数 | templateId: string, position: { x, y }, layerId: string, elementIds: string[], params?: Record<string,unknown> |
+| 输出参数 | { templateId, position, layerId, params?, elementIds } - 符合 TemplateInstance 接口的记录对象 |
+| 典型用例 | const instance = createTemplateInstance('t1', pos, 'l1', elIds); scene.templates.push(instance) |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
