@@ -909,3 +909,16 @@
 | 修改记录 | 新建：src/canvas/snap.ts（SnapManager 类：网格吸附、元素边缘/中心吸附、可配置吸附距离、Alt 临时禁用）、src/ui/Ruler.tsx（Ruler 组件：顶部水平标尺、左侧垂直标尺、自适应刻度间隔、主刻度+子刻度渲染、角方块）、src/tests/unit/snap.test.ts（13 个 SnapManager 单元测试）；修改：src/canvas/CanvasView.tsx（新增 snapManager/onElementMove props、新增元素拖拽交互（mousedown/mousemove/mouseup 三阶段、支持多选拖拽、拖拽预览变换、dragging 光标）、网格点阵渲染（SVG pattern 加 background rect）、吸附参考线渲染（垂直/水平虚线）、Alt 键临时禁用吸附）、src/canvas/index.ts（新增 SnapManager/SnapConfig/SnapResult 导出）、src/ui/index.ts（新增 Ruler/RulerProps 导出）、src/App.tsx（新增 SnapManager 实例化、Ruler 组件集成（含 window resize 监听）、元素拖拽 MoveElementsCommand 回调） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0250（SnapManager）、API-0251（SnapConfig）、API-0252（SnapResult）、API-0253（Ruler）、API-0254（RulerProps） |
+
+### T-12-08 构建 Lite 和 Full 包
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-12-08 |
+| 任务名称      | 构建 Lite 和 Full 包 |
+| 完成时间      | 2026-05-21 18:05 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | 53d4fbc |
+| 修改记录      | 修改：vite.config.ts（新增 define.__BUNDLE_TYPE__/__BUILD_TIME__ 常量注入、build.outDir 按包类型分目录输出 dist/lite 和 dist/full、Lite 包 rollupOptions.external 排除 xlsx）；修改：src/vite-env.d.ts（声明 __BUNDLE_TYPE__ 和 __BUILD_TIME__ 全局类型）；修改：src/io/excel-parser.ts（新增 __BUNDLE_TYPE__ === 'lite' 编译期提早返回，避免 Lite 包运行时触发失败的 xlsx 动态 import）；修改：src/main.tsx（根据 __BUNDLE_TYPE__ 设置文档标题）；修改：package.json（新增 build:all/preview:lite/preview:full 脚本，build 脚本默认输出 dist/full） |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0255（__BUNDLE_TYPE__）、API-0256（__BUILD_TIME__） |

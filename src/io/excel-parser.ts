@@ -15,6 +15,10 @@ let _xlsxCache: typeof import('xlsx') | null | undefined;
 
 async function getXlsx(): Promise<typeof import('xlsx') | null> {
   if (_xlsxCache !== undefined) return _xlsxCache;
+  if (__BUNDLE_TYPE__ === 'lite') {
+    _xlsxCache = null;
+    return null;
+  }
   try {
     _xlsxCache = await import('xlsx');
   } catch {

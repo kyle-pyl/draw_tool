@@ -4797,3 +4797,41 @@ _snapToGrid(value, gridSize): { value, snapped } - 网格吸附 |
 | 输出参数 | 无（接口类型） |
 | 典型用例 | const props: RulerProps = { viewport: vp, width: 1920, height: 1080 } |
 | 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0255 \_\_BUNDLE_TYPE\_\_
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0255 |
+| 名称 | \_\_BUNDLE_TYPE\_\_ |
+| 所属系统 | core |
+| 所属模块 | build |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 编译期全局常量，值为 'lite' 或 'full'，由 Vite define 注入。在 Lite 包中值为 'lite'，Full 包中值为 'full'。excel-parser.ts 使用此常量在 Lite 包编译期跳过 xlsx 动态导入，实现零代价的特性切换。 |
+| 输入参数 | 无（全局常量，由 Vite 在编译期替换为字符串字面量） |
+| 输出参数 | 'lite' \| 'full' |
+| 典型用例 | if (\_\_BUNDLE_TYPE\_\_ === 'lite') { return noXlsxResult(); } |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0256 \_\_BUILD\_TIME\_\_
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0256 |
+| 名称 | \_\_BUILD\_TIME\_\_ |
+| 所属系统 | core |
+| 所属模块 | build |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 编译期全局常量，值为构建时的 ISO 8601 时间戳字符串，由 Vite define 注入。用于在 UI 中展示构建版本信息。 |
+| 输入参数 | 无（全局常量，由 Vite 在编译期替换为字符串字面量） |
+| 输出参数 | string（ISO 8601 时间戳） |
+| 典型用例 | console.log(\`Build time: \$\{\_\_BUILD_TIME\_\_\}\`); |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
