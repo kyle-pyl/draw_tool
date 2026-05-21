@@ -39,7 +39,7 @@ export enum ErrorCode {
   RULE_MAX_LAYER_EXCEEDED = 'RULE_MAX_LAYER_EXCEEDED',
   /** Attempted to edit a locked element */
   RULE_LOCKED_ELEMENT_EDITED = 'RULE_LOCKED_ELEMENT_EDITED',
-  /** Hidden elements overlap in a way that violates the hidden policy */
+  /** [预留] Hidden elements overlap in a way that violates the hidden policy — reserved for future use */
   RULE_HIDDEN_OVERLAP = 'RULE_HIDDEN_OVERLAP',
 }
 

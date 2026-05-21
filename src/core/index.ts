@@ -56,7 +56,7 @@ export type {
   AnchorPoint,
 } from './types';
 
-export { validateScene } from './validator';
+export { validateScene, validateAndCast } from './validator';
 
 export {
   ErrorCode,
@@ -91,6 +91,10 @@ export type { CollisionEntry, CollisionResult, CollisionCheckOptions } from './c
 export {
   CommandExecutor,
   CreateElementCommand,
+  MoveElementsCommand,
+  UpdateElementCommand,
+  ChangeLayerCommand,
+  TransformElementsCommand,
   GroupElementsCommand,
   UngroupCommand,
   AddToGroupCommand,
@@ -102,7 +106,7 @@ export {
   DeleteElementCommand,
   ChartToVectorCommand,
 } from './commands';
-export type { SceneCommand, CommandHistoryEntry, ElementInput, AlignType, DistributeType, CircularDistributeOptions, BatchLayerOperation, LayerMoveDirection, DeleteElementStrategy } from './commands';
+export type { SceneCommand, CommandHistoryEntry, ElementInput, ElementChanges, TransformParams, AlignType, DistributeType, CircularDistributeOptions, BatchLayerOperation, LayerMoveDirection, DeleteElementStrategy } from './commands';
 
 export {
   registerTemplate,

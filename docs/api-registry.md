@@ -2048,6 +2048,25 @@
 | 典型用例 | `executor.execute(new AddToGroupCommand('g1', ['e3', 'e4']));` |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建（T-06-01）|
 
+### API-0107 RemoveFromGroupCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0107 |
+| 名称 | RemoveFromGroupCommand |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 从分组中移除成员命令。接收 groupId 和 elementIds，将指定元素从已有分组中移除。元素本身不受影响（保留在 scene.elements 中）。validate 检查组存在且所有引用元素存在。execute 移除指定成员。invert 生成 AddToGroupCommand 用于撤销 |
+| 输入参数 | constructor(groupId: string, elementIds: string[], label?: string) |
+| 输出参数 | implements SceneCommand |
+| 典型用例 | `executor.execute(new RemoveFromGroupCommand('g1', ['e3']));` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 补充文档 |
+
 ### API-0108 AlignType
 
 | 字段 | 内容 |
@@ -3420,3 +3439,22 @@
 | 输出参数 | LayoutEdge[] - 布局输入边数组 |
 | 典型用例 | `const edges = extractLayoutEdges(scene.elements, new Set(['e1', 'e2', 'e3']))` |
 | 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建（T-10-01）|
+
+### API-0181 DataPanelProps
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0181 |
+| 名称 | DataPanelProps |
+| 所属系统 | ui |
+| 所属模块 | DataPanel |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | DataPanel 组件的 Props 类型接口，包含数据源列表、已解析数据、加载/错误状态和选择/生成回调 |
+| 输入参数 | dataSources: DataSource[], parsedData: ParsedData \| null, loading: boolean, parseError: string \| null, onSelectDataSource: (dataSourceId: string) => void, onGenerateChart: (config: ChartConfig) => void |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const props: DataPanelProps = { dataSources: scene.dataSources, parsedData, loading: false, parseError: null, onSelectDataSource: handleSelect, onGenerateChart: handleGenerate }` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 补充文档 |

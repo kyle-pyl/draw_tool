@@ -521,6 +521,9 @@ function validateGeometryRules(data: Record<string, unknown>): ValidationError[]
   if (rulesObj.lockedElementsCollide === false) {
     collisionOptions.skipLocked = true;
   }
+  if (rulesObj.connectorsExempt === false) {
+    collisionOptions.skipConnectors = false;
+  }
 
   // 6e. Group elements by layer and run collision detection
   const elementsByLayer = new Map<string, SceneElement[]>();

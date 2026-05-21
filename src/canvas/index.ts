@@ -4,7 +4,7 @@
 
 export { Viewport } from './viewport';
 export type { ViewportConfig } from './viewport';
-export { CanvasView } from './CanvasView';
+export { CanvasView, drawStateToInput, renderDrawPreview } from './CanvasView';
 export type { DrawingToolType } from './CanvasView';
 export { SelectionManager } from './selection';
 export { ConflictHighlighter } from './conflict';

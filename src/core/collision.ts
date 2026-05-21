@@ -14,6 +14,7 @@ export interface CollisionResult {
 export interface CollisionCheckOptions {
   skipHidden?: boolean;
   skipLocked?: boolean;
+  skipConnectors?: boolean;
 }
 
 function bboxesOverlap(a: BBox, b: BBox): boolean {
@@ -40,8 +41,9 @@ export function checkLayerCollisions(
 ): CollisionResult {
   const collisions: CollisionEntry[] = [];
 
+  const skipConnectors = options?.skipConnectors !== false;
   const candidates = elements.filter((el) => {
-    if (el.type === 'connector') return false;
+    if (skipConnectors && el.type === 'connector') return false;
     if (options?.skipHidden && !el.visible) return false;
     if (options?.skipLocked && el.locked) return false;
     return true;
