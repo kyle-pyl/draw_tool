@@ -714,3 +714,16 @@
 | 修改记录 | 新建：src/io/excel-parser.ts（parseExcel/parseExcelFromBuffer/getExcelSheetNames/getExcelSheetNamesFromBuffer 函数 + ExcelParseOptions 接口，动态加载 SheetJS xlsx 库，Lite 包返回友好错误提示，支持工作表选择，内部通过 sheet_to_csv → parseCSV 保证输出格式一致，导出 _resetXlsxCacheForTesting/_setXlsxCacheForTesting 测试辅助）、src/tests/unit/excel-parser.test.ts（14 个测试用例覆盖 File/ArrayBuffer 解析、指定工作表、工作表不存在、空工作簿、列类型推断、缺失值处理、空数据、默认第一工作表、Lite 包错误提示、getExcelSheetNames 功能）；修改：src/io/index.ts（新增 parseExcel/parseExcelFromBuffer/getExcelSheetNames/getExcelSheetNamesFromBuffer 导出和 ExcelParseOptions 类型导出）、package.json（新增 xlsx 依赖） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0163（parseExcel）、API-0164（parseExcelFromBuffer）、API-0165（getExcelSheetNames）、API-0166（getExcelSheetNamesFromBuffer）、API-0167（ExcelParseOptions） |
+
+### T-10-01 实现布局引擎接口
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-10-01 |
+| 任务名称      | 实现布局引擎接口 |
+| 完成时间      | 2026-05-21 08:45 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | ca110fa |
+| 修改记录      | 新建：src/core/layout.ts（LayoutEngine 接口、LayoutResult/LayoutOptions/LayoutNode/LayoutEdge/LayoutNodeResult/LayoutEdgeResult 类型、applyLayoutToScene/extractLayoutNodes/extractLayoutEdges 函数）、src/tests/unit/layout.test.ts（35 个单元测试覆盖类型定义、LayoutEngine 接口形状、提取函数、布局应用和引擎可替换性验证）；修改：src/core/index.ts（新增所有 layout 类型和函数导出）；更新：docs/api-registry.md（新增 API-0168 ~ API-0180）、docs/task-list.md（T-10-01 状态改为已完成）、README.md（更新测试计数和可用功能描述） |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0168（LayoutDirection）、API-0169（LayoutHAlign）、API-0170（LayoutVAlign）、API-0171（LayoutOptions）、API-0172（LayoutNode）、API-0173（LayoutEdge）、API-0174（LayoutNodeResult）、API-0175（LayoutEdgeResult）、API-0176（LayoutResult）、API-0177（LayoutEngine）、API-0178（applyLayoutToScene）、API-0179（extractLayoutNodes）、API-0180（extractLayoutEdges） |

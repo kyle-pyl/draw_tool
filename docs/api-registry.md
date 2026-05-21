@@ -3173,3 +3173,250 @@
 | 输出参数 | 无（接口类型） |
 | 典型用例 | const options: ExcelParseOptions = { sheetName: 'Sheet2' }; |
 | 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0168 LayoutDirection
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0168 |
+| 名称 | LayoutDirection |
+| 所属系统 | core |
+| 所属模块 | layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 布局方向类型。LR=左到右、RL=右到左、TB=上到下、BT=下到上。用于 LayoutOptions.direction 字段控制图的走向 |
+| 输入参数 | 无（类型别名） |
+| 输出参数 | 'LR' \| 'RL' \| 'TB' \| 'BT' |
+| 典型用例 | `const dir: LayoutDirection = 'TB'` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建（T-10-01）|
+
+### API-0169 LayoutHAlign
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0169 |
+| 名称 | LayoutHAlign |
+| 所属系统 | core |
+| 所属模块 | layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 布局行内水平对齐方式。start=左对齐、center=居中、end=右对齐、stretch=拉伸填充。用于 LayoutOptions.hAlign |
+| 输入参数 | 无（类型别名） |
+| 输出参数 | 'start' \| 'center' \| 'end' \| 'stretch' |
+| 典型用例 | `const ha: LayoutHAlign = 'center'` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建（T-10-01）|
+
+### API-0170 LayoutVAlign
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0170 |
+| 名称 | LayoutVAlign |
+| 所属系统 | core |
+| 所属模块 | layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 布局列内垂直对齐方式。start=上对齐、center=居中、end=下对齐、stretch=拉伸填充。用于 LayoutOptions.vAlign |
+| 输入参数 | 无（类型别名） |
+| 输出参数 | 'start' \| 'center' \| 'end' \| 'stretch' |
+| 典型用例 | `const va: LayoutVAlign = 'center'` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建（T-10-01）|
+
+### API-0171 LayoutOptions
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0171 |
+| 名称 | LayoutOptions |
+| 所属系统 | core |
+| 所属模块 | layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 布局引擎配置选项接口。控制图的走向（direction）、节点间距（hSpacing/vSpacing）、对齐方式（hAlign/vAlign），并提供 extra 字段供具体算法扩展参数 |
+| 输入参数 | direction?: LayoutDirection（默认 'TB'），hSpacing?: number（默认 80），vSpacing?: number（默认 60），hAlign?: LayoutHAlign（默认 'center'），vAlign?: LayoutVAlign（默认 'center'），extra?: Record<string, unknown>（算法专用额外参数） |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const opts: LayoutOptions = { direction: 'LR', hSpacing: 120, vSpacing: 80, hAlign: 'center' }` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建（T-10-01）|
+
+### API-0172 LayoutNode
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0172 |
+| 名称 | LayoutNode |
+| 所属系统 | core |
+| 所属模块 | layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 布局输入节点。代表需要被布局算法定位的单个节点，包含场景元素 ID、宽度、高度和可选元数据 |
+| 输入参数 | id: string（场景元素 ID），width: number（节点宽度），height: number（节点高度），metadata?: Record<string, unknown>（算法提示元数据） |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const node: LayoutNode = { id: 'e1', width: 100, height: 60, metadata: { rank: 0 } }` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建（T-10-01）|
+
+### API-0173 LayoutEdge
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0173 |
+| 名称 | LayoutEdge |
+| 所属系统 | core |
+| 所属模块 | layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 布局输入边。代表两个节点之间的有向连接，可关联场景中的连接线元素 ID |
+| 输入参数 | source: string（源节点 ID），target: string（目标节点 ID），connectorId?: string（关联的连接线元素 ID），metadata?: Record<string, unknown>（算法提示元数据） |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const edge: LayoutEdge = { source: 'e1', target: 'e2', connectorId: 'c1' }` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建（T-10-01）|
+
+### API-0174 LayoutNodeResult
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0174 |
+| 名称 | LayoutNodeResult |
+| 所属系统 | core |
+| 所属模块 | layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 布局节点结果。包含节点 ID 和布局算法为其计算的画布绝对坐标 |
+| 输入参数 | id: string（场景元素 ID），x: number（计算后的 X 坐标），y: number（计算后的 Y 坐标） |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const nr: LayoutNodeResult = { id: 'e1', x: 100, y: 200 }` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建（T-10-01）|
+
+### API-0175 LayoutEdgeResult
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0175 |
+| 名称 | LayoutEdgeResult |
+| 所属系统 | core |
+| 所属模块 | layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 布局边结果。包含源/目标节点 ID、关联连接线 ID 和布局算法计算的路径点数组 |
+| 输入参数 | source: string（源节点 ID），target: string（目标节点 ID），connectorId?: string（关联连接线 ID），points: { x: number, y: number }[]（路由路径点） |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const er: LayoutEdgeResult = { source: 'e1', target: 'e2', connectorId: 'c1', points: [{x:100,y:30},{x:150,y:30},{x:200,y:30}] }` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建（T-10-01）|
+
+### API-0176 LayoutResult
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0176 |
+| 名称 | LayoutResult |
+| 所属系统 | core |
+| 所属模块 | layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 布局计算结果。包含所有节点的计算位置（nodes）、所有边的路由路径点（edges）和覆盖全部节点的总围盒（totalBBox） |
+| 输入参数 | nodes: LayoutNodeResult[]（节点位置结果），edges: LayoutEdgeResult[]（边路由结果），totalBBox: BBox（覆盖所有节点的轴对齐包围盒） |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const result: LayoutResult = engine.layout(nodes, edges, opts)` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建（T-10-01）|
+
+### API-0177 LayoutEngine
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0177 |
+| 名称 | LayoutEngine |
+| 所属系统 | core |
+| 所属模块 | layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 布局引擎统一接口。定义所有布局算法实现的契约：提供引擎名称（name）和 layout 方法接收节点、边、选项返回计算结果。不同图类型可接入 dagre、ELK.js 或自研实现 |
+| 输入参数 | name: string（引擎名称），layout: (nodes: LayoutNode[], edges: LayoutEdge[], options?: LayoutOptions) => LayoutResult（布局计算方法） |
+| 输出参数 | LayoutResult - 包含节点位置、边路由和总围盒的布局结果 |
+| 典型用例 | `const engine: LayoutEngine = { name: 'dagre', layout: (n, e, o) => computeDagre(n, e, o) }` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建（T-10-01）|
+
+### API-0178 applyLayoutToScene
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0178 |
+| 名称 | applyLayoutToScene |
+| 所属系统 | core |
+| 所属模块 | layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 将 LayoutResult 应用到 SceneDocument。更新匹配元素的 transform.x/y，更新连接线的 route.points 和端点坐标。不修改原始 scene，返回新 SceneDocument。未在布局结果中的元素保持不变 |
+| 输入参数 | scene: SceneDocument（原始场景文档），result: LayoutResult（布局计算结果） |
+| 输出参数 | SceneDocument - 应用布局后的新场景文档（不可变） |
+| 典型用例 | `const updatedScene = applyLayoutToScene(scene, engine.layout(nodes, edges, opts))` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建（T-10-01）|
+
+### API-0179 extractLayoutNodes
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0179 |
+| 名称 | extractLayoutNodes |
+| 所属系统 | core |
+| 所属模块 | layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 从场景元素中提取 LayoutNode 输入。仅提取 ID 在给定集合中的元素，读取 id、transform.width、transform.height 和 metadata |
+| 输入参数 | elements: SceneElement[]（场景元素数组），elementIds: Set<string>（需要包含的元素 ID 集合） |
+| 输出参数 | LayoutNode[] - 布局输入节点数组 |
+| 典型用例 | `const nodes = extractLayoutNodes(scene.elements, new Set(['e1', 'e2', 'e3']))` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建（T-10-01）|
+
+### API-0180 extractLayoutEdges
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0180 |
+| 名称 | extractLayoutEdges |
+| 所属系统 | core |
+| 所属模块 | layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 从场景连接线中提取 LayoutEdge 输入。仅提取两端 elementId 都在给定集合中的 connector 元素，映射 source/target 元素 ID 和 connectorId |
+| 输入参数 | elements: SceneElement[]（场景元素数组），elementIds: Set<string>（布局节点 ID 集合） |
+| 输出参数 | LayoutEdge[] - 布局输入边数组 |
+| 典型用例 | `const edges = extractLayoutEdges(scene.elements, new Set(['e1', 'e2', 'e3']))` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建（T-10-01）|

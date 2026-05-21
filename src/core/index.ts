@@ -120,3 +120,17 @@ export type {
   TemplateConnectorDef,
   TemplateDefinition,
 } from './templates';
+
+export { applyLayoutToScene, extractLayoutNodes, extractLayoutEdges } from './layout';
+export type {
+  LayoutDirection,
+  LayoutHAlign,
+  LayoutVAlign,
+  LayoutOptions,
+  LayoutNode,
+  LayoutEdge,
+  LayoutNodeResult,
+  LayoutEdgeResult,
+  LayoutResult,
+  LayoutEngine,
+} from './layout';
