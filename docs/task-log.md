@@ -736,7 +736,7 @@
 | 任务名称 | 实现基础流程图布局 |
 | 完成时间 | 2026-05-21 |
 | 作者/智能体 | opencode |
-| Git Commit | 待提交 |
+| Git Commit | f8293e2 |
 | 修改记录 | 1. 新建 src/modules/flowchart/layout.ts - 实现 FlowchartLayoutEngine，基于简化 dagre 式图布局算法（最长路径 rank 分配 + barycenter 交叉减少 + 正交边路由），支持 TB/LR/BT/RL 四种方向。2. 修改 src/core/commands.ts - 新增 LayoutCommand 类和 createLayoutCommand 工厂函数，将布局操作纳入命令系统支持撤销。3. 修改 src/core/layout.ts - extractLayoutNodes 增加 connector 类型过滤。4. 修改 src/core/index.ts - 导出 LayoutCommand 和 createLayoutCommand。5. 修改 src/modules/index.ts - 导出 FlowchartLayoutEngine 和 flowchartLayoutEngine。6. 新建 src/tests/unit/flowchart-layout.test.ts - 36 个测试覆盖引擎接口、空输入、线性图、菱形图、方向、间距、边路由、场景集成、LayoutCommand 和 CommandExecutor undo/redo。 |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | FlowchartLayoutEngine (LayoutEngine 实现), flowchartLayoutEngine (单例), LayoutCommand, createLayoutCommand |
