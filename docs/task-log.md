@@ -753,3 +753,16 @@
 | 修改记录 | 新建：src/modules/rtl/layout.ts（RtlLayoutEngine 类实现 LayoutEngine 接口、rtlLayoutEngine 单例、extractRtlLayoutNodes/extractRtlLayoutEdges RTL 专用提取函数、RtlLayoutOptions 接口、RtlLayoutCommand 命令类、createRtlLayoutCommand 工厂函数）。RTL 布局功能：默认 LR（左到右）数据流方向、port-position-aware 节点排序减少连线交叉、bus 信号线（rtl-bus semanticKind）视觉偏置、clock/reset 信号元数据标记（从端口名和标签识别 clk/rst）、折叠模块高度压缩（40px）；修改：src/modules/index.ts（新增 rtl/layout 模块全部导出）。新建：src/tests/unit/rtl-layout.test.ts（50 个测试用例，覆盖：LayoutEngine 接口一致性、LR/TB/RL/BT 四种方向、diamond graph 布局、hSpacing/vSpacing 间距、正交边界路由、自环和缺失边处理、确定性验证、bus 信号偏置、clock/reset 元数据保留、RTL 专用提取函数（模块端口/折叠/clock/reset 检测、端口锚点元数据、rtl-bus/rtl-net 信号类型、clock/reset 端口名识别）、场景集成（applyLayoutToScene）、RtlLayoutCommand 验证/执行/撤销/重做/CommandExecutor 集成、折叠模块处理、端口感知排序） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0186（RtlLayoutEngine）、API-0187（rtlLayoutEngine）、API-0188（extractRtlLayoutNodes）、API-0189（extractRtlLayoutEdges）、API-0190（RtlLayoutOptions）、API-0191（RtlLayoutCommand）、API-0192（createRtlLayoutCommand） |
+
+### T-10-04 实现思维导图布局
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号 | T-10-04 |
+| 任务名称 | 实现思维导图布局 |
+| 完成时间 | 2026-05-21 10:45 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| Git Commit | 7d357bb |
+| 修改记录 | 新建：src/modules/mindmap/layout.ts（MindmapLayoutEngine 类实现 LayoutEngine 接口、mindmapLayoutEngine 单例、extractMindmapLayoutNodes/extractMindmapLayoutEdges 思维导图专用提取函数、MindmapLayoutOptions 接口、MindmapLayoutMode 类型、MindmapLayoutCommand 命令类、createMindmapLayoutCommand 工厂函数）。思维导图布局功能：lr-split 模式（根节点居中，子节点交替左右排列，每个分支水平向外延伸）、radial 模式（根节点居中，子节点按扇形角度均匀辐射，每层半径递增）、折叠节点子树排除、贝塞尔曲线（cubic bezier）边路由、孤儿节点（无有效 parentId）自动挂载到根节点、可配置 hSpacing/vSpacing 间距；修改：src/modules/index.ts（新增 mindmap/layout 模块全部导出）。新建：src/tests/unit/mindmap-layout.test.ts（35 个测试用例，覆盖：LayoutEngine 接口一致性、空输入/单节点/简单树/深度树/lr-split 模式/radial 模式/折叠节点排除/边路由/自环排除/缺失端点/确定性验证/BBox 计算/孤儿节点/自定义间距/提取函数/extractMindmapLayoutNodes（mindNode 含 parentId/childrenIds/collapsed/text/折叠检测/shape 类型支持）/extractMindmapLayoutEdges/MindmapLayoutCommand 验证/执行/撤销/倒置/CommandExecutor 集成/radial 模式选项/场景集成（applyLayoutToScene 更新 node 位置和 connector 路由）/折叠节点场景集成） |
+| 发现缺陷 | 无 |
+| 产出接口/函数 | API-0193（MindmapLayoutEngine）、API-0194（mindmapLayoutEngine）、API-0195（extractMindmapLayoutNodes）、API-0196（extractMindmapLayoutEdges）、API-0197（MindmapLayoutOptions）、API-0198（MindmapLayoutMode）、API-0199（MindmapLayoutCommand）、API-0200（createMindmapLayoutCommand） |

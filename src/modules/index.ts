@@ -11,3 +11,5 @@ export type { ChartGenerationConfig, LegendPosition, ChartColorScheme, Converted
 export { FlowchartLayoutEngine, flowchartLayoutEngine } from './flowchart/layout';
 export { RtlLayoutEngine, rtlLayoutEngine, extractRtlLayoutNodes, extractRtlLayoutEdges, RtlLayoutCommand, createRtlLayoutCommand } from './rtl/layout';
 export type { RtlLayoutOptions } from './rtl/layout';
+export { MindmapLayoutEngine, mindmapLayoutEngine, extractMindmapLayoutNodes, extractMindmapLayoutEdges, MindmapLayoutCommand, createMindmapLayoutCommand } from './mindmap/layout';
+export type { MindmapLayoutOptions, MindmapLayoutMode } from './mindmap/layout';

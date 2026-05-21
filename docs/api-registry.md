@@ -3667,3 +3667,155 @@
 | 输出参数 | RtlLayoutCommand |
 | 典型用例 | const cmd = createRtlLayoutCommand(['mod1', 'mod2', 'c1'], { direction: 'LR' }) |
 | 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0193 MindmapLayoutEngine
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0193 |
+| 名称 | MindmapLayoutEngine |
+| 所属系统 | modules |
+| 所属模块 | mindmap/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 思维导图自动布局引擎，实现 LayoutEngine 接口。支持两种布局模式：lr-split（默认，根节点居中，子节点交替左右侧排列，每个分支水平向外延伸）和 radial（根节点居中，子节点按扇形角度均匀分布，每层半径递增）。折叠的节点子树不参与布局计算 |
+| 输入参数 | LayoutEngine 接口布局方法：nodes: LayoutNode[]（待布局节点，含 mindNode 元数据 parentId/childrenIds/collapsed）, edges: LayoutEdge[]（边列表）, options?: LayoutOptions（支持 hSpacing/vSpacing 间距控制，extra.mode 控制布局模式） |
+| 输出参数 | LayoutResult — 含 nodes: LayoutNodeResult[] 节点位置、edges: LayoutEdgeResult[] 贝塞尔曲线路由点、totalBBox: BBox 总包围盒 |
+| 典型用例 | const result = mindmapLayoutEngine.layout(nodes, edges, { extra: { mode: 'lr-split' }, hSpacing: 80 }) |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0194 mindmapLayoutEngine
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0194 |
+| 名称 | mindmapLayoutEngine |
+| 所属系统 | modules |
+| 所属模块 | mindmap/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | MindmapLayoutEngine 的单例实例 |
+| 输入参数 | 无 |
+| 输出参数 | MindmapLayoutEngine 实例 |
+| 典型用例 | import { mindmapLayoutEngine } from './modules/mindmap/layout' |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0195 extractMindmapLayoutNodes
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0195 |
+| 名称 | extractMindmapLayoutNodes |
+| 所属系统 | modules |
+| 所属模块 | mindmap/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 从场景元素中提取思维导图布局节点。与通用 extractLayoutNodes 区别：对 mindNode 类型元素提取 parentId、childrenIds、collapsed、text 到 metadata，支持 shape 类型元素作为节点。排除 connector 和 rtlPort 等非节点类型 |
+| 输入参数 | elements: SceneElement[]（场景元素数组）, elementIds: Set<string>（需要包含的元素 ID） |
+| 输出参数 | LayoutNode[] — 含父/子节点 ID、折叠状态、文本等元数据的布局节点数组 |
+| 典型用例 | const nodes = extractMindmapLayoutNodes(scene.elements, new Set(['root', 'topic1'])) |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0196 extractMindmapLayoutEdges
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0196 |
+| 名称 | extractMindmapLayoutEdges |
+| 所属系统 | modules |
+| 所属模块 | mindmap/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 从场景连接线中提取思维导图布局边。过滤出两端 elementId 都在给定节点集合中的 connector 元素，映射 source/target 元素 ID 和 connectorId |
+| 输入参数 | elements: SceneElement[]（场景元素数组）, elementIds: Set<string>（布局节点 ID 集合） |
+| 输出参数 | LayoutEdge[] — 布局输入边数组 |
+| 典型用例 | const edges = extractMindmapLayoutEdges(scene.elements, new Set(['root', 'topic1'])) |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0197 MindmapLayoutOptions
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0197 |
+| 名称 | MindmapLayoutOptions |
+| 所属系统 | modules |
+| 所属模块 | mindmap/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 思维导图布局扩展选项接口，继承 LayoutOptions 添加 mode 字段控制布局模式（radial 或 lr-split） |
+| 输入参数 | mode?: MindmapLayoutMode（'radial' | 'lr-split'，默认 'lr-split'） |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | const opts: MindmapLayoutOptions = { mode: 'radial', hSpacing: 100 } |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0198 MindmapLayoutMode
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0198 |
+| 名称 | MindmapLayoutMode |
+| 所属系统 | modules |
+| 所属模块 | mindmap/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 思维导图布局模式类型。radial=根节点居中子节点扇形辐射，lr-split=根节点居中子节点交替左右分列 |
+| 输入参数 | 无（类型别名） |
+| 输出参数 | 'radial' | 'lr-split' |
+| 典型用例 | const mode: MindmapLayoutMode = 'lr-split' |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0199 MindmapLayoutCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0199 |
+| 名称 | MindmapLayoutCommand |
+| 所属系统 | modules |
+| 所属模块 | mindmap/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 思维导图布局命令，将自动布局操作纳入命令系统。使用思维导图专用提取函数（extractMindmapLayoutNodes/extractMindmapLayoutEdges）获取树结构和折叠状态元数据，通过 MindmapLayoutEngine 计算布局，保存前态支持撤销/重做。符合 SceneCommand 接口 |
+| 输入参数 | engine: MindmapLayoutEngine, elementIds: string[], options?: MindmapLayoutOptions |
+| 输出参数 | 无（命令执行修改场景状态） |
+| 典型用例 | const cmd = new MindmapLayoutCommand(mindmapLayoutEngine, ['root', 'topic1', 'c1'], { mode: 'lr-split' }); executor.execute(cmd) |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0200 createMindmapLayoutCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0200 |
+| 名称 | createMindmapLayoutCommand |
+| 所属系统 | modules |
+| 所属模块 | mindmap/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 创建 MindmapLayoutCommand 的工厂函数，使用默认 mindmapLayoutEngine 实例 |
+| 输入参数 | elementIds: string[], options?: MindmapLayoutOptions |
+| 输出参数 | MindmapLayoutCommand |
+| 典型用例 | const cmd = createMindmapLayoutCommand(['root', 'topic1', 'c1'], { mode: 'radial' }) |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
