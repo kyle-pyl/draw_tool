@@ -15,6 +15,8 @@ import { createGeometryAdapter } from './geometry';
 import type { GeometryAdapter } from './types';
 import { ErrorCode } from './errors';
 import { recalculateRoutesForElements } from './routing';
+import { performBooleanOperation, geometryToSvgPath, type BooleanOperationType } from './boolean-ops';
+import { getGeometry } from './geometry';
 import { convertChartSvgToElements } from '../modules/chart/convert';
 import type { LayoutEngine, LayoutOptions, LayoutResult } from './layout';
 import { extractLayoutNodes, extractLayoutEdges, applyLayoutToScene } from './layout';
@@ -2834,6 +2836,227 @@ export class ChartToVectorCommand implements SceneCommand {
           layers: scene.layers.filter((l) => l.id !== newLayerId),
           elements,
           groups: scene.groups.filter((g) => g.id !== newGroupId),
+        };
+      },
+      invert: () => null,
+    };
+
+    return invertCmd;
+  }
+}
+
+// ─── Boolean Operation Command ──────────────────────────────────────────────────
+
+export class BooleanOperationCommand implements SceneCommand {
+  id: string;
+  label: string;
+
+  private elementIds: string[];
+  private operation: BooleanOperationType;
+  private newLayerId: string;
+  private newElementId: string;
+  private savedElements: Map<string, SceneElement>;
+
+  constructor(elementIds: string[], operation: BooleanOperationType, label?: string) {
+    this.id = generateId('boolean');
+    this.elementIds = elementIds;
+    this.operation = operation;
+    this.newLayerId = generateId('boolayer');
+    this.newElementId = generateId('boolres');
+    this.savedElements = new Map();
+
+    const opLabels: Record<BooleanOperationType, string> = {
+      union: 'Union',
+      intersect: 'Intersect',
+      xor: 'XOR',
+      subtract: 'Subtract',
+    };
+    this.label = label || `${opLabels[operation]} ${elementIds.length} shapes`;
+  }
+
+  getNewLayerId(): string {
+    return this.newLayerId;
+  }
+
+  getNewElementId(): string {
+    return this.newElementId;
+  }
+
+  validate(scene: SceneDocument): ValidationResult {
+    if (this.elementIds.length < 2) {
+      return failureResult({
+        code: 'SCHEMA_FIELD_TYPE_ERROR',
+        message: 'Boolean operations require at least 2 elements',
+        severity: 'error',
+        suggestion: 'Select at least two closed shape elements',
+      });
+    }
+
+    const shapes: SceneElement[] = [];
+
+    for (const id of this.elementIds) {
+      const el = scene.elements.find((e) => e.id === id);
+      if (!el) {
+        return failureResult({
+          code: ErrorCode.REF_GROUP_NOT_FOUND as string,
+          message: `Element "${id}" not found`,
+          severity: 'error',
+          elementIds: [id],
+          suggestion: 'The element may have been deleted',
+        });
+      }
+      if (el.locked) {
+        return failureResult({
+          code: ErrorCode.RULE_LOCKED_ELEMENT_EDITED,
+          message: `Element "${id}" is locked and cannot be used in a boolean operation`,
+          severity: 'error',
+          elementIds: [id],
+        });
+      }
+      if (el.type !== 'shape') {
+        return failureResult({
+          code: 'SCHEMA_INVALID_TYPE',
+          message: `Element "${id}" is not a shape element (type: ${el.type})`,
+          severity: 'error',
+          elementIds: [id],
+          suggestion: 'Boolean operations only support shape elements (polygon, path, rect, circle, ellipse)',
+        });
+      }
+      const geom = getGeometry(el);
+      if (geom.paths.length === 0) {
+        return failureResult({
+          code: 'SCHEMA_FIELD_TYPE_ERROR',
+          message: `Element "${id}" has no extractable geometry (shape kind: ${el.shapeKind})`,
+          severity: 'error',
+          elementIds: [id],
+          suggestion: 'Ensure the shape has defined vertices. Path elements may not be supported yet.',
+        });
+      }
+      shapes.push(el);
+    }
+
+    if (scene.layers.length >= scene.rules.maxLayerCount) {
+      return failureResult({
+        code: ErrorCode.RULE_MAX_LAYER_EXCEEDED,
+        message: 'Cannot create new layer for boolean result: maximum layer count reached',
+        severity: 'error',
+        suggestion: 'Remove an empty layer or increase maxLayerCount',
+      });
+    }
+
+    return successResult();
+  }
+
+  execute(scene: SceneDocument): SceneDocument {
+    this.savedElements.clear();
+
+    const geometries = this.elementIds.map((id) => {
+      const el = scene.elements.find((e) => e.id === id)!;
+      this.savedElements.set(id, { ...el } as SceneElement);
+      return getGeometry(el);
+    });
+
+    const resultGeom = performBooleanOperation(geometries, this.operation);
+
+    if (resultGeom.paths.length === 0) {
+      return scene;
+    }
+
+    const pathCommands = geometryToSvgPath(resultGeom);
+
+    const bbox = resultGeom.paths.reduce(
+      (acc, path) => {
+        for (const p of path) {
+          acc.minX = Math.min(acc.minX, p.x);
+          acc.minY = Math.min(acc.minY, p.y);
+          acc.maxX = Math.max(acc.maxX, p.x);
+          acc.maxY = Math.max(acc.maxY, p.y);
+        }
+        return acc;
+      },
+      { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity },
+    );
+
+    const resultElement: SceneElement = {
+      id: this.newElementId,
+      type: 'shape',
+      shapeKind: 'path',
+      layerId: this.newLayerId,
+      name: `Boolean ${this.operation} result`,
+      transform: {
+        x: bbox.minX,
+        y: bbox.minY,
+        width: bbox.maxX - bbox.minX,
+        height: bbox.maxY - bbox.minY,
+        rotation: 0,
+        scaleX: 1,
+        scaleY: 1,
+      },
+      style: {
+        fill: '#cccccc',
+        stroke: '#333333',
+        strokeWidth: 2,
+        opacity: 1,
+      },
+      visible: true,
+      locked: false,
+      pathCommands,
+    };
+
+    const newLayer: Layer = {
+      id: this.newLayerId,
+      name: `Boolean ${this.operation}`,
+      order: Math.max(...scene.layers.map((l) => l.order), 0) + 1,
+      visible: true,
+      locked: false,
+    };
+
+    const remainingElements = scene.elements.filter(
+      (el) => !this.elementIds.includes(el.id),
+    );
+
+    return {
+      ...scene,
+      layers: [...scene.layers, newLayer],
+      elements: [...remainingElements, resultElement],
+    };
+  }
+
+  invert(scene: SceneDocument): SceneCommand | null {
+    if (this.savedElements.size === 0) return null;
+
+    const savedElements = this.savedElements;
+    const newLayerId = this.newLayerId;
+    const newElementId = this.newElementId;
+    const elementIds = this.elementIds;
+    const operation = this.operation;
+
+    const invertCmd: SceneCommand = {
+      id: generateId('inv-boolean'),
+      label: `Undo: ${this.label}`,
+      validate: () => {
+        const store = useDocumentStore.getState();
+        if (!store.scene) {
+          return failureResult({
+            code: 'SCHEMA_MISSING_ID',
+            message: 'No scene loaded',
+            severity: 'error',
+          });
+        }
+        return successResult();
+      },
+      execute: (scene: SceneDocument) => {
+        const elements = scene.elements.filter((el) => el.id !== newElementId);
+        for (const id of elementIds) {
+          const saved = savedElements.get(id);
+          if (saved) {
+            elements.push({ ...saved } as SceneElement);
+          }
+        }
+        return {
+          ...scene,
+          layers: scene.layers.filter((l) => l.id !== newLayerId),
+          elements,
         };
       },
       invert: () => null,

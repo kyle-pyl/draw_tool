@@ -3971,3 +3971,78 @@
 | 输出参数 | TopologyLayoutCommand |
 | 典型用例 | const cmd = createTopologyLayoutCommand(['router1', 'switch1', 'c1'], { mode: 'hierarchical' }) |
 | 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0210 BooleanOperationType
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0210 |
+| 名称 | BooleanOperationType |
+| 所属系统 | core |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 布尔运算类型字面量联合类型：union（合并）、intersect（相交）、xor（异或）、subtract（相减） |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0211 performBooleanOperation
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0211 |
+| 名称 | performBooleanOperation |
+| 所属系统 | core |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 对多个 GeometryShape 执行指定的布尔运算（union/intersect/xor/subtract），返回运算结果的 GeometryShape。底层使用 polygon-clipping 库 |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0212 geometryToSvgPath
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0212 |
+| 名称 | geometryToSvgPath |
+| 所属系统 | core |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 将 GeometryShape 转换为 SVG path 命令字符串（路径数据 d 属性值），支持多路径输出 |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0213 getGeometry
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0213 |
+| 名称 | getGeometry |
+| 所属系统 | core |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 从 shape 元素提取真实 GeometryShape（闭合路径顶点数组）。rect 转 4 顶点多边形（支持旋转），circle/ellipse 近似 64 顶点，polygon 直接使用顶点（支持旋转），path 暂不支持 |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0214 BooleanOperationCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0214 |
+| 名称 | BooleanOperationCommand |
+| 所属系统 | core |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 布尔运算命令类，实现 SceneCommand 接口。对选中的 shape 元素执行布尔运算（union/intersect/xor/subtract），生成新的 path 元素放入新图层，支持撤销/重做。验证包括：至少2个元素、元素存在/未锁定/为shape类型、几何可提取、图层数未达上限 |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |

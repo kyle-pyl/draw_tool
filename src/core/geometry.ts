@@ -1,4 +1,4 @@
-import type { SceneElement, BBox, GeometryAdapter } from './types';
+import type { SceneElement, BBox, GeometryAdapter, GeometryShape } from './types';
 
 function rotatePoint(
   px: number, py: number, cx: number, cy: number, angle: number
@@ -142,13 +142,109 @@ export function getBBox(element: SceneElement): BBox {
 }
 
 /**
- * Create a GeometryAdapter instance with getBBox fully implemented.
- * getGeometry and intersects are reserved for future advanced collision detection.
+ * Extract the real geometric shape from a scene element as closed paths.
+ *
+ * Supported element types:
+ * - shape rect: converted to a 4-vertex polygon with rotation applied
+ * - shape circle: approximated as a 64-vertex polygon
+ * - shape ellipse: approximated as a 64-vertex polygon
+ * - shape polygon: points used directly with transform offset
+ * - shape path: not yet supported (returns empty paths)
+ * - other types: returns empty paths
+ */
+export function getGeometry(element: SceneElement): GeometryShape {
+  if (element.type !== 'shape') {
+    return { paths: [] };
+  }
+
+  const { x, y, width, height, rotation } = element.transform;
+  const cx = x + width / 2;
+  const cy = y + height / 2;
+
+  switch (element.shapeKind) {
+    case 'rect': {
+      const corners: { x: number; y: number }[] = [
+        { x: x, y: y },
+        { x: x + width, y: y },
+        { x: x + width, y: y + height },
+        { x: x, y: y + height },
+      ];
+      if (rotation !== 0) {
+        const rotated = corners.map((p) => {
+          const [rx, ry] = rotatePoint(p.x, p.y, cx, cy, rotation);
+          return { x: rx, y: ry };
+        });
+        return { paths: [rotated] };
+      }
+      return { paths: [corners] };
+    }
+
+    case 'circle': {
+      const r = Math.min(width, height) / 2;
+      const centerX = cx;
+      const centerY = cy;
+      const segments = 64;
+      const points: { x: number; y: number }[] = [];
+      for (let i = 0; i < segments; i++) {
+        const angle = (2 * Math.PI * i) / segments;
+        points.push({
+          x: centerX + r * Math.cos(angle),
+          y: centerY + r * Math.sin(angle),
+        });
+      }
+      return { paths: [points] };
+    }
+
+    case 'ellipse': {
+      const rx = width / 2;
+      const ry = height / 2;
+      const segments = 64;
+      const points: { x: number; y: number }[] = [];
+      for (let i = 0; i < segments; i++) {
+        const angle = (2 * Math.PI * i) / segments;
+        const px = cx + rx * Math.cos(angle);
+        const py = cy + ry * Math.sin(angle);
+        if (rotation !== 0) {
+          const [rpx, rpy] = rotatePoint(px, py, cx, cy, rotation);
+          points.push({ x: rpx, y: rpy });
+        } else {
+          points.push({ x: px, y: py });
+        }
+      }
+      return { paths: [points] };
+    }
+
+    case 'polygon': {
+      if (element.points && element.points.length >= 3) {
+        const absolute = element.points.map((p) => ({
+          x: p.x + x,
+          y: p.y + y,
+        }));
+        if (rotation !== 0) {
+          const rotated = absolute.map((p) => {
+            const [rx, ry] = rotatePoint(p.x, p.y, cx, cy, rotation);
+            return { x: rx, y: ry };
+          });
+          return { paths: [rotated] };
+        }
+        return { paths: [absolute] };
+      }
+      return { paths: [] };
+    }
+
+    default:
+      return { paths: [] };
+  }
+}
+
+/**
+ * Create a GeometryAdapter instance with getBBox fully implemented
+ * and getGeometry provided for real geometry access.
  */
 export function createGeometryAdapter(): GeometryAdapter {
   return {
     getBBox,
-    getGeometry: undefined,
+    getGeometry,
     intersects: undefined,
   };
 }

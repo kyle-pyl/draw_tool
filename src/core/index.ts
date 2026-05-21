@@ -78,7 +78,7 @@ export { generateId } from './utils';
 export { useDocumentStore } from './store';
 export type { DocumentStore } from './store';
 
-export { getBBox, createGeometryAdapter } from './geometry';
+export { getBBox, getGeometry, createGeometryAdapter } from './geometry';
 
 export { getAnchors, resolveAnchor } from './anchors';
 
@@ -105,6 +105,7 @@ export {
   MoveLayersCommand,
   DeleteElementCommand,
   ChartToVectorCommand,
+  BooleanOperationCommand,
   LayoutCommand,
   createLayoutCommand,
 } from './commands';
@@ -140,3 +141,6 @@ export type {
   LayoutResult,
   LayoutEngine,
 } from './layout';
+
+export { performBooleanOperation, geometryToSvgPath } from './boolean-ops';
+export type { BooleanOperationType } from './boolean-ops';
