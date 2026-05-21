@@ -3819,3 +3819,155 @@
 | 输出参数 | MindmapLayoutCommand |
 | 典型用例 | const cmd = createMindmapLayoutCommand(['root', 'topic1', 'c1'], { mode: 'radial' }) |
 | 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0201 TopologyLayoutEngine
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0201 |
+| 名称 | TopologyLayoutEngine |
+| 所属系统 | modules |
+| 所属模块 | topology/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 网络拓扑图自动布局引擎，实现 LayoutEngine 接口。支持两种模式：hierarchical（按网络层级 core/distribution/access 分层排列，默认 TB 方向）和 force-directed（力导向迭代模拟）。设备类型自动分配 rank：router=0(core), switch=1(distribution), firewall/loadBalancer/gateway=2, server=3(access)。支持容器子网区域自动扩边包含子设备。使用简化 dagre 式算法（最长路径 rank + barycenter 交叉减少 + 正交边路由） |
+| 输入参数 | nodes: LayoutNode[], edges: LayoutEdge[], options?: LayoutOptions |
+| 输出参数 | LayoutResult（含节点位置、边路由和总包围盒） |
+| 典型用例 | topologyLayoutEngine.layout(nodes, edges, { direction: 'TB', extra: { mode: 'hierarchical' } }) |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0202 topologyLayoutEngine
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0202 |
+| 名称 | topologyLayoutEngine |
+| 所属系统 | modules |
+| 所属模块 | topology/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | TopologyLayoutEngine 的单例实例 |
+| 输入参数 | 无 |
+| 输出参数 | TopologyLayoutEngine 实例 |
+| 典型用例 | import { topologyLayoutEngine } from './modules/topology/layout' |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0203 extractTopologyLayoutNodes
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0203 |
+| 名称 | extractTopologyLayoutNodes |
+| 所属系统 | modules |
+| 所属模块 | topology/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 从场景元素中提取拓扑布局节点。仅提取 topologyNode 和 container 类型元素。对 topologyNode 元素提取 deviceType、label、properties 到 metadata，并根据设备类型自动分配 rank。对 container 元素提取 isContainer/containerKind/childElementIds |
+| 输入参数 | elements: SceneElement[], elementIds: Set<string> |
+| 输出参数 | LayoutNode[] — 含设备类型、rank、容器信息等元数据的布局节点数组 |
+| 典型用例 | const nodes = extractTopologyLayoutNodes(scene.elements, new Set(['router1', 'switch1'])) |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0204 extractTopologyLayoutEdges
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0204 |
+| 名称 | extractTopologyLayoutEdges |
+| 所属系统 | modules |
+| 所属模块 | topology/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 从场景连接线中提取拓扑布局边。过滤出两端 elementId 都在给定节点集合中的 connector 元素，丰富边元数据含 semanticKind 和 linkLabels |
+| 输入参数 | elements: SceneElement[], elementIds: Set<string> |
+| 输出参数 | LayoutEdge[] — 含链路标签和语义类型的布局输入边数组 |
+| 典型用例 | const edges = extractTopologyLayoutEdges(scene.elements, new Set(['router1', 'switch1'])) |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0205 TopologyLayoutOptions
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0205 |
+| 名称 | TopologyLayoutOptions |
+| 所属系统 | modules |
+| 所属模块 | topology/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 拓扑布局扩展选项接口，继承 LayoutOptions。添加 mode 字段和 containerPadding 字段 |
+| 输入参数 | mode?: TopologyLayoutMode（默认 'hierarchical'）, containerPadding?: number（默认 30） |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | const opts: TopologyLayoutOptions = { mode: 'force-directed', containerPadding: 40 } |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0206 TopologyLayoutMode
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0206 |
+| 名称 | TopologyLayoutMode |
+| 所属系统 | modules |
+| 所属模块 | topology/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 拓扑布局模式类型。hierarchical=按网络层级分层排列，force-directed=力导向算法迭代模拟 |
+| 输入参数 | 无（类型别名） |
+| 输出参数 | 'hierarchical' | 'force-directed' |
+| 典型用例 | const mode: TopologyLayoutMode = 'hierarchical' |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0207 TopologyLayoutCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0207 |
+| 名称 | TopologyLayoutCommand |
+| 所属系统 | modules |
+| 所属模块 | topology/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 网络拓扑布局命令，将自动布局纳入命令系统。使用拓扑专用提取函数获取设备类型和链路元数据，通过 TopologyLayoutEngine 计算布局。保存前态（位置、尺寸、连接线路由）支持撤销/重做 |
+| 输入参数 | engine: TopologyLayoutEngine, elementIds: string[], options?: TopologyLayoutOptions |
+| 输出参数 | 无（命令执行修改场景状态） |
+| 典型用例 | const cmd = new TopologyLayoutCommand(topologyLayoutEngine, ['router1', 'switch1', 'c1'], { mode: 'hierarchical' }); executor.execute(cmd) |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0208 createTopologyLayoutCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0208 |
+| 名称 | createTopologyLayoutCommand |
+| 所属系统 | modules |
+| 所属模块 | topology/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 创建 TopologyLayoutCommand 的工厂函数，使用默认 topologyLayoutEngine 实例 |
+| 输入参数 | elementIds: string[], options?: TopologyLayoutOptions |
+| 输出参数 | TopologyLayoutCommand |
+| 典型用例 | const cmd = createTopologyLayoutCommand(['router1', 'switch1', 'c1'], { mode: 'hierarchical' }) |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |

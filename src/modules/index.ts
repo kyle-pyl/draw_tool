@@ -13,3 +13,5 @@ export { RtlLayoutEngine, rtlLayoutEngine, extractRtlLayoutNodes, extractRtlLayo
 export type { RtlLayoutOptions } from './rtl/layout';
 export { MindmapLayoutEngine, mindmapLayoutEngine, extractMindmapLayoutNodes, extractMindmapLayoutEdges, MindmapLayoutCommand, createMindmapLayoutCommand } from './mindmap/layout';
 export type { MindmapLayoutOptions, MindmapLayoutMode } from './mindmap/layout';
+export { TopologyLayoutEngine, topologyLayoutEngine, extractTopologyLayoutNodes, extractTopologyLayoutEdges, TopologyLayoutCommand, createTopologyLayoutCommand } from './topology/layout';
+export type { TopologyLayoutOptions, TopologyLayoutMode } from './topology/layout';
