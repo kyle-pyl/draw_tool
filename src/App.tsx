@@ -1,16 +1,33 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { CanvasView, Viewport, SelectionManager, ConflictHighlighter } from './canvas';
-import type { DrawingToolType } from './canvas';
-import { ShapeToolbar, ConflictPanel, TextEditor, ImageImportButton, PropertyPanel, PwaPrompt, useKeyboardShortcuts } from './ui';
+import type { DrawingToolType, CanvasContextMenuEvent } from './canvas';
+import { ShapeToolbar, ConflictPanel, TextEditor, ImageImportButton, PropertyPanel, PwaPrompt, useKeyboardShortcuts, ContextMenu } from './ui';
+import type { MenuItem, ContextMenuState } from './ui';
 import { createGeometryAdapter } from './core/geometry';
 import { checkLayerCollisions } from './core/collision';
 import { useDocumentStore } from './core/store';
-import { CommandExecutor, CreateElementCommand, UpdateElementCommand, ChangeLayerCommand } from './core/commands';
+import {
+  CommandExecutor,
+  CreateElementCommand,
+  UpdateElementCommand,
+  ChangeLayerCommand,
+  DeleteElementCommand,
+  GroupElementsCommand,
+  AlignElementsCommand,
+  DistributeElementsCommand,
+} from './core/commands';
 import type { ElementInput, ElementChanges } from './core/commands';
 import type { ElementStyle } from './core/types';
 import exampleScene from '../examples/basic/scene.json';
 import type { SceneDocument, TextElement } from './core/types';
 import { isSupportedImageFile, importImageFromFile } from './io/image-utils';
+import {
+  getClipboard,
+  setClipboard,
+  hasClipboard,
+  elementToClipboardInput,
+  computePastePosition,
+} from './core/clipboard';
 
 function findActiveLayerId(scene: SceneDocument): string {
   const visibleUnlocked = [...scene.layers]
@@ -250,6 +267,313 @@ function App() {
     activeLayerId: drawingLayerId,
   });
 
+  const [contextMenuState, setContextMenuState] = useState<ContextMenuState | null>(null);
+
+  const handleCanvasContextMenu = useCallback(
+    (event: CanvasContextMenuEvent) => {
+      const scene = useDocumentStore.getState().getScene();
+      if (!scene) return;
+
+      const selectedIds = selectionManager.selectedIds;
+      const clickedElement = event.elementId;
+      const selectedCount = selectedIds.size;
+
+      const items: MenuItem[] = [];
+
+      if (!clickedElement) {
+        // Canvas context menu
+        items.push(
+          { label: 'Select All', action: () => { selectionManager.selectAll(scene); forceUpdate(); } },
+          {
+            label: 'Paste',
+            action: () => handlePaste(),
+            disabled: !hasClipboard(),
+            shortcut: 'Ctrl+V',
+          },
+          { separator: true },
+          {
+            label: 'Fit to Canvas',
+            action: () => handleFitToCanvas(),
+          },
+          { separator: true },
+          { label: 'Zoom In', action: () => { viewport.zoomIn(); forceUpdate(); }, shortcut: 'Ctrl+=' },
+          { label: 'Zoom Out', action: () => { viewport.zoomOut(); forceUpdate(); }, shortcut: 'Ctrl+-' },
+          { label: 'Reset Zoom', action: () => { viewport.reset(); forceUpdate(); }, shortcut: 'Ctrl+0' },
+        );
+      } else {
+        const effectiveSelectedIds = selectedIds.size > 0
+          ? [...selectedIds]
+          : [clickedElement];
+
+        const isSingle = effectiveSelectedIds.length === 1;
+        const isMulti = effectiveSelectedIds.length > 1;
+
+        items.push(
+          {
+            label: 'Copy',
+            action: () => handleCopy(effectiveSelectedIds),
+            shortcut: 'Ctrl+C',
+          },
+          {
+            label: 'Cut',
+            action: () => handleCut(effectiveSelectedIds),
+            shortcut: 'Ctrl+X',
+          },
+          {
+            label: 'Delete',
+            action: () => handleDelete(effectiveSelectedIds),
+            shortcut: 'Del',
+          },
+          { separator: true },
+        );
+
+        // Change Layer submenu
+        const visibleLayers = scene.layers
+          .filter((l) => l.visible && !l.locked)
+          .sort((a, b) => b.order - a.order);
+
+        if (visibleLayers.length > 1) {
+          const layerItems: MenuItem[] = visibleLayers.map((l) => ({
+            label: l.name || l.id,
+            action: () => handleChangeLayer(effectiveSelectedIds, l.id),
+          }));
+          items.push({
+            label: 'Change Layer',
+            children: layerItems,
+          });
+        }
+
+        // Group
+        if (isMulti) {
+          items.push({
+            label: 'Group',
+            action: () => handleGroup(effectiveSelectedIds),
+            shortcut: 'Ctrl+G',
+          });
+        }
+
+        // Align submenu
+        if (isMulti) {
+          const alignItems: MenuItem[] = (
+            ['left', 'centerHorizontal', 'right', 'top', 'centerVertical', 'bottom', 'center'] as const
+          ).map((a) => ({
+            label: a.charAt(0).toUpperCase() + a.slice(1).replace(/([A-Z])/g, ' $1'),
+            action: () => handleAlign(effectiveSelectedIds, a),
+          }));
+          items.push({
+            label: 'Align',
+            children: alignItems,
+          });
+        }
+
+        // Distribute submenu
+        if (effectiveSelectedIds.length >= 3) {
+          const distItems: MenuItem[] = [
+            { label: 'Horizontal', action: () => handleDistribute(effectiveSelectedIds, 'horizontal') },
+            { label: 'Vertical', action: () => handleDistribute(effectiveSelectedIds, 'vertical') },
+          ];
+          items.push({
+            label: 'Distribute',
+            children: distItems,
+          });
+        }
+      }
+
+      setContextMenuState({
+        x: event.x,
+        y: event.y,
+        items,
+      });
+    },
+    [selectionManager, forceUpdate, viewport],
+  );
+
+  const handleCopy = useCallback(
+    (elementIds: string[]) => {
+      const scene = useDocumentStore.getState().getScene();
+      if (!scene) return;
+      const items = elementIds
+        .map((id) => scene.elements.find((el) => el.id === id))
+        .filter((el): el is NonNullable<typeof el> => !!el)
+        .map((el) => elementToClipboardInput(el));
+      setClipboard(items);
+    },
+    [],
+  );
+
+  const handleCut = useCallback(
+    (elementIds: string[]) => {
+      const scene = useDocumentStore.getState().getScene();
+      if (!scene) return;
+      const items = elementIds
+        .map((id) => scene.elements.find((el) => el.id === id))
+        .filter((el): el is NonNullable<typeof el> => !!el)
+        .map((el) => elementToClipboardInput(el));
+      setClipboard(items);
+      const cmd = new DeleteElementCommand(elementIds, 'unbind');
+      executorRef.current.execute(cmd);
+      selectionManager.clearSelection();
+      forceUpdate();
+    },
+    [selectionManager, forceUpdate],
+  );
+
+  const handlePaste = useCallback(() => {
+    const cb = getClipboard();
+    if (cb.length === 0) return;
+    const scene = useDocumentStore.getState().getScene();
+    if (!scene) return;
+
+    const selectedIds = selectionManager.selectedIds;
+    let centerX = 400;
+    let centerY = 300;
+
+    if (selectedIds.size > 0) {
+      let sumX = 0;
+      let sumY = 0;
+      let count = 0;
+      for (const el of scene.elements) {
+        if (selectedIds.has(el.id)) {
+          sumX += el.transform.x + el.transform.width / 2;
+          sumY += el.transform.y + el.transform.height / 2;
+          count++;
+        }
+      }
+      if (count > 0) {
+        centerX = sumX / count;
+        centerY = sumY / count;
+      }
+    }
+
+    const base = computePastePosition({ x: centerX, y: centerY });
+
+    if (cb.length === 1) {
+      const input: ElementInput = {
+        ...cb[0],
+        layerId: drawingLayerId,
+        transform: { ...cb[0].transform, x: base.x, y: base.y },
+      };
+      executorRef.current.execute(new CreateElementCommand(input, 'Paste'));
+    } else {
+      const cElements = cb.map((c) => ({ transform: c.transform }));
+      let clipCX = 0;
+      let clipCY = 0;
+      let clipCount = 0;
+      for (const c of cElements) {
+        clipCX += c.transform.x + c.transform.width / 2;
+        clipCY += c.transform.y + c.transform.height / 2;
+        clipCount++;
+      }
+      clipCX /= clipCount;
+      clipCY /= clipCount;
+
+      for (const item of cb) {
+        const dx = item.transform.x + item.transform.width / 2 - clipCX;
+        const dy = item.transform.y + item.transform.height / 2 - clipCY;
+        const input: ElementInput = {
+          ...item,
+          layerId: drawingLayerId,
+          transform: { ...item.transform, x: base.x + dx, y: base.y + dy },
+        };
+        executorRef.current.execute(new CreateElementCommand(input, 'Paste'));
+      }
+    }
+    forceUpdate();
+  }, [drawingLayerId, selectionManager, forceUpdate]);
+
+  const handleDelete = useCallback(
+    (elementIds: string[]) => {
+      if (elementIds.length === 0) return;
+      const cmd = new DeleteElementCommand(elementIds, 'unbind');
+      executorRef.current.execute(cmd);
+      selectionManager.clearSelection();
+      forceUpdate();
+    },
+    [selectionManager, forceUpdate],
+  );
+
+  const handleChangeLayer = useCallback(
+    (elementIds: string[], targetLayerId: string) => {
+      const cmd = new ChangeLayerCommand(elementIds, targetLayerId);
+      const result = executorRef.current.execute(cmd);
+      if (!result.valid) {
+        console.warn('Layer change failed:', result.errors.map((e) => e.message).join('\n'));
+      }
+      forceUpdate();
+    },
+    [forceUpdate],
+  );
+
+  const handleGroup = useCallback(
+    (elementIds: string[]) => {
+      if (elementIds.length < 2) return;
+      const cmd = new GroupElementsCommand(elementIds, `Group ${Date.now()}`);
+      executorRef.current.execute(cmd);
+      forceUpdate();
+    },
+    [forceUpdate],
+  );
+
+  const handleAlign = useCallback(
+    (elementIds: string[], alignType: 'left' | 'right' | 'top' | 'bottom' | 'centerHorizontal' | 'centerVertical' | 'center') => {
+      const cmd = new AlignElementsCommand(elementIds, alignType);
+      const result = executorRef.current.execute(cmd);
+      if (!result.valid) {
+        console.warn('Align failed:', result.errors.map((e) => e.message).join('\n'));
+      }
+      forceUpdate();
+    },
+    [forceUpdate],
+  );
+
+  const handleDistribute = useCallback(
+    (elementIds: string[], distType: 'horizontal' | 'vertical' | 'circular') => {
+      const cmd = new DistributeElementsCommand(elementIds, distType);
+      const result = executorRef.current.execute(cmd);
+      if (!result.valid) {
+        console.warn('Distribute failed:', result.errors.map((e) => e.message).join('\n'));
+      }
+      forceUpdate();
+    },
+    [forceUpdate],
+  );
+
+  const handleFitToCanvas = useCallback(() => {
+    if (currentScene.elements.length === 0) return;
+    const geometryAdapter = createGeometryAdapter();
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    for (const el of currentScene.elements) {
+      const bbox = geometryAdapter.getBBox(el);
+      if (bbox.x < minX) minX = bbox.x;
+      if (bbox.y < minY) minY = bbox.y;
+      if (bbox.x + bbox.width > maxX) maxX = bbox.x + bbox.width;
+      if (bbox.y + bbox.height > maxY) maxY = bbox.y + bbox.height;
+    }
+
+    if (minX === Infinity) return;
+
+    const sGroup = document.querySelector('svg');
+    if (!sGroup) return;
+
+    const containerW = sGroup.clientWidth || window.innerWidth;
+    const containerH = sGroup.clientHeight || window.innerHeight;
+
+    viewport.fitToRect(
+      { x: minX, y: minY, width: maxX - minX, height: maxY - minY },
+      containerW,
+      containerH,
+    );
+    forceUpdate();
+  }, [currentScene, viewport, forceUpdate]);
+
+  const handleCloseContextMenu = useCallback(() => {
+    setContextMenuState(null);
+  }, []);
+
   return (
     <div className="app-container" onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
       {isDragOver && (
@@ -269,6 +593,7 @@ function App() {
         onDrawComplete={handleDrawComplete}
         onTextEditRequest={handleTextEditRequest}
         onConnectorRouteChange={handleConnectorRouteChange}
+        onContextMenu={handleCanvasContextMenu}
       />
       <ShapeToolbar activeTool={activeTool} onToolChange={handleToolChange} />
       <ImageImportButton layerId={drawingLayerId} onImport={handleImageImport} />
@@ -289,6 +614,7 @@ function App() {
         />
       )}
       <PwaPrompt />
+      <ContextMenu state={contextMenuState} onClose={handleCloseContextMenu} />
     </div>
   );
 }

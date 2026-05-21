@@ -8,7 +8,7 @@ import {
 } from '../core/commands';
 import type { ElementInput } from '../core/commands';
 import { useDocumentStore } from '../core/store';
-import type { SceneDocument, SceneElement } from '../core/types';
+import type { SceneDocument } from '../core/types';
 import { generateId } from '../core/utils';
 import {
   matchShortcut,
@@ -22,58 +22,21 @@ import {
 import type { ShortcutMap } from '../core/keyboard';
 import type { SelectionManager } from '../canvas/selection';
 import { saveProject } from '../io/exporters';
+import {
+  getClipboard,
+  setClipboard,
+  clearClipboard,
+  hasClipboard,
+  elementToClipboardInput,
+  computePastePosition,
+  PASTE_OFFSET,
+} from '../core/clipboard';
 
 interface KeyboardShortcutOptions {
   executorRef: React.RefObject<CommandExecutor | null>;
   selectionManager: SelectionManager;
   forceUpdate: () => void;
   activeLayerId: string;
-}
-
-const clipboard: ElementInput[] = [];
-const PASTE_OFFSET = 20;
-
-function elementToInput(el: SceneElement): ElementInput {
-  const input: ElementInput = {
-    type: el.type,
-    layerId: el.layerId,
-    name: el.name,
-    transform: { ...el.transform },
-    style: { ...el.style },
-    visible: el.visible,
-    locked: el.locked,
-    tags: el.tags ? [...el.tags] : undefined,
-    metadata: el.metadata ? { ...el.metadata } : undefined,
-  };
-
-  if (el.type === 'shape') {
-    input.shapeKind = el.shapeKind;
-    input.cornerRadius = el.cornerRadius;
-    input.points = el.points ? el.points.map((p) => ({ ...p })) : undefined;
-    input.pathCommands = el.pathCommands;
-  } else if (el.type === 'text') {
-    input.text = el.text;
-  } else if (el.type === 'image') {
-    input.src = el.src;
-    input.originalWidth = el.originalWidth;
-    input.originalHeight = el.originalHeight;
-    input.objectFit = el.objectFit;
-  } else if (el.type === 'connector') {
-    input.source = { ...el.source };
-    input.target = { ...el.target };
-    input.route = { ...el.route, points: el.route.points.map((p) => ({ ...p })) };
-    input.arrowStart = el.arrowStart;
-    input.arrowEnd = el.arrowEnd;
-    input.labels = el.labels ? el.labels.map((l) => ({ ...l })) : undefined;
-  } else if (el.type === 'chart') {
-    input.dataSourceId = el.dataSourceId;
-    input.chartType = el.chartType;
-    input.columnMappings = el.columnMappings ? { ...el.columnMappings } : undefined;
-    input.options = el.options ? { ...el.options } : undefined;
-    input.svgContent = el.svgContent;
-  }
-
-  return input;
 }
 
 function computeCenterOfElements(elements: { transform: { x: number; y: number; width: number; height: number } }[]): { x: number; y: number } {
@@ -147,12 +110,13 @@ export function useKeyboardShortcuts(options: KeyboardShortcutOptions): {
       // Copy
       if (matchShortcut(e, shortcutMap.copy)) {
         e.preventDefault();
-        clipboard.length = 0;
+        const items: ElementInput[] = [];
         for (const el of scene.elements) {
           if (selectedIds.has(el.id)) {
-            clipboard.push(elementToInput(el));
+            items.push(elementToClipboardInput(el));
           }
         }
+        setClipboard(items);
         return;
       }
 
@@ -160,12 +124,13 @@ export function useKeyboardShortcuts(options: KeyboardShortcutOptions): {
       if (matchShortcut(e, shortcutMap.cut)) {
         e.preventDefault();
         if (selectedIds.size === 0) return;
-        clipboard.length = 0;
+        const items: ElementInput[] = [];
         for (const el of scene.elements) {
           if (selectedIds.has(el.id)) {
-            clipboard.push(elementToInput(el));
+            items.push(elementToClipboardInput(el));
           }
         }
+        setClipboard(items);
         const cmd = new DeleteElementCommand([...selectedIds], 'unbind');
         executor.execute(cmd);
         selectionManager.clearSelection();
@@ -176,27 +141,28 @@ export function useKeyboardShortcuts(options: KeyboardShortcutOptions): {
       // Paste
       if (matchShortcut(e, shortcutMap.paste)) {
         e.preventDefault();
-        if (clipboard.length === 0) return;
+        const cb = getClipboard();
+        if (cb.length === 0) return;
 
         const pasteLayerId = activeLayerId;
         const center = computeCenterOfSelection(scene, selectedIds);
-        const pasteBaseX = center.x + PASTE_OFFSET;
+        const pasteBase = computePastePosition(center);
 
-        if (clipboard.length === 1) {
-          const item = clipboard[0];
+        if (cb.length === 1) {
+          const item = cb[0];
           const input: ElementInput = {
             ...item,
             layerId: pasteLayerId,
-            transform: { ...item.transform, x: pasteBaseX, y: center.y + PASTE_OFFSET },
+            transform: { ...item.transform, x: pasteBase.x, y: pasteBase.y },
           };
           const cmd = new CreateElementCommand(input, 'Paste');
           executor.execute(cmd);
         } else {
-          const clipboardElements = clipboard.map((c) => ({
+          const clipboardElements = cb.map((c) => ({
             transform: c.transform,
           }));
           const clipboardCenter = computeCenterOfElements(clipboardElements);
-          for (const item of clipboard) {
+          for (const item of cb) {
             const dx = item.transform.x - clipboardCenter.x;
             const dy = item.transform.y - clipboardCenter.y;
             const input: ElementInput = {
@@ -204,8 +170,8 @@ export function useKeyboardShortcuts(options: KeyboardShortcutOptions): {
               layerId: pasteLayerId,
               transform: {
                 ...item.transform,
-                x: pasteBaseX + dx,
-                y: center.y + PASTE_OFFSET + dy,
+                x: pasteBase.x + dx,
+                y: pasteBase.y + dy,
               },
             };
             const cmd = new CreateElementCommand(input, 'Paste');

@@ -75,6 +75,16 @@ export {
 
 export { generateId } from './utils';
 
+export {
+  getClipboard,
+  setClipboard,
+  clearClipboard,
+  hasClipboard,
+  elementToClipboardInput,
+  computePastePosition,
+  PASTE_OFFSET,
+} from './clipboard';
+
 export { useDocumentStore } from './store';
 export type { DocumentStore } from './store';
 

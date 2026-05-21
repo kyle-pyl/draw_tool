@@ -4490,3 +4490,175 @@
 | 输出参数 | { shortcutMap: ShortcutMap, resetShortcuts: () => void } |
 | 典型用例 | `useKeyboardShortcuts({ executorRef, selectionManager, forceUpdate, activeLayerId: drawingLayerId });` |
 | 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0239 getClipboard
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0239 |
+| 名称 | getClipboard |
+| 所属系统 | core |
+| 所属模块 | clipboard |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 只读获取当前剪贴板内容。返回 ElementInput 数组的只读视图，用于判断是否有可粘贴内容和获取粘贴数据。被键盘快捷键系统和右键菜单共享使用 |
+| 输入参数 | 无 |
+| 输出参数 | readonly ElementInput[] |
+| 典型用例 | `if (hasClipboard()) { const items = getClipboard(); }` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0240 setClipboard
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0240 |
+| 名称 | setClipboard |
+| 所属系统 | core |
+| 所属模块 | clipboard |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 设置剪贴板内容，清空之前的内容并写入新的 ElementInput 数组。用于复制/剪切操作 |
+| 输入参数 | items: ElementInput[] |
+| 输出参数 | void |
+| 典型用例 | `setClipboard(elementInputs);` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0241 hasClipboard
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0241 |
+| 名称 | hasClipboard |
+| 所属系统 | core |
+| 所属模块 | clipboard |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 判断剪贴板是否有可粘贴的内容。返回布尔值 |
+| 输入参数 | 无 |
+| 输出参数 | boolean |
+| 典型用例 | `const canPaste = hasClipboard();` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0242 elementToClipboardInput
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0242 |
+| 名称 | elementToClipboardInput |
+| 所属系统 | core |
+| 所属模块 | clipboard |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 将 SceneElement 转换为可复制的 ElementInput 格式，深拷贝所有可变字段。支持 shape/text/image/connector/chart 所有元素类型的完整复制 |
+| 输入参数 | el: SceneElement |
+| 输出参数 | ElementInput |
+| 典型用例 | `const input = elementToClipboardInput(el);` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0243 computePastePosition
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0243 |
+| 名称 | computePastePosition |
+| 所属系统 | core |
+| 所属模块 | clipboard |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 根据选区中心点计算粘贴偏移位置。返回 { x, y } 偏移后的坐标，偏移量由 PASTE_OFFSET 常量（20px）控制 |
+| 输入参数 | selectionCenter: { x: number, y: number } |
+| 输出参数 | { x: number, y: number } |
+| 典型用例 | `const pos = computePastePosition(center);` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0244 ContextMenu
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0244 |
+| 名称 | ContextMenu |
+| 所属系统 | ui |
+| 所属模块 | ContextMenu |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | React 右键上下文菜单组件。接收 ContextMenuState 定位、渲染菜单项列表，支持子菜单（hover 展开）、分隔线、快捷键显示、禁用项、Esc 关闭和点击外部关闭。菜单自动调整位置避免超出视口 |
+| 输入参数 | state: ContextMenuState | null（菜单状态，null 时不渲染）, onClose: () => void（关闭回调） |
+| 输出参数 | JSX.Element | null |
+| 典型用例 | ```tsx
+<ContextMenu state={contextMenuState} onClose={() => setContextMenuState(null)} />``` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0245 MenuItem
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0245 |
+| 名称 | MenuItem |
+| 所属系统 | ui |
+| 所属模块 | ContextMenu |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 上下文菜单项接口定义。包含标签、可选的执行动作、禁用标记、快捷键提示、子菜单项和分隔线标记。用于构建多层级的右键菜单结构 |
+| 输入参数 | N/A（TypeScript interface） |
+| 输出参数 | N/A |
+| 典型用例 | `{ label: 'Copy', action: () => handleCopy(ids), shortcut: 'Ctrl+C' }` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0246 ContextMenuState
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0246 |
+| 名称 | ContextMenuState |
+| 所属系统 | ui |
+| 所属模块 | ContextMenu |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 右键菜单状态接口，包含菜单显示位置和菜单项列表。由 App.tsx 中的 contextMenuState 状态管理，右键画布或元素时更新 |
+| 输入参数 | N/A（TypeScript interface） |
+| 输出参数 | N/A |
+| 典型用例 | `{ x: 100, y: 200, items: [...] }` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0247 CanvasContextMenuEvent
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0247 |
+| 名称 | CanvasContextMenuEvent |
+| 所属系统 | canvas |
+| 所属模块 | CanvasView |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 画布右键事件类型，由 CanvasView 通过 props.onContextMenu 回调传给 App。包含屏幕坐标和右键目标元素 ID（右键空白区域时为 null） |
+| 输入参数 | N/A（TypeScript interface） |
+| 输出参数 | N/A |
+| 典型用例 | `{ x: 150, y: 300, elementId: 'rect_abc123' }` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |

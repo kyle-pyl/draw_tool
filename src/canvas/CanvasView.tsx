@@ -17,6 +17,12 @@ interface DrawState {
   points: { x: number; y: number }[];
 }
 
+export interface CanvasContextMenuEvent {
+  x: number;
+  y: number;
+  elementId: string | null;
+}
+
 interface CanvasViewProps {
   scene: SceneDocument;
   viewport: Viewport;
@@ -32,6 +38,7 @@ interface CanvasViewProps {
   onDrawComplete?: (input: ElementInput) => void;
   onTextEditRequest?: (elementId: string) => void;
   onConnectorRouteChange?: (connectorId: string, routePoints: { x: number; y: number }[]) => void;
+  onContextMenu?: (event: CanvasContextMenuEvent) => void;
 }
 
 function getElementBBox(el: SceneElement): BBox {
@@ -823,7 +830,7 @@ export function renderDrawPreview(tool: DrawingToolType, state: DrawState): Reac
   }
 }
 
-export function CanvasView({ scene, viewport, width, height, className, onViewportChange, selectionManager, onSelectionChange, conflictHighlighter, activeTool, drawingLayerId, onDrawComplete, onTextEditRequest, onConnectorRouteChange }: CanvasViewProps) {
+export function CanvasView({ scene, viewport, width, height, className, onViewportChange, selectionManager, onSelectionChange, conflictHighlighter, activeTool, drawingLayerId, onDrawComplete, onTextEditRequest, onConnectorRouteChange, onContextMenu }: CanvasViewProps) {
   const layersSorted = [...scene.layers].sort((a, b) => a.order - b.order);
   const layerElementMap = new Map<string, SceneElement[]>();
   const layerMap = new Map(scene.layers.map((l) => [l.id, l]));
@@ -1380,10 +1387,31 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
   }, [viewport, marquee, selectionManager, scene, onSelectionChange, activeTool, completeDragDraw, onDrawComplete, drawingLayerId, onConnectorRouteChange, bendPointDragPos, screenToCanvas]);
 
   const handleContextMenu = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
-    if (isPanningRef.current) {
-      e.preventDefault();
+    e.preventDefault();
+    if (isPanningRef.current) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const screenX = e.clientX;
+    const screenY = e.clientY;
+    const canvasPt = screenToCanvas(screenX - rect.left, screenY - rect.top);
+
+    const target = e.target as Element;
+    const elementGroup = target.closest('[data-element-id]');
+    let elementId: string | null = null;
+
+    if (elementGroup) {
+      elementId = elementGroup.getAttribute('data-element-id');
+      if (elementId && selectionManager) {
+        const el = scene.elements.find((e2) => e2.id === elementId);
+        if (el && !selectionManager.isSelected(elementId)) {
+          selectionManager.select(elementId);
+          onSelectionChange?.();
+        }
+      }
     }
-  }, []);
+
+    onContextMenu?.({ x: screenX, y: screenY, elementId });
+  }, [screenToCanvas, scene.elements, selectionManager, onSelectionChange, onContextMenu]);
 
   const getCursor = (): string => {
     if (isPanning) return 'grabbing';

@@ -19,3 +19,5 @@ export type { DataPanelProps, ChartConfig } from './DataPanel';
 export { PwaPrompt } from './PwaPrompt';
 export type { PwaPromptProps } from './PwaPrompt';
 export { useKeyboardShortcuts } from './useKeyboardShortcuts';
+export { ContextMenu } from './ContextMenu';
+export type { MenuItem, ContextMenuState } from './ContextMenu';

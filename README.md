@@ -8,8 +8,8 @@ Agent 友好的论文与技术图表绘制工具。纯 Web 应用，本地优先
 |---|---|---|
 | 阶段 | 阶段 12：产品化 |
 | 版本 | 0.12.0 |
-| 可用功能 | 核心类型已定义（scene.json 结构、元素模型、图层、连接线、图表等），错误码和校验结果类型已定义，scene.json Schema 结构校验器已实现（含引用完整性校验和几何规则校验），示例项目 examples/basic/ 已创建并通过校验，ID 生成工具已实现（generateId），视口变换管理器（Viewport）已实现，SVG 画布渲染组件已实现（CanvasView），Document Store 已实现（useDocumentStore），JSON/ZIP 项目文件加载已实现，File System Access API 项目目录打开已实现，项目保存功能已实现，BBox 计算器已实现，同层碰撞检测已实现，图层冲突校验器已实现，冲突高亮已实现（ConflictHighlighter + ConflictPanel），命令系统框架已实现（CommandExecutor），CreateElement/MoveElements/UpdateElement/ChangeLayer/TransformElements/DeleteElement 命令已实现，图形绘制工具已实现（ShapeToolbar），文本工具已实现（TextEditor），图片导入工具已实现（SVG 安全清洗），属性面板已实现（PropertyPanel），分组命令已实现（Group/Ungroup/AddToGroup/RemoveFromGroup），对齐命令已实现（AlignElementsCommand：7 种对齐方式），分布命令已实现（DistributeElementsCommand：水平/垂直/环形），按层批量编辑命令已实现（BatchLayerEditCommand），多图层移动命令已实现（MoveLayersCommand），锚点系统已实现（getAnchors/resolveAnchor），连接线创建/渲染/箭头/标签已支持，正交路由已实现（computeOrthogonalRoute），连接线端点校验已实现，模板系统框架已实现（TemplateDefinition + 注册/查找/分类/实例化 API），基础几何模板已实现（9 种），流程图模板已实现（7 种），架构图模板已实现（8 种），RTL 模块模板已实现（9 种），模板面板 UI 已实现（TemplatePanel），CSV 解析器已实现（parseCSV），Excel 解析器已实现（Full 包：动态加载 SheetJS；Lite 包返回友好提示），数据面板 UI 已实现（DataPanel），基础图表生成已实现（generateChart：6 种图表类型），图表样式编辑已支持（配色方案/图例/网格/轴标签），图表转矢量组已实现（ChartToVectorCommand），布局引擎接口已实现（LayoutEngine：统一接口支持 dagre/ELK.js/自研实现），流程图/RTL/思维导图/网络拓扑自动布局已实现，布尔运算已实现（BooleanOperationCommand），元素裁剪已实现（ClipElementCommand），真实几何碰撞检测已实现（intersects/checkElementsCollide），SVG 导出已实现（exportToSVG/downloadSvg），PNG/JPG 导出已实现（exportToRaster/downloadRaster），PWA 离线支持已实现（Service Worker 离线缓存、安装提示、更新提示） |
-| 构建状态 | 可安装、可启动、可构建、可运行测试（1470 个测试通过） |
+| 可用功能 | 核心类型已定义（scene.json 结构、元素模型、图层、连接线、图表等），错误码和校验结果类型已定义，scene.json Schema 结构校验器已实现（含引用完整性校验和几何规则校验），示例项目 examples/basic/ 已创建并通过校验，ID 生成工具已实现（generateId），视口变换管理器（Viewport）已实现，SVG 画布渲染组件已实现（CanvasView），Document Store 已实现（useDocumentStore），JSON/ZIP 项目文件加载已实现，File System Access API 项目目录打开已实现，项目保存功能已实现，BBox 计算器已实现，同层碰撞检测已实现，图层冲突校验器已实现，冲突高亮已实现（ConflictHighlighter + ConflictPanel），命令系统框架已实现（CommandExecutor），CreateElement/MoveElements/UpdateElement/ChangeLayer/TransformElements/DeleteElement 命令已实现，图形绘制工具已实现（ShapeToolbar），文本工具已实现（TextEditor），图片导入工具已实现（SVG 安全清洗），属性面板已实现（PropertyPanel），分组命令已实现（Group/Ungroup/AddToGroup/RemoveFromGroup），对齐命令已实现（AlignElementsCommand：7 种对齐方式），分布命令已实现（DistributeElementsCommand：水平/垂直/环形），按层批量编辑命令已实现（BatchLayerEditCommand），多图层移动命令已实现（MoveLayersCommand），锚点系统已实现（getAnchors/resolveAnchor），连接线创建/渲染/箭头/标签已支持，正交路由已实现（computeOrthogonalRoute），连接线端点校验已实现，模板系统框架已实现（TemplateDefinition + 注册/查找/分类/实例化 API），基础几何模板已实现（9 种），流程图模板已实现（7 种），架构图模板已实现（8 种），RTL 模块模板已实现（9 种），模板面板 UI 已实现（TemplatePanel），CSV 解析器已实现（parseCSV），Excel 解析器已实现（Full 包：动态加载 SheetJS；Lite 包返回友好提示），数据面板 UI 已实现（DataPanel），基础图表生成已实现（generateChart：6 种图表类型），图表样式编辑已支持（配色方案/图例/网格/轴标签），图表转矢量组已实现（ChartToVectorCommand），布局引擎接口已实现（LayoutEngine：统一接口支持 dagre/ELK.js/自研实现），流程图/RTL/思维导图/网络拓扑自动布局已实现，布尔运算已实现（BooleanOperationCommand），元素裁剪已实现（ClipElementCommand），真实几何碰撞检测已实现（intersects/checkElementsCollide），SVG 导出已实现（exportToSVG/downloadSvg），PNG/JPG 导出已实现（exportToRaster/downloadRaster），PWA 离线支持已实现（Service Worker 离线缓存、安装提示、更新提示），快捷键系统已实现（Ctrl+Z/Y/C/V/X/A/G/S 等 10 个快捷键），右键菜单已实现（Canvas/Element 上下文菜单，支持子菜单和动态启用/禁用） |
+11: | 构建状态 | 可安装、可启动、可构建、可运行测试（1513 个测试通过） |
 
 ## 功能目标
 
@@ -61,8 +61,8 @@ examples/     # 示例项目
 | 文档名称 | 功能 | 路径 | 最近修订日期 | 修订来源任务 |
 |---|---|---|---|---|
 | 顶层设计文档 | 产品目标、架构、数据模型、实现路线 | docs/top-level-design.md | 2026-05-18 | 初始创建 |
-| 任务清单 | 完整有序的开发任务列表 | docs/task-list.md | 2026-05-21 | T-12-03 |
-| 任务日志 | 每个任务的完成记录 | docs/task-log.md | 2026-05-21 | T-12-03 |
-| 接口/函数文档 | 项目所有公开接口的注册表 | docs/api-registry.md | 2026-05-21 | T-12-03 |
+| 任务清单 | 完整有序的开发任务列表 | docs/task-list.md | 2026-05-21 | T-12-05 |
+| 任务日志 | 每个任务的完成记录 | docs/task-log.md | 2026-05-21 | T-12-05 |
+| 接口/函数文档 | 项目所有公开接口的注册表 | docs/api-registry.md | 2026-05-21 | T-12-05 |
 | 缺陷记录表 | 开发过程中的缺陷跟踪 | docs/defect-log.md | 2026-05-18 | T-00-01 |
 | 文档维护指南 | 文档体系说明和维护规则 | docs/documentation-guide.md | 2026-05-18 | T-00-01 |

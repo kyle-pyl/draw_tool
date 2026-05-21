@@ -870,3 +870,16 @@
 | 修改记录 | 新建：src/core/keyboard.ts（ShortcutActionId/ShortcutBinding/ShortcutMap 类型、DEFAULT_SHORTCUTS 默认映射、ALT_REDO_BINDING 备用重做绑定、matchShortcut/matchShortcutOr 匹配函数、loadShortcutMap/saveShortcutMap 持久化函数、formatShortcut 格式化函数、isInputFocused 焦点检测）、src/ui/useKeyboardShortcuts.ts（React Hook：useKeyboardShortcuts，接收 executorRef/selectionManager/forceUpdate/activeLayerId，实现 Ctrl+Z 撤销、Ctrl+Shift+Z/Ctrl+Y 重做、Ctrl+C 复制、Ctrl+V 粘贴、Ctrl+X 剪切、Delete/Backspace 删除、Ctrl+A 全选、Ctrl+G 分组、Ctrl+Shift+G 解散组、Ctrl+S 保存等快捷键，内置剪贴板支持复制粘贴元素）、src/tests/unit/keyboard.test.ts（43 个测试用例）；修改：src/core/index.ts（新增 keyboard 模块全部导出）、src/ui/index.ts（新增 useKeyboardShortcuts 导出）、src/App.tsx（集成 useKeyboardShortcuts hook） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0228（ShortcutActionId）、API-0229（ShortcutBinding）、API-0230（ShortcutMap）、API-0231（DEFAULT_SHORTCUTS）、API-0232（matchShortcut）、API-0233（matchShortcutOr）、API-0234（loadShortcutMap）、API-0235（saveShortcutMap）、API-0236（formatShortcut）、API-0237（isInputFocused）、API-0238（useKeyboardShortcuts） |
+
+### T-12-05 实现右键菜单
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号 | T-12-05 |
+| 任务名称 | 实现右键菜单 |
+| 完成时间 | 2026-05-21 16:45 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| Git Commit | 58ec357 |
+| 修改记录 | 新建：src/core/clipboard.ts（共享剪贴板模块，getClipboard/setClipboard/clearClipboard/hasClipboard/elementToClipboardInput/computePastePosition/PASTE_OFFSET）、src/ui/ContextMenu.tsx（ContextMenu 组件，支持 Canvas/Element 两种上下文、子菜单、快捷键显示、动态启用/禁用、Esc/点击外部关闭）；修改：src/ui/useKeyboardShortcuts.ts（改用共享剪贴板模块）、src/canvas/CanvasView.tsx（新增 onContextMenu 回调和 CanvasContextMenuEvent 类型、handleContextMenu 实现右键元素自动选中和上下文事件发送）、src/App.tsx（集成 ContextMenu，实现 Canvas 右键：全选/粘贴/适配画布/缩放/重置缩放；Element 右键：复制/剪切/删除/改层子菜单/分组/对齐子菜单/分布子菜单）、src/App.css（上下文菜单样式）、src/ui/index.ts（导出 ContextMenu/MenuItem/ContextMenuState）、src/canvas/index.ts（导出 CanvasContextMenuEvent）、src/core/index.ts（导出 clipboard 模块） |
+| 发现缺陷 | 无 |
+| 产出接口/函数 | API-0239（getClipboard）、API-0240（setClipboard）、API-0241（hasClipboard）、API-0242（elementToClipboardInput）、API-0243（computePastePosition）、API-0244（ContextMenu）、API-0245（MenuItem）、API-0246（ContextMenuState）、API-0247（CanvasContextMenuEvent） |

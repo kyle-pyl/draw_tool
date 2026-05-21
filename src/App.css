@@ -127,3 +127,75 @@
 .pwa-prompt-btn-dismiss:hover {
   color: #fff;
 }
+
+/* Context Menu Styles */
+.context-menu {
+  background: #fff;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  padding: 4px 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  font-size: 13px;
+  user-select: none;
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  cursor: pointer;
+  color: #333;
+  position: relative;
+  white-space: nowrap;
+}
+
+.context-menu-item:hover:not(.disabled) {
+  background: #e8f0fe;
+  color: #1a73e8;
+}
+
+.context-menu-item.disabled {
+  color: #aaa;
+  cursor: default;
+}
+
+.context-menu-label {
+  flex: 1;
+}
+
+.context-menu-shortcut {
+  margin-left: 24px;
+  color: #888;
+  font-size: 11px;
+}
+
+.context-menu-item:hover:not(.disabled) .context-menu-shortcut {
+  color: #5a9cf8;
+}
+
+.context-menu-arrow {
+  margin-left: 12px;
+  color: #888;
+  font-size: 10px;
+}
+
+.context-menu-separator {
+  height: 1px;
+  background: #e0e0e0;
+  margin: 4px 8px;
+}
+
+.context-submenu {
+  position: absolute;
+  left: calc(100% + 2px);
+  top: -4px;
+  background: #fff;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  min-width: 160px;
+  padding: 4px 0;
+  z-index: 1001;
+}
