@@ -4046,3 +4046,48 @@
 | 最后修订者 | OpenCode/deepseek-v4-pro |
 | 功能描述 | 布尔运算命令类，实现 SceneCommand 接口。对选中的 shape 元素执行布尔运算（union/intersect/xor/subtract），生成新的 path 元素放入新图层，支持撤销/重做。验证包括：至少2个元素、元素存在/未锁定/为shape类型、几何可提取、图层数未达上限 |
 | 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0215 ClipStrategy
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0215 |
+| 名称 | ClipStrategy |
+| 所属系统 | core |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 元素裁剪策略类型，区分 shape 元素（使用布尔交集）和 image 元素（使用 clipPath 元数据）两种裁剪方式 |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0216 ClipElementCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0216 |
+| 名称 | ClipElementCommand |
+| 所属系统 | core |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 元素裁剪命令，支持 shape（布尔交集裁剪）和 image（clipPath 元数据裁剪）两种目标类型。可配置是否保留/移除裁剪形状。完整支持 validate/execute/invert 用于撤销重做 |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0217 geometryToRelativeSvgPath
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0217 |
+| 名称 | geometryToRelativeSvgPath |
+| 所属系统 | core |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 将 GeometryShape 转换为相对于形状包围盒左上角的 SVG path 命令字符串，供裁剪后的形状元素使用 |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |

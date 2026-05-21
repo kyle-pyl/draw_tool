@@ -106,10 +106,11 @@ export {
   DeleteElementCommand,
   ChartToVectorCommand,
   BooleanOperationCommand,
+  ClipElementCommand,
   LayoutCommand,
   createLayoutCommand,
 } from './commands';
-export type { SceneCommand, CommandHistoryEntry, ElementInput, ElementChanges, TransformParams, AlignType, DistributeType, CircularDistributeOptions, BatchLayerOperation, LayerMoveDirection, DeleteElementStrategy } from './commands';
+export type { SceneCommand, CommandHistoryEntry, ElementInput, ElementChanges, TransformParams, AlignType, DistributeType, CircularDistributeOptions, BatchLayerOperation, LayerMoveDirection, DeleteElementStrategy, ClipStrategy } from './commands';
 
 export {
   registerTemplate,

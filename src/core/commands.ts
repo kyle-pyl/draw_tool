@@ -3066,6 +3066,323 @@ export class BooleanOperationCommand implements SceneCommand {
   }
 }
 
+// ─── Clip Element Command ─────────────────────────────────────────────────────
+
+/**
+ * Strategy for clipping an element:
+ * - shape targets use boolean intersection to produce new geometry
+ * - image targets store clip path data in metadata for the renderer to apply
+ */
+export type ClipStrategy = 'shape' | 'image';
+
+function geometryToRelativeSvgPath(geom: import('./types').GeometryShape): string {
+  if (geom.paths.length === 0) return '';
+
+  const bbox = geom.paths.reduce(
+    (acc, path) => {
+      for (const p of path) {
+        acc.minX = Math.min(acc.minX, p.x);
+        acc.minY = Math.min(acc.minY, p.y);
+        acc.maxX = Math.max(acc.maxX, p.x);
+        acc.maxY = Math.max(acc.maxY, p.y);
+      }
+      return acc;
+    },
+    { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity },
+  );
+
+  return geom.paths
+    .map((path) => {
+      if (path.length === 0) return '';
+      const parts = path.map((p, i) => {
+        const rx = p.x - bbox.minX;
+        const ry = p.y - bbox.minY;
+        if (i === 0) return `M ${rx} ${ry}`;
+        return `L ${rx} ${ry}`;
+      });
+      parts.push('Z');
+      return parts.join(' ');
+    })
+    .join(' ');
+}
+
+export class ClipElementCommand implements SceneCommand {
+  id: string;
+  label: string;
+
+  private targetElementId: string;
+  private clipShapeId: string;
+  private removeClipShape: boolean;
+  private savedTarget: SceneElement | null;
+  private savedClip: SceneElement | null;
+  private savedPrevImageClipPath: string | undefined;
+
+  constructor(
+    targetElementId: string,
+    clipShapeId: string,
+    removeClipShape = true,
+    label?: string,
+  ) {
+    this.id = generateId('clip');
+    this.targetElementId = targetElementId;
+    this.clipShapeId = clipShapeId;
+    this.removeClipShape = removeClipShape;
+    this.savedTarget = null;
+    this.savedClip = null;
+    this.savedPrevImageClipPath = undefined;
+    this.label = label || 'Clip element';
+  }
+
+  getTargetElementId(): string {
+    return this.targetElementId;
+  }
+
+  getClipShapeId(): string {
+    return this.clipShapeId;
+  }
+
+  validate(scene: SceneDocument): ValidationResult {
+    const target = scene.elements.find((e) => e.id === this.targetElementId);
+    if (!target) {
+      return failureResult({
+        code: ErrorCode.REF_GROUP_NOT_FOUND as string,
+        message: `Target element "${this.targetElementId}" not found`,
+        severity: 'error',
+        elementIds: [this.targetElementId],
+        suggestion: 'The target element may have been deleted',
+      });
+    }
+
+    const clip = scene.elements.find((e) => e.id === this.clipShapeId);
+    if (!clip) {
+      return failureResult({
+        code: ErrorCode.REF_GROUP_NOT_FOUND as string,
+        message: `Clip shape "${this.clipShapeId}" not found`,
+        severity: 'error',
+        elementIds: [this.clipShapeId],
+        suggestion: 'The clip shape element may have been deleted',
+      });
+    }
+
+    if (target.locked) {
+      return failureResult({
+        code: ErrorCode.RULE_LOCKED_ELEMENT_EDITED as string,
+        message: `Target element "${target.name || target.id}" is locked and cannot be clipped`,
+        severity: 'error',
+        elementIds: [target.id],
+        suggestion: 'Unlock the target element before clipping',
+      });
+    }
+
+    if (target.type !== 'shape' && target.type !== 'image') {
+      return failureResult({
+        code: 'SCHEMA_INVALID_TYPE',
+        message: `Target element "${target.name || target.id}" has type "${target.type}" — only shape and image elements can be clipped`,
+        severity: 'error',
+        elementIds: [target.id],
+        suggestion: 'Select a shape or image element as the clipping target',
+      });
+    }
+
+    if (clip.type !== 'shape') {
+      return failureResult({
+        code: 'SCHEMA_INVALID_TYPE',
+        message: `Clip shape "${clip.name || clip.id}" has type "${clip.type}" — only shape elements can be used as clip regions`,
+        severity: 'error',
+        elementIds: [clip.id],
+        suggestion: 'Select a shape element (rect, circle, polygon, path) as the clipping region',
+      });
+    }
+
+    if (target.type === 'shape') {
+      const targetGeom = getGeometry(target);
+      if (targetGeom.paths.length === 0) {
+        return failureResult({
+          code: 'SCHEMA_FIELD_TYPE_ERROR',
+          message: `Target element "${target.name || target.id}" has no extractable geometry`,
+          severity: 'error',
+          elementIds: [target.id],
+          suggestion: 'The target shape may not have supported geometry (e.g. path elements may not be supported yet)',
+        });
+      }
+    }
+
+    const clipGeom = getGeometry(clip);
+    if (clipGeom.paths.length === 0) {
+      return failureResult({
+        code: 'SCHEMA_FIELD_TYPE_ERROR',
+        message: `Clip shape "${clip.name || clip.id}" has no extractable geometry`,
+        severity: 'error',
+        elementIds: [clip.id],
+        suggestion: 'The clip shape must be a supported shape with extractable geometry',
+      });
+    }
+
+    return successResult();
+  }
+
+  execute(scene: SceneDocument): SceneDocument {
+    const target = scene.elements.find((e) => e.id === this.targetElementId)!;
+    const clip = scene.elements.find((e) => e.id === this.clipShapeId)!;
+
+    this.savedTarget = JSON.parse(JSON.stringify(target)) as SceneElement;
+    this.savedClip = JSON.parse(JSON.stringify(clip)) as SceneElement;
+
+    if (target.type === 'image') {
+      this.savedPrevImageClipPath = (target.metadata?.clipSvgPath as string | undefined);
+
+      const clipGeom = getGeometry(clip);
+      const clipSvgPath = geometryToSvgPath(clipGeom);
+
+      const updatedTarget = {
+        ...target,
+        metadata: {
+          ...target.metadata,
+          clipShapeId: this.clipShapeId,
+          clipSvgPath,
+        },
+      };
+
+      let elements: SceneElement[];
+      if (this.removeClipShape) {
+        elements = scene.elements
+          .filter((e) => e.id !== this.clipShapeId)
+          .map((e) => (e.id === this.targetElementId ? updatedTarget : e));
+      } else {
+        elements = scene.elements.map((e) =>
+          e.id === this.targetElementId ? updatedTarget : e,
+        );
+      }
+
+      return { ...scene, elements };
+    }
+
+    const targetGeom = getGeometry(target);
+    const clipGeom = getGeometry(clip);
+    const resultGeom = performBooleanOperation([targetGeom, clipGeom], 'intersect');
+
+    if (resultGeom.paths.length === 0) {
+      const updatedTarget = {
+        ...target,
+        shapeKind: 'path' as const,
+        pathCommands: '',
+        visible: false,
+      };
+
+      let elements: SceneElement[];
+      if (this.removeClipShape) {
+        elements = scene.elements
+          .filter((e) => e.id !== this.clipShapeId)
+          .map((e) => (e.id === this.targetElementId ? updatedTarget : e));
+      } else {
+        elements = scene.elements.map((e) =>
+          e.id === this.targetElementId ? updatedTarget : e,
+        );
+      }
+
+      return { ...scene, elements };
+    }
+
+    const bbox = resultGeom.paths.reduce(
+      (acc, path) => {
+        for (const p of path) {
+          acc.minX = Math.min(acc.minX, p.x);
+          acc.minY = Math.min(acc.minY, p.y);
+          acc.maxX = Math.max(acc.maxX, p.x);
+          acc.maxY = Math.max(acc.maxY, p.y);
+        }
+        return acc;
+      },
+      { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity },
+    );
+
+    const relativePath = geometryToRelativeSvgPath(resultGeom);
+
+    const updatedTarget: SceneElement = {
+      ...target,
+      shapeKind: 'path',
+      transform: {
+        ...target.transform,
+        x: bbox.minX,
+        y: bbox.minY,
+        width: bbox.maxX - bbox.minX,
+        height: bbox.maxY - bbox.minY,
+      },
+      pathCommands: relativePath,
+    };
+
+    let elements: SceneElement[];
+    if (this.removeClipShape) {
+      elements = scene.elements
+        .filter((e) => e.id !== this.clipShapeId)
+        .map((e) => (e.id === this.targetElementId ? updatedTarget : e));
+    } else {
+      elements = scene.elements.map((e) =>
+        e.id === this.targetElementId ? updatedTarget : e,
+      );
+    }
+
+    return { ...scene, elements };
+  }
+
+  invert(_scene: SceneDocument): SceneCommand | null {
+    if (!this.savedTarget || !this.savedClip) return null;
+
+    const savedTarget = this.savedTarget;
+    const savedClip = this.savedClip;
+    const targetElementId = this.targetElementId;
+    const clipShapeId = this.clipShapeId;
+    const removeClipShape = this.removeClipShape;
+    const savedPrevImageClipPath = this.savedPrevImageClipPath;
+
+    const invertCmd: SceneCommand = {
+      id: generateId('inv-clip'),
+      label: `Undo: ${this.label}`,
+      validate: () => {
+        const store = useDocumentStore.getState();
+        if (!store.scene) {
+          return failureResult({
+            code: 'SCHEMA_MISSING_ID',
+            message: 'No scene loaded',
+            severity: 'error',
+          });
+        }
+        return successResult();
+      },
+      execute: (scene: SceneDocument) => {
+        let elements = scene.elements.map((e) => {
+          if (e.id === targetElementId) {
+            if (savedTarget.type === 'image' && savedPrevImageClipPath !== undefined) {
+              return {
+                ...savedTarget,
+                metadata: {
+                  ...savedTarget.metadata,
+                  clipSvgPath: savedPrevImageClipPath || undefined,
+                  clipShapeId: savedPrevImageClipPath ? clipShapeId : undefined,
+                },
+              };
+            }
+            return JSON.parse(JSON.stringify(savedTarget)) as SceneElement;
+          }
+          return e;
+        });
+
+        if (removeClipShape) {
+          const clipExists = elements.some((e) => e.id === clipShapeId);
+          if (!clipExists) {
+            elements.push(JSON.parse(JSON.stringify(savedClip)) as SceneElement);
+          }
+        }
+
+        return { ...scene, elements };
+      },
+      invert: () => null,
+    };
+
+    return invertCmd;
+  }
+}
+
 // ─── Layout Command ────────────────────────────────────────────────────────────
 
 export class LayoutCommand implements SceneCommand {

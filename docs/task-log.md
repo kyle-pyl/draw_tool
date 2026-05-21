@@ -792,3 +792,16 @@
 | 修改记录 | 新建：src/core/boolean-ops.ts（performBooleanOperation/geometryToSvgPath 函数 + BooleanOperationType 类型，使用 polygon-clipping 库实现 union/intersect/xor/subtract 四种布尔运算，支持多形状输入，输出 SVG path 命令字符串）、src/tests/unit/boolean-ops.test.ts（29 个测试用例覆盖 getGeometry 几何提取、performBooleanOperation 四种运算、geometryToSvgPath 转换、BooleanOperationCommand 的验证/执行/撤销/重做/锁定/类型检查/图层上限/圆与矩形混合运算）；修改：src/core/geometry.ts（新增 getGeometry 函数，从 shape 元素提取 GeometryShape：rect 转 4 顶点多边形、circle 近似 64 顶点、ellipse 近似 64 顶点、polygon 直接使用顶点，均应用 transform 旋转；createGeometryAdapter 现在实际提供 getGeometry 而非 undefined）、src/core/commands.ts（新增 BooleanOperationCommand 类 + 引入 boolean-ops 模块，实现 check: 至少2个元素、元素存在/未锁定/为 shape 类型、几何可提取、图层未达上限；execute: 提取几何执行布尔运算生成新 path 元素放入新图层；invert: 保存原始元素并删除结果元素和图层，支持 undo/redo）、src/core/index.ts（新增 getGeometry/performBooleanOperation/geometryToSvgPath 导出、BooleanOperationType 类型导出、BooleanOperationCommand 导出）、package.json（新增 polygon-clipping 0.15.7 依赖）；更新：src/tests/unit/geometry.test.ts（createGeometryAdapter 测试更新为 getGeometry 不为 undefined） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0210（BooleanOperationType）、API-0211（performBooleanOperation）、API-0212（geometryToSvgPath）、API-0213（getGeometry）、API-0214（BooleanOperationCommand） |
+
+### T-11-02 实现元素裁剪
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号 | T-11-02 |
+| 任务名称 | 实现元素裁剪 |
+| 完成时间 | 2026-05-21 12:00 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| 修改记录 | 修改：src/core/commands.ts（新增 ClipStrategy 类型、geometryToRelativeSvgPath 辅助函数、ClipElementCommand 类：支持 shape 元素的布尔交集裁剪和 image 元素的 clipPath 元数据裁剪，支持 removeClipShape 选项控制裁剪形状是否保留，完整的 validate/execute/invert 实现用于 undo/redo）、src/core/index.ts（新增 ClipElementCommand 和 ClipStrategy 导出）；新建：src/tests/unit/clip-command.test.ts（23 个测试用例覆盖 shape 裁剪、image 裁剪、undo/redo、非重叠裁剪处理、验证失败场景、getter 方法） |
+| Git Commit | fdba4df |
+| 发现缺陷 | 无 |
+| 产出接口/函数 | API-0215（ClipStrategy）、API-0216（ClipElementCommand）、API-0217（geometryToRelativeSvgPath） |
