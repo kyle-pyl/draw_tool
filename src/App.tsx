@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { CanvasView, Viewport, SelectionManager, ConflictHighlighter } from './canvas';
 import type { DrawingToolType } from './canvas';
-import { ShapeToolbar, ConflictPanel, TextEditor, ImageImportButton, PropertyPanel, PwaPrompt } from './ui';
+import { ShapeToolbar, ConflictPanel, TextEditor, ImageImportButton, PropertyPanel, PwaPrompt, useKeyboardShortcuts } from './ui';
 import { createGeometryAdapter } from './core/geometry';
 import { checkLayerCollisions } from './core/collision';
 import { useDocumentStore } from './core/store';
@@ -242,6 +242,13 @@ function App() {
   useEffect(() => {
     checkConflicts();
   }, [checkConflicts]);
+
+  useKeyboardShortcuts({
+    executorRef,
+    selectionManager,
+    forceUpdate,
+    activeLayerId: drawingLayerId,
+  });
 
   return (
     <div className="app-container" onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>

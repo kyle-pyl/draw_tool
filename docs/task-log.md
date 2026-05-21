@@ -857,3 +857,16 @@
 | 修改记录 | 新建：public/sw.js（自定义 Service Worker，实现离线缓存：install/activate/fetch 事件处理，stale-while-revalidate 策略缓存同源资源，SKIP_WAITING 消息支持更新）、public/manifest.webmanifest（PWA 应用清单：name/short_name/description/theme_color/background_color/display/icons）、public/pwa-192x192.png（192px PWA 图标）、public/pwa-512x512.png（512px PWA 图标）、src/ui/PwaPrompt.tsx（PWA 安装和更新提示组件：beforeinstallprompt 安装提示、Service Worker updatefound 更新提示、SKIP_WAITING 消息触发更新、UI 动画和样式）；修改：src/ui/index.ts（新增 PwaPrompt 和 PwaPromptProps 导出）、src/App.css（新增 .pwa-prompt 浮层样式含滑入动画）、src/App.tsx（集成 PwaPrompt 组件）、src/main.tsx（手动注册 Service Worker）、index.html（新增 PWA meta 标签：theme-color/description/apple-touch-icon/manifest link） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0226（PwaPrompt）、API-0227（PwaPromptProps） |
+
+### T-12-04 实现快捷键系统
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号 | T-12-04 |
+| 任务名称 | 实现快捷键系统 |
+| 完成时间 | 2026-05-21 15:00 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| Git Commit | 待填写 |
+| 修改记录 | 新建：src/core/keyboard.ts（ShortcutActionId/ShortcutBinding/ShortcutMap 类型、DEFAULT_SHORTCUTS 默认映射、ALT_REDO_BINDING 备用重做绑定、matchShortcut/matchShortcutOr 匹配函数、loadShortcutMap/saveShortcutMap 持久化函数、formatShortcut 格式化函数、isInputFocused 焦点检测）、src/ui/useKeyboardShortcuts.ts（React Hook：useKeyboardShortcuts，接收 executorRef/selectionManager/forceUpdate/activeLayerId，实现 Ctrl+Z 撤销、Ctrl+Shift+Z/Ctrl+Y 重做、Ctrl+C 复制、Ctrl+V 粘贴、Ctrl+X 剪切、Delete/Backspace 删除、Ctrl+A 全选、Ctrl+G 分组、Ctrl+Shift+G 解散组、Ctrl+S 保存等快捷键，内置剪贴板支持复制粘贴元素）、src/tests/unit/keyboard.test.ts（43 个测试用例）；修改：src/core/index.ts（新增 keyboard 模块全部导出）、src/ui/index.ts（新增 useKeyboardShortcuts 导出）、src/App.tsx（集成 useKeyboardShortcuts hook） |
+| 发现缺陷 | 无 |
+| 产出接口/函数 | API-0228（ShortcutActionId）、API-0229（ShortcutBinding）、API-0230（ShortcutMap）、API-0231（DEFAULT_SHORTCUTS）、API-0232（matchShortcut）、API-0233（matchShortcutOr）、API-0234（loadShortcutMap）、API-0235（saveShortcutMap）、API-0236（formatShortcut）、API-0237（isInputFocused）、API-0238（useKeyboardShortcuts） |

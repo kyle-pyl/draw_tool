@@ -4281,3 +4281,212 @@
 | 输出参数 | { onInstallStatusChange?: (installed: boolean) => void } |
 | 典型用例 | `const props: PwaPromptProps = { onInstallStatusChange: handleInstallStatus };` |
 | 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0228 ShortcutActionId
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0228 |
+| 名称 | ShortcutActionId |
+| 所属系统 | core |
+| 所属模块 | keyboard |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 快捷键动作标识符的字符串字面量联合类型。包含 undo、redo、copy、paste、cut、delete、selectAll、group、ungroup、save 共 10 个动作。用于 ShortcutMap 的键和快捷键匹配 |
+| 输入参数 | 无（类型别名） |
+| 输出参数 | 无 |
+| 典型用例 | `const action: ShortcutActionId = 'undo';` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0229 ShortcutBinding
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0229 |
+| 名称 | ShortcutBinding |
+| 所属系统 | core |
+| 所属模块 | keyboard |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 快捷键绑定定义接口。key 为 KeyboardEvent.key 值（如 'z'、'Delete'），ctrl/shift/alt/meta 为修饰键。ctrl 同时匹配 Ctrl 和 Meta（Mac Cmd）键 |
+| 输入参数 | key: string, ctrl?: boolean, shift?: boolean, alt?: boolean, meta?: boolean |
+| 输出参数 | 无 |
+| 典型用例 | `const binding: ShortcutBinding = { key: 'z', ctrl: true };` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0230 ShortcutMap
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0230 |
+| 名称 | ShortcutMap |
+| 所属系统 | core |
+| 所属模块 | keyboard |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 快捷键映射类型，Record<ShortcutActionId, ShortcutBinding>。将每个动作映射到具体的快捷键绑定 |
+| 输入参数 | 无 |
+| 输出参数 | 无 |
+| 典型用例 | `const map: ShortcutMap = loadShortcutMap();` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0231 DEFAULT_SHORTCUTS
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0231 |
+| 名称 | DEFAULT_SHORTCUTS |
+| 所属系统 | core |
+| 所属模块 | keyboard |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 默认快捷键映射常量。undo=Ctrl+Z, redo=Ctrl+Shift+Z, copy=Ctrl+C, paste=Ctrl+V, cut=Ctrl+X, delete=Delete, selectAll=Ctrl+A, group=Ctrl+G, ungroup=Ctrl+Shift+G, save=Ctrl+S |
+| 输入参数 | 无 |
+| 输出参数 | ShortcutMap |
+| 典型用例 | `const defaults = DEFAULT_SHORTCUTS;` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0232 matchShortcut
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0232 |
+| 名称 | matchShortcut |
+| 所属系统 | core |
+| 所属模块 | keyboard |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 判断 KeyboardEvent 是否匹配指定的 ShortcutBinding。key 比较忽略大小写，ctrl 同时匹配 Ctrl 和 Meta 键 |
+| 输入参数 | event: KeyboardEvent, binding: ShortcutBinding |
+| 输出参数 | boolean |
+| 典型用例 | `if (matchShortcut(e, DEFAULT_SHORTCUTS.undo)) { executor.undo(); }` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0233 matchShortcutOr
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0233 |
+| 名称 | matchShortcutOr |
+| 所属系统 | core |
+| 所属模块 | keyboard |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 判断 KeyboardEvent 是否匹配两个 ShortcutBinding 中的任意一个。用于支持备用快捷键（如 Ctrl+Shift+Z 和 Ctrl+Y 都触发重做） |
+| 输入参数 | event: KeyboardEvent, a: ShortcutBinding, b: ShortcutBinding |
+| 输出参数 | boolean |
+| 典型用例 | `if (matchShortcutOr(e, shortcutMap.redo, ALT_REDO_BINDING)) { executor.redo(); }` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0234 loadShortcutMap
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0234 |
+| 名称 | loadShortcutMap |
+| 所属系统 | core |
+| 所属模块 | keyboard |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 从 localStorage 加载用户自定义的快捷键映射。若不存在或解析失败则返回 DEFAULT_SHORTCUTS 的副本。部分自定义时未设置的动作回退到默认值 |
+| 输入参数 | 无 |
+| 输出参数 | ShortcutMap |
+| 典型用例 | `const map = loadShortcutMap();` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0235 saveShortcutMap
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0235 |
+| 名称 | saveShortcutMap |
+| 所属系统 | core |
+| 所属模块 | keyboard |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 将快捷键映射持久化到 localStorage。存储键为 'draw-tool-shortcuts'，序列化为 JSON |
+| 输入参数 | map: ShortcutMap |
+| 输出参数 | void |
+| 典型用例 | `saveShortcutMap(customMap);` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0236 formatShortcut
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0236 |
+| 名称 | formatShortcut |
+| 所属系统 | core |
+| 所属模块 | keyboard |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 将 ShortcutBinding 格式化为人类可读的字符串。例如 { key: 'z', ctrl: true } 返回 'Ctrl+Z' |
+| 输入参数 | binding: ShortcutBinding |
+| 输出参数 | string |
+| 典型用例 | `const label = formatShortcut(DEFAULT_SHORTCUTS.undo); // 'Ctrl+Z'` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0237 isInputFocused
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0237 |
+| 名称 | isInputFocused |
+| 所属系统 | core |
+| 所属模块 | keyboard |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 检测当前焦点是否在文本输入元素上。检查 INPUT/TEXTAREA/SELECT 标签以及 contentEditable 元素。用于快捷键处理时跳过文本输入场景，避免与用户打字冲突 |
+| 输入参数 | 无 |
+| 输出参数 | boolean |
+| 典型用例 | `if (isInputFocused()) return; // skip shortcut handling` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0238 useKeyboardShortcuts
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0238 |
+| 名称 | useKeyboardShortcuts |
+| 所属系统 | ui |
+| 所属模块 | useKeyboardShortcuts |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | React Hook，注册全局键盘快捷键监听。接收 CommandExecutor ref、SelectionManager、forceUpdate 回调和 activeLayerId，在 window keydown 事件中匹配快捷键并执行对应操作。自动跳过输入元素内的按键。返回当前 ShortcutMap 和 resetShortcuts 重置函数。支持 10 个快捷键动作：撤销/重做/复制/粘贴/剪切/删除/全选/分组/解散组/保存 |
+| 输入参数 | options: { executorRef: RefObject<CommandExecutor | null>, selectionManager: SelectionManager, forceUpdate: () => void, activeLayerId: string } |
+| 输出参数 | { shortcutMap: ShortcutMap, resetShortcuts: () => void } |
+| 典型用例 | `useKeyboardShortcuts({ executorRef, selectionManager, forceUpdate, activeLayerId: drawingLayerId });` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |

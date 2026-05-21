@@ -144,4 +144,21 @@ export type {
 } from './layout';
 
 export { performBooleanOperation, geometryToSvgPath } from './boolean-ops';
-export type { BooleanOperationType } from './boolean-ops';
+export type {
+  BooleanOperationType } from './boolean-ops';
+
+export {
+  matchShortcut,
+  matchShortcutOr,
+  loadShortcutMap,
+  saveShortcutMap,
+  formatShortcut,
+  isInputFocused,
+  DEFAULT_SHORTCUTS,
+  ALT_REDO_BINDING,
+} from './keyboard';
+export type {
+  ShortcutActionId,
+  ShortcutBinding,
+  ShortcutMap,
+} from './keyboard';

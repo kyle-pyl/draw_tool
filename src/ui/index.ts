@@ -18,3 +18,4 @@ export { DataPanel } from './DataPanel';
 export type { DataPanelProps, ChartConfig } from './DataPanel';
 export { PwaPrompt } from './PwaPrompt';
 export type { PwaPromptProps } from './PwaPrompt';
+export { useKeyboardShortcuts } from './useKeyboardShortcuts';
