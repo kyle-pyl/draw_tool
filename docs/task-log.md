@@ -802,6 +802,6 @@
 | 完成时间 | 2026-05-21 12:00 |
 | 作者/智能体 | OpenCode/deepseek-v4-pro |
 | 修改记录 | 修改：src/core/commands.ts（新增 ClipStrategy 类型、geometryToRelativeSvgPath 辅助函数、ClipElementCommand 类：支持 shape 元素的布尔交集裁剪和 image 元素的 clipPath 元数据裁剪，支持 removeClipShape 选项控制裁剪形状是否保留，完整的 validate/execute/invert 实现用于 undo/redo）、src/core/index.ts（新增 ClipElementCommand 和 ClipStrategy 导出）；新建：src/tests/unit/clip-command.test.ts（23 个测试用例覆盖 shape 裁剪、image 裁剪、undo/redo、非重叠裁剪处理、验证失败场景、getter 方法） |
-| Git Commit | fdba4df |
+| Git Commit | 0ee12fe |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0215（ClipStrategy）、API-0216（ClipElementCommand）、API-0217（geometryToRelativeSvgPath） |
