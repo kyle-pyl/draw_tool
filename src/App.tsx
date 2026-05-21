@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { CanvasView, Viewport, SelectionManager, ConflictHighlighter } from './canvas';
 import type { DrawingToolType, CanvasContextMenuEvent } from './canvas';
-import { ShapeToolbar, ConflictPanel, TextEditor, ImageImportButton, PropertyPanel, PwaPrompt, useKeyboardShortcuts, ContextMenu } from './ui';
+import { ShapeToolbar, ConflictPanel, TextEditor, ImageImportButton, PropertyPanel, LayerPanel, PwaPrompt, useKeyboardShortcuts, ContextMenu } from './ui';
 import type { MenuItem, ContextMenuState } from './ui';
 import { createGeometryAdapter } from './core/geometry';
 import { checkLayerCollisions } from './core/collision';
@@ -597,6 +597,13 @@ function App() {
       />
       <ShapeToolbar activeTool={activeTool} onToolChange={handleToolChange} />
       <ImageImportButton layerId={drawingLayerId} onImport={handleImageImport} />
+      <LayerPanel
+        scene={currentScene}
+        selectionManager={selectionManager}
+        conflictHighlighter={conflictHighlighter}
+        executor={executorRef.current}
+        forceUpdate={forceUpdate}
+      />
       <ConflictPanel conflictHighlighter={conflictHighlighter} />
       <PropertyPanel
         scene={currentScene}

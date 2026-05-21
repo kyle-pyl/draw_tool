@@ -4662,3 +4662,41 @@
 | 输出参数 | N/A |
 | 典型用例 | `{ x: 150, y: 300, elementId: 'rect_abc123' }` |
 | 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0248 LayerPanel
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0248 |
+| 名称 | LayerPanel |
+| 所属系统 | ui |
+| 所属模块 | LayerPanel |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 图层面板 React 组件，显示所有图层的列表（按 order 降序排列，高层在上）。支持：可见性切换（眼图标）、锁定切换（锁图标）、元素计数徽章、点击选中图层所有元素、双击重命名图层、HTML5 拖拽排序（通过 MoveLayersCommand 执行）、每层的批量操作下拉菜单（全选/改填充色/改描边色/改透明度/显示隐藏/复制到层/移动到层/删除全部）、冲突图层红色边框高亮、折叠/展开面板、底部添加图层按钮。批量操作通过 BatchLayerEditCommand 执行并支持冲突校验 |
+| 输入参数 | scene: SceneDocument、selectionManager: SelectionManager、conflictHighlighter: ConflictHighlighter、executor: CommandExecutor、forceUpdate: () => void |
+| 输出参数 | React 组件 |
+| 典型用例 | <LayerPanel scene={currentScene} selectionManager={selectionManager} conflictHighlighter={conflictHighlighter} executor={executorRef.current} forceUpdate={forceUpdate} /> |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0249 LayerPanelProps
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0249 |
+| 名称 | LayerPanelProps |
+| 所属系统 | ui |
+| 所属模块 | LayerPanel |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | LayerPanel 组件的 Props 接口，定义组件所需的依赖注入参数 |
+| 输入参数 | N/A（TypeScript interface） |
+| 输出参数 | N/A |
+| 典型用例 | 参见 LayerPanel 接口 |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |

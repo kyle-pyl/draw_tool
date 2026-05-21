@@ -883,3 +883,16 @@
 | 修改记录 | 新建：src/core/clipboard.ts（共享剪贴板模块，getClipboard/setClipboard/clearClipboard/hasClipboard/elementToClipboardInput/computePastePosition/PASTE_OFFSET）、src/ui/ContextMenu.tsx（ContextMenu 组件，支持 Canvas/Element 两种上下文、子菜单、快捷键显示、动态启用/禁用、Esc/点击外部关闭）；修改：src/ui/useKeyboardShortcuts.ts（改用共享剪贴板模块）、src/canvas/CanvasView.tsx（新增 onContextMenu 回调和 CanvasContextMenuEvent 类型、handleContextMenu 实现右键元素自动选中和上下文事件发送）、src/App.tsx（集成 ContextMenu，实现 Canvas 右键：全选/粘贴/适配画布/缩放/重置缩放；Element 右键：复制/剪切/删除/改层子菜单/分组/对齐子菜单/分布子菜单）、src/App.css（上下文菜单样式）、src/ui/index.ts（导出 ContextMenu/MenuItem/ContextMenuState）、src/canvas/index.ts（导出 CanvasContextMenuEvent）、src/core/index.ts（导出 clipboard 模块） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0239（getClipboard）、API-0240（setClipboard）、API-0241（hasClipboard）、API-0242（elementToClipboardInput）、API-0243（computePastePosition）、API-0244（ContextMenu）、API-0245（MenuItem）、API-0246（ContextMenuState）、API-0247（CanvasContextMenuEvent） |
+
+### T-12-06 实现图层面板 UI
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-12-06 |
+| 任务名称      | 实现图层面板 UI |
+| 完成时间      | 2026-05-21 17:20 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | e3bd6f9 |
+| 修改记录      | 新建：src/ui/LayerPanel.tsx（LayerPanel 组件：图层列表按 order 降序显示、可见性切换、锁定切换、元素计数、点击选中全层元素、拖拽排序（HTML5 drag-and-drop）、双击重命名、批量操作下拉菜单（全选/改色/改透明度/显示隐藏/复制到层/移动到层/删除全部）、冲突图层红色高亮）；修改：src/ui/index.ts（新增 LayerPanel/LayerPanelProps 导出）、src/App.tsx（集成 LayerPanel 组件） |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0248（LayerPanel）、API-0249（LayerPanelProps） |
