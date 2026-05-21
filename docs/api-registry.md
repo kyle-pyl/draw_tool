@@ -3534,3 +3534,136 @@
 | 输出参数 | LayoutCommand |
 | 典型用例 | const cmd = createLayoutCommand(flowchartLayoutEngine, ids, { direction: 'TB' }) |
 | 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0186 RtlLayoutEngine
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0186 |
+| 名称 | RtlLayoutEngine |
+| 所属系统 | modules |
+| 所属模块 | rtl/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | RTL 硬件模块连接图自动布局引擎，实现 LayoutEngine 接口。默认 LR（左到右）数据流方向，使用简化 dagre 式算法进行 rank 分配、port-position-aware 节点排序减少交叉、正交边界路由。额外增强：bus 信号线偏移可视化、clock/reset 信号元数据标记、折叠模块高度压缩。支持 TB/LR/BT/RL 四种方向 |
+| 输入参数 | nodes: LayoutNode[]（待布局节点）, edges: LayoutEdge[]（边列表）, options?: LayoutOptions（布局选项，默认 direction='LR'） |
+| 输出参数 | LayoutResult（nodes: LayoutNodeResult[] 节点位置, edges: LayoutEdgeResult[] 边路由, totalBBox: BBox 总包围盒） |
+| 典型用例 | const result = rtlLayoutEngine.layout(nodes, edges, { direction: 'LR', hSpacing: 120 }) |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0187 rtlLayoutEngine
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0187 |
+| 名称 | rtlLayoutEngine |
+| 所属系统 | modules |
+| 所属模块 | rtl/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | RtlLayoutEngine 的单例实例 |
+| 输入参数 | 无 |
+| 输出参数 | RtlLayoutEngine 实例 |
+| 典型用例 | import { rtlLayoutEngine } from './modules/rtl/layout' |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0188 extractRtlLayoutNodes
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0188 |
+| 名称 | extractRtlLayoutNodes |
+| 所属系统 | modules |
+| 所属模块 | rtl/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 从场景元素中提取 RTL 布局节点。与通用 extractLayoutNodes 区别：对 rtlModule 元素提取 moduleName/instanceName/ports/portCount/inputPortCount/outputPortCount/hasClock/hasReset 到 metadata，折叠模块降低有效高度（40px），排除 rtlPort 和 connector 元素 |
+| 输入参数 | elements: SceneElement[]（场景元素数组）, elementIds: Set<string>（需要包含的元素 ID） |
+| 输出参数 | LayoutNode[] - 含 RTL 元数据的布局节点数组 |
+| 典型用例 | const nodes = extractRtlLayoutNodes(scene.elements, new Set(['mod1', 'mod2'])) |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0189 extractRtlLayoutEdges
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0189 |
+| 名称 | extractRtlLayoutEdges |
+| 所属系统 | modules |
+| 所属模块 | rtl/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 从场景连接线中提取 RTL 布局边。与通用 extractLayoutEdges 区别：读取 connector 的 semanticKind 标记 signalType（rtl-net/rtl-bus），提取 source.anchorId/target.anchorId 记录端口连接关系，检测 clock/reset 信号（从锚点名或标签文本识别 clk/rst/clock/reset）并标记 highlightSignal 元数据 |
+| 输入参数 | elements: SceneElement[]（场景元素数组）, elementIds: Set<string>（布局节点 ID 集合） |
+| 输出参数 | LayoutEdge[] - 含 RTL 信号类型/端口/时钟复位标记的布局边数组 |
+| 典型用例 | const edges = extractRtlLayoutEdges(scene.elements, new Set(['mod1', 'mod2'])) |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0190 RtlLayoutOptions
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0190 |
+| 名称 | RtlLayoutOptions |
+| 所属系统 | modules |
+| 所属模块 | rtl/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | RTL 布局扩展选项接口，继承 LayoutOptions 添加 RTL 专用配置：highlightClockReset 控制是否输出时钟复位元数据标记，busSpacing 控制 bus 信号线垂直偏置量（默认 30） |
+| 输入参数 | highlightClockReset?: boolean, busSpacing?: number（默认 30） |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | const opts: RtlLayoutOptions = { direction: 'LR', busSpacing: 40, highlightClockReset: true } |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0191 RtlLayoutCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0191 |
+| 名称 | RtlLayoutCommand |
+| 所属系统 | modules |
+| 所属模块 | rtl/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | RTL 布局命令，将自动布局操作纳入命令系统。使用 RTL 专用提取函数（extractRtlLayoutNodes/extractRtlLayoutEdges）提供端口/信号类型元数据，通过 RtlLayoutEngine 计算布局，保存前态支持撤销/重做。符合 SceneCommand 接口 |
+| 输入参数 | engine: RtlLayoutEngine, elementIds: string[], options?: RtlLayoutOptions |
+| 输出参数 | 无（命令执行修改场景状态） |
+| 典型用例 | const cmd = new RtlLayoutCommand(rtlLayoutEngine, ['mod1', 'mod2', 'c1'], { direction: 'LR' }); executor.execute(cmd) |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0192 createRtlLayoutCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0192 |
+| 名称 | createRtlLayoutCommand |
+| 所属系统 | modules |
+| 所属模块 | rtl/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 创建 RtlLayoutCommand 的工厂函数，使用默认 rtlLayoutEngine 实例 |
+| 输入参数 | elementIds: string[], options?: RtlLayoutOptions |
+| 输出参数 | RtlLayoutCommand |
+| 典型用例 | const cmd = createRtlLayoutCommand(['mod1', 'mod2', 'c1'], { direction: 'LR' }) |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |

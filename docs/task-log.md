@@ -740,3 +740,16 @@
 | 修改记录 | 1. 新建 src/modules/flowchart/layout.ts - 实现 FlowchartLayoutEngine，基于简化 dagre 式图布局算法（最长路径 rank 分配 + barycenter 交叉减少 + 正交边路由），支持 TB/LR/BT/RL 四种方向。2. 修改 src/core/commands.ts - 新增 LayoutCommand 类和 createLayoutCommand 工厂函数，将布局操作纳入命令系统支持撤销。3. 修改 src/core/layout.ts - extractLayoutNodes 增加 connector 类型过滤。4. 修改 src/core/index.ts - 导出 LayoutCommand 和 createLayoutCommand。5. 修改 src/modules/index.ts - 导出 FlowchartLayoutEngine 和 flowchartLayoutEngine。6. 新建 src/tests/unit/flowchart-layout.test.ts - 36 个测试覆盖引擎接口、空输入、线性图、菱形图、方向、间距、边路由、场景集成、LayoutCommand 和 CommandExecutor undo/redo。 |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | FlowchartLayoutEngine (LayoutEngine 实现), flowchartLayoutEngine (单例), LayoutCommand, createLayoutCommand |
+
+### T-10-03 实现 RTL 模块布局
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号 | T-10-03 |
+| 任务名称 | 实现 RTL 模块布局 |
+| 完成时间 | 2026-05-21 10:16 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| Git Commit | （待提交） |
+| 修改记录 | 新建：src/modules/rtl/layout.ts（RtlLayoutEngine 类实现 LayoutEngine 接口、rtlLayoutEngine 单例、extractRtlLayoutNodes/extractRtlLayoutEdges RTL 专用提取函数、RtlLayoutOptions 接口、RtlLayoutCommand 命令类、createRtlLayoutCommand 工厂函数）。RTL 布局功能：默认 LR（左到右）数据流方向、port-position-aware 节点排序减少连线交叉、bus 信号线（rtl-bus semanticKind）视觉偏置、clock/reset 信号元数据标记（从端口名和标签识别 clk/rst）、折叠模块高度压缩（40px）；修改：src/modules/index.ts（新增 rtl/layout 模块全部导出）。新建：src/tests/unit/rtl-layout.test.ts（50 个测试用例，覆盖：LayoutEngine 接口一致性、LR/TB/RL/BT 四种方向、diamond graph 布局、hSpacing/vSpacing 间距、正交边界路由、自环和缺失边处理、确定性验证、bus 信号偏置、clock/reset 元数据保留、RTL 专用提取函数（模块端口/折叠/clock/reset 检测、端口锚点元数据、rtl-bus/rtl-net 信号类型、clock/reset 端口名识别）、场景集成（applyLayoutToScene）、RtlLayoutCommand 验证/执行/撤销/重做/CommandExecutor 集成、折叠模块处理、端口感知排序） |
+| 发现缺陷 | 无 |
+| 产出接口/函数 | API-0186（RtlLayoutEngine）、API-0187（rtlLayoutEngine）、API-0188（extractRtlLayoutNodes）、API-0189（extractRtlLayoutEdges）、API-0190（RtlLayoutOptions）、API-0191（RtlLayoutCommand）、API-0192（createRtlLayoutCommand） |

@@ -9,3 +9,5 @@ export { registerRtlTemplates, rtlTemplateDefinitions } from './rtl-templates';
 export { generateChart, CHART_COLOR_SCHEMES, convertChartSvgToElements } from './chart';
 export type { ChartGenerationConfig, LegendPosition, ChartColorScheme, ConvertedElementResult } from './chart';
 export { FlowchartLayoutEngine, flowchartLayoutEngine } from './flowchart/layout';
+export { RtlLayoutEngine, rtlLayoutEngine, extractRtlLayoutNodes, extractRtlLayoutEdges, RtlLayoutCommand, createRtlLayoutCommand } from './rtl/layout';
+export type { RtlLayoutOptions } from './rtl/layout';
