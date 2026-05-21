@@ -98,6 +98,8 @@ export type { CardinalDirection } from './routing';
 export { checkLayerCollisions, checkElementsCollide } from './collision';
 export type { CollisionEntry, CollisionResult, CollisionCheckOptions } from './collision';
 
+export { SpatialIndex, findCollisionPairsFromIndex } from './spatial-index';
+
 export {
   CommandExecutor,
   CreateElementCommand,

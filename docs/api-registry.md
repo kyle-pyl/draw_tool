@@ -4835,3 +4835,79 @@ _snapToGrid(value, gridSize): { value, snapped } - 网格吸附 |
 | 输出参数 | string（ISO 8601 时间戳） |
 | 典型用例 | console.log(\`Build time: \$\{\_\_BUILD_TIME\_\_\}\`); |
 | 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0257 SpatialIndex
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0257 |
+| 名称 | SpatialIndex |
+| 所属系统 | core |
+| 所属模块 | spatial-index |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 基于rbush的空间索引类，用于加速碰撞检测。提供insert/remove/search/clear/size/getAllIds方法，通过R-tree结构将碰撞检测从O(n²)降低到平均O(n log n)。 |
+| 输入参数 | maxEntries?: number（树节点最大条目数，默认16） |
+| 输出参数 | 无（通过方法返回结果） |
+| 典型用例 | const idx = new SpatialIndex(); idx.insert(elId, bbox); const nearby = idx.search(queryBBox); |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0258 findCollisionPairsFromIndex
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0258 |
+| 名称 | findCollisionPairsFromIndex |
+| 所属系统 | core |
+| 所属模块 | spatial-index |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 利用空间索引查找所有包围盒重叠的元素对，替代 O(n²) 全量成对比较。批量构建 R-tree 后逐元素查询邻居，返回 (elementA, elementB) 去重对列表。由 checkLayerCollisions 在候选元素 >= 50 时自动调用。 |
+| 输入参数 | indexedIds: string[]（元素ID列表）、bboxes: Map<string, BBox>（ID到包围盒映射） |
+| 输出参数 | Array<{ elementA: string; elementB: string }>（重叠元素对列表，去重） |
+| 典型用例 | import { findCollisionPairsFromIndex } from './spatial-index'; |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0259 parseCSVChunked
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0259 |
+| 名称 | parseCSVChunked |
+| 所属系统 | io |
+| 所属模块 | csv-parser |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 分块解析大型CSV文件，使用 PapaParse 的 step 回调逐行处理并通过 setTimeout 让出主线程。支持进度回调（ChunkProgress）、自定义块大小（chunkSize）、总行数提示（totalSizeHint）和100k行安全上限。分块大小影响性能和 UI 响应性。 |
+| 输入参数 | content: string（CSV文本内容）、options?: ChunkedParseOptions（含chunkSize/totalSizeHint/onProgress等） |
+| 输出参数 | Promise<ParsedData>（与parseCSV相同格式的解析结果） |
+| 典型用例 | parseCSVChunked(bigFile, { chunkSize: 2000, onProgress: (p) => setProgress(p.rowsProcessed) }) |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0260 computeLayoutInWorker
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0260 |
+| 名称 | computeLayoutInWorker |
+| 所属系统 | core |
+| 所属模块 | layout-worker |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 将布局计算卸载到 Web Worker 线程的 Promise 化 API。接收 LayoutNode[]、LayoutEdge[] 和 LayoutOptions，在独立线程执行层次布局和边路由计算，返回节点位置、边路由点和总包围盒。失败时自动降级（若 Worker 不可用则返回 reject）。 |
+| 输入参数 | nodes: LayoutNode[]、edges: LayoutEdge[]、options?: LayoutOptions |
+| 输出参数 | Promise<{ nodes: LayoutNodeResult[], edges: LayoutEdgeResult[], totalBBox: BBox }> |
+| 典型用例 | computeLayoutInWorker(nodes, edges, { direction: 'TB' }).then(result => applyLayoutToScene(scene, result)) |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |

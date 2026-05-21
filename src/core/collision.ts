@@ -1,4 +1,5 @@
 import type { SceneElement, GeometryAdapter, BBox, CollisionStrategy } from './types';
+import { findCollisionPairsFromIndex } from './spatial-index';
 
 export interface CollisionEntry {
   elementA: string;
@@ -35,13 +36,13 @@ function bboxIntersection(a: BBox, b: BBox): BBox {
   return { x, y, width, height };
 }
 
+const SPATIAL_INDEX_THRESHOLD = 50;
+
 export function checkLayerCollisions(
   elements: SceneElement[],
   geometryAdapter: GeometryAdapter,
   options?: CollisionCheckOptions
 ): CollisionResult {
-  const collisions: CollisionEntry[] = [];
-
   const skipConnectors = options?.skipConnectors !== false;
   const useGeometry = options?.collisionStrategy === 'geometry' && typeof geometryAdapter.intersects === 'function';
   const candidates = elements.filter((el) => {
@@ -50,6 +51,64 @@ export function checkLayerCollisions(
     if (options?.skipLocked && el.locked) return false;
     return true;
   });
+
+  if (candidates.length >= SPATIAL_INDEX_THRESHOLD) {
+    return checkWithSpatialIndex(candidates, geometryAdapter, useGeometry);
+  }
+
+  return checkWithNestedLoop(candidates, geometryAdapter, useGeometry);
+}
+
+function checkWithSpatialIndex(
+  candidates: SceneElement[],
+  geometryAdapter: GeometryAdapter,
+  useGeometry: boolean,
+): CollisionResult {
+  const collisions: CollisionEntry[] = [];
+  const elementMap = new Map(candidates.map((el) => [el.id, el]));
+  const bboxMap = new Map(candidates.map((el) => [el.id, geometryAdapter.getBBox(el)]));
+
+  const pairs = findCollisionPairsFromIndex(
+    candidates.map((el) => el.id),
+    bboxMap,
+  );
+
+  for (const { elementA, elementB } of pairs) {
+    const a = elementMap.get(elementA);
+    const b = elementMap.get(elementB);
+    if (!a || !b) continue;
+
+    const bboxA = bboxMap.get(elementA)!;
+    const bboxB = bboxMap.get(elementB)!;
+
+    if (!bboxesOverlap(bboxA, bboxB)) continue;
+
+    if (useGeometry) {
+      if (geometryAdapter.intersects!(a, b)) {
+        collisions.push({
+          elementA: a.id,
+          elementB: b.id,
+          overlapBBox: bboxIntersection(bboxA, bboxB),
+        });
+      }
+    } else {
+      collisions.push({
+        elementA: a.id,
+        elementB: b.id,
+        overlapBBox: bboxIntersection(bboxA, bboxB),
+      });
+    }
+  }
+
+  return { hasCollision: collisions.length > 0, collisions };
+}
+
+function checkWithNestedLoop(
+  candidates: SceneElement[],
+  geometryAdapter: GeometryAdapter,
+  useGeometry: boolean,
+): CollisionResult {
+  const collisions: CollisionEntry[] = [];
 
   for (let i = 0; i < candidates.length; i++) {
     const a = candidates[i];

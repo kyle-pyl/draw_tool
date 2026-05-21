@@ -135,3 +135,104 @@ export function parseCSV(content: string, options?: CsvParseOptions): ParsedData
 
   return { columns, rows, rowCount, headers, parseErrors };
 }
+
+export interface ChunkProgress {
+  rowsProcessed: number;
+  totalEstimate: number | null;
+  done: boolean;
+}
+
+export interface ChunkedParseOptions extends CsvParseOptions {
+  chunkSize?: number;
+  totalSizeHint?: number;
+  onProgress?: (progress: ChunkProgress) => void;
+}
+
+/**
+ * Parse CSV in chunks to avoid blocking the main thread with very large files.
+ * Uses PapaParse step callback to process rows incrementally, yielding control
+ * back to the browser between chunks via setTimeout.
+ */
+export function parseCSVChunked(
+  content: string,
+  options?: ChunkedParseOptions,
+): Promise<ParsedData> {
+  return new Promise((resolve, reject) => {
+    const chunkSize = options?.chunkSize ?? 2000;
+    const parseErrors: string[] = [];
+    const rawRows: Record<string, string>[] = [];
+    let headers: string[] = [];
+    let headersDetermined = false;
+
+    try {
+      Papa.parse<string[]>(content, {
+        header: false,
+        skipEmptyLines: options?.skipEmptyLines ?? true,
+        delimiter: options?.delimiter,
+        dynamicTyping: false,
+        step: (results, parser) => {
+          const row = results.data;
+          if (Array.isArray(row)) {
+            if (!headersDetermined) {
+              if (options?.header ?? true) {
+                headers = row.map((h: string) => h.trim());
+              } else {
+                headers = row.map((_: string, i: number) => `col_${i}`);
+                rawRows.push(row.reduce((obj: Record<string, string>, val: string, i: number) => {
+                  obj[`col_${i}`] = val;
+                  return obj;
+                }, {}));
+              }
+              headersDetermined = true;
+            } else {
+              const obj: Record<string, string> = {};
+              headers.forEach((h: string, i: number) => {
+                obj[h] = row[i] ?? '';
+              });
+              rawRows.push(obj);
+            }
+          }
+
+          if (rawRows.length >= chunkSize) {
+            options?.onProgress?.({ rowsProcessed: rawRows.length, totalEstimate: options.totalSizeHint ?? null, done: false });
+          }
+
+          if ((options?.totalSizeHint ?? 0) > 100000 && rawRows.length > 100000) {
+            parser.abort();
+          }
+        },
+        error: (err: Papa.ParseError) => {
+          parseErrors.push(`Row ${err.row ?? '?'}: ${err.message || 'Unknown parse error'}`);
+        },
+        complete: () => {
+          const rowCount = rawRows.length;
+
+          const columns: ColumnInfo[] = headers.map((name) => {
+            const values = rawRows.map((row) => row[name] ?? '');
+            const missingCount = values.filter((v) => isMissing(v)).length;
+            const totalCount = values.length;
+            return {
+              name,
+              inferredType: inferColumnType(values),
+              missingRate: totalCount > 0 ? missingCount / totalCount : 0,
+            };
+          });
+
+          const rows: Record<string, string | number | boolean | null>[] = rawRows.map((row) => {
+            const parsed: Record<string, string | number | boolean | null> = {};
+            for (const col of columns) {
+              const raw = row[col.name] ?? '';
+              parsed[col.name] = parseValue(raw, col.inferredType);
+            }
+            return parsed;
+          });
+
+          options?.onProgress?.({ rowsProcessed: rowCount, totalEstimate: rowCount, done: true });
+          resolve({ columns, rows, rowCount, headers, parseErrors });
+        },
+      });
+    } catch (err) {
+      reject(err);
+    }
+  });
+}

@@ -935,3 +935,16 @@
 | 修改记录      | 新建：examples/flowchart/scene.json（完整流程图：开始→输入→处理→判断→分支→结束，7 个节点、4 个图层、7 条连接线）、examples/architecture/scene.json（三层架构图：表示层/应用层/数据层，3 个容器、12 个服务节点、5 个图层、9 条依赖连接线）、examples/rtl/scene.json（RTL datapath：PC、指令存储器、译码器、寄存器文件、ALU、数据存储器、多路选择器，7 个 rtlModule、8 条 net/bus 连接线、4 个图层）、examples/statistics/scene.json（统计图：柱状图 chart 元素、坐标轴、标题和图例标签、CSV 数据源和图表定义）、examples/topology/scene.json（网络拓扑图：核心层/分布层/接入层/DMZ/服务器区，5 个容器、11 个拓扑节点、4 个图层、8 条网络链路）、examples/statistics/data/measurements.csv（实验数据 CSV）、src/tests/unit/example-scenes-validation.test.ts（5 个示例项目的 validateScene 校验测试）；新建目录：examples/flowchart/data/、examples/flowchart/assets/、examples/architecture/data/、examples/architecture/assets/、examples/rtl/data/、examples/rtl/assets/、examples/statistics/data/、examples/statistics/assets/、examples/topology/data/、examples/topology/assets/ |
 | 发现缺陷      | 无 |
 | 产出接口/函数 | 无（仅示例项目文件，无新增 API） |
+
+### T-12-10 性能优化
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号 | T-12-10 |
+| 任务名称 | 性能优化 |
+| 完成时间 | 2026-05-21 20:02 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| Git Commit | 待填写 |
+| 修改记录 | 新建：src/core/spatial-index.ts（SpatialIndex类包装rbush空间索引、findCollisionPairsFromIndex函数用于O(n log n)碰撞对查找）、src/workers/layout.worker.ts（布局计算Web Worker：简单有向图层次布局算法、正交边路由、独立线程执行）、src/workers/layout-worker-manager.ts（Worker生命周期管理、Promise化API - computeLayoutInWorker/terminateLayoutWorker）、src/tests/unit/performance.test.ts（5个性能基准测试：1000元素碰撞检测、500重叠元素、O(n²)vsO(n log n)缩放对比、正确性验证、connector豁免）；修改：src/core/collision.ts（集成空间索引：50元素以上自动切换到rbush加速路径、保留50以下线性扫描、保持接口兼容）、src/core/index.ts（新增SpatialIndex/findCollisionPairsFromIndex导出）、src/io/csv-parser.ts（新增parseCSVChunked函数：分块解析大CSV、进度回调ChunkProgress、100k行安全上限）、src/canvas/CanvasView.tsx（实现视口裁剪：useMemo计算可见元素ID集合、视口BBox与元素BBox相交检测、connector永远渲染、200px缓冲区、动态跟随zoom/offset变化）、package.json（新增rbush和@types/rbush依赖） |
+| 发现缺陷 | 无 |
+| 产出接口/函数 | API-0257（SpatialIndex）、API-0258（findCollisionPairsFromIndex）、API-0259（checkLayerCollisions - 更新为支持空间索引）、API-0260（parseCSVChunked）、API-0261（ChunkProgress）、API-0262（ChunkedParseOptions）、API-0263（computeLayoutInWorker）、API-0264（terminateLayoutWorker） |

@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import type { SceneDocument, SceneElement, ShapeElement, TextElement, ImageElement, ConnectorElement, ConnectorEndpoint, ElementStyle, BBox, AnchorPoint } from '../core/types';
 import type { ElementInput } from '../core';
 import type { Viewport } from './viewport';
@@ -48,6 +48,12 @@ function getElementBBox(el: SceneElement): BBox {
   const { x, y, width, height } = el.transform;
   return { x, y, width, height };
 }
+
+function bboxIntersects(a: BBox, b: BBox): boolean {
+  return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+}
+
+const VIEWPORT_PADDING = 200;
 
 function getVisibleAnchors(el: SceneElement): { anchor: AnchorPoint; absX: number; absY: number }[] {
   const anchors = getAnchors(el);
@@ -820,6 +826,36 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
   const viewportTransform = viewport.getTransformMatrix();
   const gridSize = scene.canvas.gridSize;
 
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  const visibleElementIds = useMemo(() => {
+    const svgEl = svgRef.current;
+    if (!svgEl) return null;
+    const rect = svgEl.getBoundingClientRect();
+    const w = rect.width || 1000;
+    const h = rect.height || 1000;
+    const topLeft = viewport.screenToCanvas(-VIEWPORT_PADDING, -VIEWPORT_PADDING);
+    const bottomRight = viewport.screenToCanvas(w + VIEWPORT_PADDING, h + VIEWPORT_PADDING);
+    const visibleRect: BBox = {
+      x: Math.min(topLeft.x, bottomRight.x),
+      y: Math.min(topLeft.y, bottomRight.y),
+      width: Math.abs(bottomRight.x - topLeft.x),
+      height: Math.abs(bottomRight.y - topLeft.y),
+    };
+    const ids = new Set<string>();
+    for (const el of scene.elements) {
+      if (el.type === 'connector') {
+        ids.add(el.id);
+        continue;
+      }
+      const bbox = getElementBBox(el);
+      if (bboxIntersects(bbox, visibleRect)) {
+        ids.add(el.id);
+      }
+    }
+    return ids;
+  }, [scene.elements, viewport.zoom, viewport.offsetX, viewport.offsetY]);
+
   const [spacePressed, setSpacePressed] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
   const isPanningRef = useRef(false);
@@ -1572,6 +1608,7 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
 
   return (
     <svg
+      ref={svgRef}
       width={width ?? '100%'}
       height={height ?? '100%'}
       className={className}
@@ -1626,6 +1663,7 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
               style={isLayerHidden ? { visibility: 'hidden' } : undefined}
             >
               {els.map((el) => {
+                if (visibleElementIds && !visibleElementIds.has(el.id)) return null;
                 const isDragged = elementDrag && elementDrag.elementIds.includes(el.id);
                 const dragTransform = isDragged ? `translate(${elementDrag.movedX}, ${elementDrag.movedY})` : undefined;
                 return (
