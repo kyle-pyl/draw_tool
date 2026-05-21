@@ -5,11 +5,34 @@ Agent 友好的论文与技术图表绘制工具。纯 Web 应用，本地优先
 ## 当前状态
 
 | 项目 | 状态 |
-|---|---|---|
+|---|---|
 | 阶段 | 阶段 12：产品化 |
 | 版本 | 0.12.0 |
-| 可用功能 | 核心类型已定义（scene.json 结构、元素模型、图层、连接线、图表等），错误码和校验结果类型已定义，scene.json Schema 结构校验器已实现（含引用完整性校验和几何规则校验），示例项目集已创建（examples/basic/、flowchart/、architecture/、rtl/、statistics/、topology/）并通过校验，ID 生成工具已实现（generateId），视口变换管理器（Viewport）已实现，SVG 画布渲染组件已实现（CanvasView：视口裁剪优化），Document Store 已实现（useDocumentStore），JSON/ZIP 项目文件加载已实现，File System Access API 项目目录打开已实现，项目保存功能已实现，BBox 计算器已实现，同层碰撞检测已实现（rbush 空间索引加速：≥50 元素自动切换），图层冲突校验器已实现，冲突高亮已实现（ConflictHighlighter + ConflictPanel），命令系统框架已实现（CommandExecutor），CreateElement/MoveElements/UpdateElement/ChangeLayer/TransformElements/DeleteElement 命令已实现，图形绘制工具已实现（ShapeToolbar），文本工具已实现（TextEditor），图片导入工具已实现（SVG 安全清洗），属性面板已实现（PropertyPanel），分组命令已实现（Group/Ungroup/AddToGroup/RemoveFromGroup），对齐命令已实现（AlignElementsCommand：7 种对齐方式），分布命令已实现（DistributeElementsCommand：水平/垂直/环形），按层批量编辑命令已实现（BatchLayerEditCommand），多图层移动命令已实现（MoveLayersCommand），锚点系统已实现（getAnchors/resolveAnchor），连接线创建/渲染/箭头/标签已支持，正交路由已实现（computeOrthogonalRoute），连接线端点校验已实现，模板系统框架已实现（TemplateDefinition + 注册/查找/分类/实例化 API），基础几何模板已实现（9 种），流程图模板已实现（7 种），架构图模板已实现（8 种），RTL 模块模板已实现（9 种），模板面板 UI 已实现（TemplatePanel），CSV 解析器已实现（parseCSV + parseCSVChunked 分块解析），Excel 解析器已实现（Full 包：动态加载 SheetJS；Lite 包返回友好提示），数据面板 UI 已实现（DataPanel），基础图表生成已实现（generateChart：6 种图表类型），图表样式编辑已支持（配色方案/图例/网格/轴标签），图表转矢量组已实现（ChartToVectorCommand），布局引擎接口已实现（LayoutEngine：统一接口支持 dagre/ELK.js/自研实现 + Web Worker 离线计算），流程图/RTL/思维导图/网络拓扑自动布局已实现，布尔运算已实现（BooleanOperationCommand），元素裁剪已实现（ClipElementCommand），真实几何碰撞检测已实现（intersects/checkElementsCollide），SVG 导出已实现（exportToSVG/downloadSvg），PNG/JPG 导出已实现（exportToRaster/downloadRaster），PWA 离线支持已实现（Service Worker 离线缓存、安装提示、更新提示），快捷键系统已实现（Ctrl+Z/Y/C/V/X/A/G/S 等 10 个快捷键），右键菜单已实现（Canvas/Element 上下文菜单，支持子菜单和动态启用/禁用），图层面板 UI 已实现（LayerPanel：图层列表/可见性/锁定/拖拽排序/批量操作），网格/标尺/吸附已实现（SnapManager + Ruler），Lite/Full 双包构建已实现（VITE_BUNDLE=lite|full 环境变量区分，Lite 包排除 xlsx，dist/lite 和 dist/full 分目录输出） |
-11: | 构建状态 | 可安装、可启动、可构建、可运行测试（1541 个测试通过） |
+| 构建状态 | 可安装、可启动、可构建、可运行测试（1541 个测试通过） |
+
+### 可用功能
+
+**核心与画布：** 核心类型已定义（scene.json 结构、元素模型、图层、连接线、图表等），错误码和校验结果类型已定义，ID 生成工具已实现（generateId）。scene.json Schema 结构校验器已实现（含引用完整性校验和几何规则校验）。SVG 画布渲染组件已实现（CanvasView：视口裁剪优化，仅渲染可见区域元素）。视口变换管理器（Viewport）已实现，支持缩放、平移、适配。
+
+**存储与导入导出：** Document Store 已实现（useDocumentStore/Zustand）。JSON/ZIP 项目文件加载已实现，File System Access API 项目目录打开已实现，项目保存功能已实现，Lite/Full 双包构建已实现（VITE_BUNDLE 环境变量区分，dist/lite 和 dist/full 分目录输出）。
+
+**图层与碰撞：** BBox 计算器已实现，同层碰撞检测已实现（rbush 空间索引加速：≥50 元素自动切换 O(n log n) 路径），图层冲突校验器已实现，冲突高亮已实现（ConflictHighlighter + ConflictPanel）。
+
+**编辑命令：** 命令系统框架已实现（CommandExecutor，支持撤销/重做）。CreateElement、MoveElements、UpdateElement、ChangeLayer、TransformElements、DeleteElement 命令已实现。图形绘制工具（ShapeToolbar）、文本工具（TextEditor）、图片导入工具（SVG 安全清洗）、属性面板（PropertyPanel）已实现。分组命令（Group/Ungroup/AddToGroup/RemoveFromGroup）、对齐命令（7 种）、分布命令（水平/垂直/环形）、批量层编辑命令（BatchLayerEditCommand）、多图层移动命令（MoveLayersCommand）已实现。
+
+**连接线系统：** 锚点系统已实现（getAnchors/resolveAnchor）。连接线创建/渲染/箭头/标签已支持，正交路由已实现（computeOrthogonalRoute），连接线端点校验已实现。
+
+**模板与专用图：** 模板系统框架已实现（注册/查找/分类/实例化 API）。基础几何模板（9 种）、流程图模板（7 种）、架构图模板（8 种）、RTL 模块模板（9 种）已实现。模板面板 UI（TemplatePanel）已实现。
+
+**数据图表：** CSV 解析器已实现（parseCSV + parseCSVChunked 分块解析，支持进度回调和 100k 行安全上限）。Excel 解析器已实现（Full 包：动态加载 SheetJS；Lite 包返回友好提示）。数据面板 UI（DataPanel）已实现。基础图表生成已实现（generateChart：6 种图表类型）。图表样式编辑（配色方案/图例/网格/轴标签）和图表转矢量组（ChartToVectorCommand）已实现。
+
+**布局引擎：** 布局引擎接口已实现（LayoutEngine：统一接口支持 dagre/ELK.js/自研实现）。流程图、RTL、思维导图、网络拓扑自动布局已实现。Web Worker 将布局计算移出主线程（computeLayoutInWorker）。
+
+**高级几何：** 布尔运算（BooleanOperationCommand）、元素裁剪（ClipElementCommand）、真实几何碰撞检测（intersects/checkElementsCollide）已实现。
+
+**导出：** SVG 导出（exportToSVG/downloadSvg）、PNG/JPG 导出（exportToRaster/downloadRaster）已实现。
+
+**产品化：** PWA 离线支持已实现（Service Worker 缓存、安装提示、更新提示）。快捷键系统已实现（Ctrl+Z/Y/C/V/X/A/G/S 等）。右键菜单已实现（Canvas/Element 上下文菜单）。图层面板 UI（LayerPanel：列表/锁定/可见性/拖拽排序/批量操作）。网格/标尺/吸附已实现（SnapManager + Ruler）。示例项目集已创建（basic、flowchart、architecture、rtl、statistics、topology）。
 
 ## 功能目标
 
