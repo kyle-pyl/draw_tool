@@ -8,7 +8,7 @@ Agent 友好的论文与技术图表绘制工具。纯 Web 应用，本地优先
 |---|---|
 | 阶段 | 阶段 12：产品化 |
 | 版本 | 0.12.0 |
-| 构建状态 | 可安装、可启动、可构建、可运行测试（1541 个测试通过） |
+| 构建状态 | 可安装、可启动、可构建、可运行测试（1632 个测试通过） |
 
 ### 可用功能
 
@@ -67,7 +67,7 @@ npm run build        # 构建 Full 包到 dist/full
 npm run build:lite   # 构建 Lite 包（不含 Excel 支持）到 dist/lite
 npm run build:full   # 构建 Full 包到 dist/full
 npm run build:all    # 同时构建 Lite 和 Full 包
-npm test             # 运行单元测试（>1500 个测试）
+npm test             # 运行单元测试（1632 个测试）
 ```
 
 ## 项目结构

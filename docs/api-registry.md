@@ -4911,3 +4911,61 @@ _snapToGrid(value, gridSize): { value, snapped } - 网格吸附 |
 | 输出参数 | Promise<{ nodes: LayoutNodeResult[], edges: LayoutEdgeResult[], totalBBox: BBox }> |
 | 典型用例 | computeLayoutInWorker(nodes, edges, { direction: 'TB' }).then(result => applyLayoutToScene(scene, result)) |
 | 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0261 ChunkProgress
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0261 |
+| 名称 | ChunkProgress |
+| 所属系统 | io |
+| 所属模块 | csv-parser |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 分块解析进度接口。用于 parseCSVChunked 的 onProgress 回调，提供 rowsProcessed（已处理行数）、totalEstimate（总行数估算，null 表示未知）和 done（是否已完成） |
+| 输入参数 | rowsProcessed: number, totalEstimate: number | null, done: boolean |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const progress: ChunkProgress = { rowsProcessed: 5000, totalEstimate: 10000, done: false }` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0262 ChunkedParseOptions
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0262 |
+| 名称 | ChunkedParseOptions |
+| 所属系统 | io |
+| 所属模块 | csv-parser |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | parseCSVChunked 函数的配置选项接口，继承 CsvParseOptions。新增 chunkSize（每批处理行数，默认 2000）、totalSizeHint（总行数提示，用于进度预估）和 onProgress（进度回调） |
+| 输入参数 | chunkSize?: number（默认 2000）, totalSizeHint?: number, onProgress?: (progress: ChunkProgress) => void |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | `const opts: ChunkedParseOptions = { chunkSize: 2000, totalSizeHint: 100000, onProgress: (p) => updateProgress(p) }` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0263 terminateLayoutWorker
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0263 |
+| 名称 | terminateLayoutWorker |
+| 所属系统 | workers |
+| 所属模块 | layout-worker-manager |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 终止当前布局计算 Web Worker 实例。调用 Worker.terminate() 立即终止线程，清空所有待处理的请求（pendingRequests），重置 workerInstance 为 null。后续 computeLayoutInWorker 调用会自动创建新的 Worker 实例 |
+| 输入参数 | 无 |
+| 输出参数 | void |
+| 典型用例 | `terminateLayoutWorker(); // 清理资源或取消布局计算` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
