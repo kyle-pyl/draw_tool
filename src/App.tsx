@@ -1,7 +1,8 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
-import { CanvasView, Viewport, SelectionManager, ConflictHighlighter } from './canvas';
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import { CanvasView, Viewport, SelectionManager, ConflictHighlighter, SnapManager } from './canvas';
 import type { DrawingToolType, CanvasContextMenuEvent } from './canvas';
-import { ShapeToolbar, ConflictPanel, TextEditor, ImageImportButton, PropertyPanel, LayerPanel, PwaPrompt, useKeyboardShortcuts, ContextMenu } from './ui';
+import { ShapeToolbar, ConflictPanel, TextEditor, ImageImportButton, PropertyPanel, LayerPanel, PwaPrompt, useKeyboardShortcuts, ContextMenu, Ruler } from './ui';
 import type { MenuItem, ContextMenuState } from './ui';
 import { createGeometryAdapter } from './core/geometry';
 import { checkLayerCollisions } from './core/collision';
@@ -15,6 +16,7 @@ import {
   GroupElementsCommand,
   AlignElementsCommand,
   DistributeElementsCommand,
+  MoveElementsCommand,
 } from './core/commands';
 import type { ElementInput, ElementChanges } from './core/commands';
 import type { ElementStyle } from './core/types';
@@ -41,9 +43,17 @@ function App() {
   const [viewport] = useState(() => new Viewport());
   const [selectionManager] = useState(() => new SelectionManager());
   const [conflictHighlighter] = useState(() => new ConflictHighlighter());
+  const [snapManager] = useState(() => new SnapManager());
   const [, setTick] = useState(0);
   const forceUpdate = useCallback(() => setTick((n) => n + 1), []);
   const executorRef = useRef(new CommandExecutor());
+
+  const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+  useEffect(() => {
+    const handleResize = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const [activeTool, setActiveTool] = useState<DrawingToolType>('select');
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
@@ -66,6 +76,18 @@ function App() {
     if (el && el.type === 'text') return el as TextElement;
     return null;
   }, [editingTextId, currentScene]);
+
+  const handleElementMove = useCallback(
+    (elementIds: string[], delta: { dx: number; dy: number }) => {
+      const cmd = new MoveElementsCommand(elementIds, delta);
+      const result = executorRef.current.execute(cmd);
+      if (!result.valid) {
+        console.warn('Move failed:', result.errors.map((e) => e.message).join('\n'));
+      }
+      forceUpdate();
+    },
+    [forceUpdate],
+  );
 
   const handleDrawComplete = useCallback(
     (input: ElementInput) => {
@@ -586,6 +608,7 @@ function App() {
         viewport={viewport}
         selectionManager={selectionManager}
         conflictHighlighter={conflictHighlighter}
+        snapManager={snapManager}
         onViewportChange={forceUpdate}
         onSelectionChange={forceUpdate}
         activeTool={activeTool}
@@ -594,7 +617,9 @@ function App() {
         onTextEditRequest={handleTextEditRequest}
         onConnectorRouteChange={handleConnectorRouteChange}
         onContextMenu={handleCanvasContextMenu}
+        onElementMove={handleElementMove}
       />
+      <Ruler viewport={viewport} width={windowSize.width} height={windowSize.height} />
       <ShapeToolbar activeTool={activeTool} onToolChange={handleToolChange} />
       <ImageImportButton layerId={drawingLayerId} onImport={handleImageImport} />
       <LayerPanel

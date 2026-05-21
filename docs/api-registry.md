@@ -4700,3 +4700,100 @@
 | 输出参数 | N/A |
 | 典型用例 | 参见 LayerPanel 接口 |
 | 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0250 SnapManager
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0250 |
+| 名称 | SnapManager |
+| 所属系统 | canvas |
+| 所属模块 | snap |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 吸附管理器类。提供网格吸附（snapToGrid）和元素边缘/中心吸附（snapToElements）能力，统一 snapPosition 方法计算最终吸附位置（先网格后元素）。支持可配置吸附距离、网格/元素独立开关、Alt 键临时禁用。元素吸附支持左/右/上/下边缘和水平/垂直中心对齐。自动排除 connector、隐藏元素和自身元素。 |
+| 输入参数 | constructor(config?: Partial<SnapConfig>) - 可配置 enabled/gridSnap/elementSnap/snapDistance
+snapPosition(x, y, width, height, gridSize, elements, excludeIds): SnapResult - 综合吸附计算
+_snapToGrid(value, gridSize): { value, snapped } - 网格吸附 |
+| 输出参数 | SnapResult - { x, y, snappedX, snappedY, snapTarget? } |
+| 典型用例 | const sm = new SnapManager({ snapDistance: 8 }); const result = sm.snapPosition(197, 50, 100, 80, 20, elements, ['moving-1']); |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0251 SnapConfig
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0251 |
+| 名称 | SnapConfig |
+| 所属系统 | canvas |
+| 所属模块 | snap |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 吸附配置接口。控制吸附总开关、网格吸附开关、元素吸附开关和吸附距离。 |
+| 输入参数 | enabled: boolean（吸附总开关，默认 true）、gridSnap: boolean（网格吸附，默认 true）、elementSnap: boolean（元素吸附，默认 true）、snapDistance: number（吸附距离像素，默认 8） |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | const config: Partial<SnapConfig> = { snapDistance: 6, gridSnap: false } |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0252 SnapResult
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0252 |
+| 名称 | SnapResult |
+| 所属系统 | canvas |
+| 所属模块 | snap |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 吸附结果接口。返回吸附后的位置、X/Y 方向是否吸附成功及吸附目标元素 ID。 |
+| 输入参数 | x: number（吸附后 X 坐标）、y: number（吸附后 Y 坐标）、snappedX: boolean（X 方向是否吸附）、snappedY: boolean（Y 方向是否吸附）、snapTarget?: string（吸附目标元素 ID） |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | const result: SnapResult = { x: 200, y: 100, snappedX: true, snappedY: false } |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0253 Ruler
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0253 |
+| 名称 | Ruler |
+| 所属系统 | ui |
+| 所属模块 | Ruler |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 标尺 React 组件。在画布上方和左侧渲染 HTML Canvas 标尺，显示 Canvas 坐标。顶部水平标尺显示 X 坐标，左侧垂直标尺显示 Y 坐标。刻度间隔自动随缩放调整（computeTickInterval），包含主刻度（带数字标签）和子刻度（5 等分）。角方块连接两个标尺。使用 Canvas 2D 渲染，每 100ms 自动刷新。 |
+| 输入参数 | props: { viewport: Viewport, width: number, height: number, rulerSize?: number } |
+| 输出参数 | ReactElement - 两个 Canvas 元素和角方块 div |
+| 典型用例 | <Ruler viewport={viewport} width={window.innerWidth} height={window.innerHeight} /> |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0254 RulerProps
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0254 |
+| 名称 | RulerProps |
+| 所属系统 | ui |
+| 所属模块 | Ruler |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | Ruler 组件的 Props 类型。包含 Viewport 实例、容器宽度/高度和可选的标尺尺寸。 |
+| 输入参数 | viewport: Viewport、width: number、height: number、rulerSize?: number（默认 25） |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | const props: RulerProps = { viewport: vp, width: 1920, height: 1080 } |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |

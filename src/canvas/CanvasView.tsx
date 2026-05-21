@@ -1,9 +1,10 @@
-import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import type { SceneDocument, SceneElement, ShapeElement, TextElement, ImageElement, ConnectorElement, ConnectorEndpoint, ConnectorLabel, ArrowStyle, ElementStyle, BBox, AnchorPoint } from '../core/types';
+import { useRef, useState, useEffect, useCallback } from 'react';
+import type { SceneDocument, SceneElement, ShapeElement, TextElement, ImageElement, ConnectorElement, ConnectorEndpoint, ElementStyle, BBox, AnchorPoint } from '../core/types';
 import type { ElementInput } from '../core';
 import type { Viewport } from './viewport';
 import type { SelectionManager } from './selection';
 import type { ConflictHighlighter } from './conflict';
+import type { SnapManager } from './snap';
 import { getAnchors, resolveAnchor } from '../core/anchors';
 import { computeOrthogonalRoute, getBBox } from '../core';
 
@@ -39,6 +40,8 @@ interface CanvasViewProps {
   onTextEditRequest?: (elementId: string) => void;
   onConnectorRouteChange?: (connectorId: string, routePoints: { x: number; y: number }[]) => void;
   onContextMenu?: (event: CanvasContextMenuEvent) => void;
+  snapManager?: SnapManager;
+  onElementMove?: (elementIds: string[], delta: { dx: number; dy: number }) => void;
 }
 
 function getElementBBox(el: SceneElement): BBox {
@@ -56,30 +59,6 @@ function getVisibleAnchors(el: SceneElement): { anchor: AnchorPoint; absX: numbe
       absY: resolved?.y ?? el.transform.y + anchor.position.y * el.transform.height,
     };
   });
-}
-
-function findElementAtPoint(
-  canvasX: number,
-  canvasY: number,
-  elements: SceneElement[],
-  excludeConnectors: boolean,
-): SceneElement | null {
-  const connectorBBoxPad = 0;
-  for (let i = elements.length - 1; i >= 0; i--) {
-    const el = elements[i];
-    if (!el.visible || el.locked) continue;
-    if (excludeConnectors && el.type === 'connector') continue;
-    const bbox = getElementBBox(el);
-    if (
-      canvasX >= bbox.x &&
-      canvasX <= bbox.x + bbox.width &&
-      canvasY >= bbox.y &&
-      canvasY <= bbox.y + bbox.height
-    ) {
-      return el;
-    }
-  }
-  return null;
 }
 
 function findNearestAnchor(
@@ -287,7 +266,7 @@ function renderImageElement(el: ImageElement) {
   );
 }
 
-function resolveEndpointPosition(ep: ConnectorEndpoint, _elements: SceneElement[]): { x: number; y: number } {
+function resolveEndpointPosition(ep: ConnectorEndpoint): { x: number; y: number } {
   return { x: ep.x, y: ep.y };
 }
 
@@ -338,12 +317,6 @@ function computePointOnPath(points: { x: number; y: number }[], t: number): { x:
 
   return points[points.length - 1];
 }
-
-function createArrowMarkerId(arrow: ArrowStyle, prefix: string): string {
-  return `arrow-${prefix}-${arrow.type}-${arrow.size ?? 1}-${arrow.color ?? 'default'}-${Date.now()}`;
-}
-
-const arrowMarkerCache = new Map<string, React.ReactElement>();
 
 function buildArrowMarkers(scene: SceneDocument): React.ReactElement[] {
   const markers: React.ReactElement[] = [];
@@ -447,9 +420,9 @@ function buildArrowMarkers(scene: SceneDocument): React.ReactElement[] {
   return markers;
 }
 
-function renderConnectorElement(el: ConnectorElement, elements: SceneElement[]) {
-  const source = resolveEndpointPosition(el.source, elements);
-  const target = resolveEndpointPosition(el.target, elements);
+function renderConnectorElement(el: ConnectorElement) {
+  const source = resolveEndpointPosition(el.source);
+  const target = resolveEndpointPosition(el.target);
   const routePoints = el.route.points;
   const routeType = el.route.type;
 
@@ -553,7 +526,7 @@ function renderConnectorElement(el: ConnectorElement, elements: SceneElement[]) 
   );
 }
 
-function renderElement(el: SceneElement, elements: SceneElement[]): React.ReactElement | null {
+function renderElement(el: SceneElement): React.ReactElement | null {
   if (!el.visible) return null;
 
   switch (el.type) {
@@ -564,7 +537,7 @@ function renderElement(el: SceneElement, elements: SceneElement[]): React.ReactE
     case 'image':
       return renderImageElement(el as ImageElement);
     case 'connector':
-      return renderConnectorElement(el as ConnectorElement, elements);
+      return renderConnectorElement(el as ConnectorElement);
     default:
       return null;
   }
@@ -830,7 +803,7 @@ export function renderDrawPreview(tool: DrawingToolType, state: DrawState): Reac
   }
 }
 
-export function CanvasView({ scene, viewport, width, height, className, onViewportChange, selectionManager, onSelectionChange, conflictHighlighter, activeTool, drawingLayerId, onDrawComplete, onTextEditRequest, onConnectorRouteChange, onContextMenu }: CanvasViewProps) {
+export function CanvasView({ scene, viewport, width, height, className, onViewportChange, selectionManager, onSelectionChange, conflictHighlighter, activeTool, drawingLayerId, onDrawComplete, onTextEditRequest, onConnectorRouteChange, onContextMenu, snapManager, onElementMove }: CanvasViewProps) {
   const layersSorted = [...scene.layers].sort((a, b) => a.order - b.order);
   const layerElementMap = new Map<string, SceneElement[]>();
   const layerMap = new Map(scene.layers.map((l) => [l.id, l]));
@@ -845,6 +818,7 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
   }
 
   const viewportTransform = viewport.getTransformMatrix();
+  const gridSize = scene.canvas.gridSize;
 
   const [spacePressed, setSpacePressed] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
@@ -853,6 +827,25 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
   const lastMouseRef = useRef({ x: 0, y: 0 });
   const [marquee, setMarquee] = useState<MarqueeState | null>(null);
   const didDragRef = useRef(false);
+
+  const altDownRef = useRef(false);
+
+  interface ElementDragState {
+    elementIds: string[];
+    startX: number;
+    startY: number;
+    movedX: number;
+    movedY: number;
+    snappedX: number;
+    snappedY: number;
+  }
+  const [elementDrag, setElementDrag] = useState<ElementDragState | null>(null);
+  const elementDragRef = useRef<ElementDragState | null>(null);
+  const elementDragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const [snapLines, setSnapLines] = useState<{
+    verticals: number[];
+    horizontals: number[];
+  } | null>(null);
 
   const [drawState, setDrawState] = useState<DrawState | null>(null);
   const drawStateRef = useRef<DrawState | null>(null);
@@ -947,6 +940,7 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
       return;
     }
     if (didDragRef.current) return;
+    if (elementDragRef.current) return;
     selectionManager.clearSelection();
     onSelectionChange?.();
   }, [selectionManager, onSelectionChange]);
@@ -999,6 +993,9 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
         spaceDownRef.current = true;
         setSpacePressed(true);
       }
+      if (e.code === 'AltLeft' || e.code === 'AltRight') {
+        altDownRef.current = true;
+      }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
@@ -1008,6 +1005,9 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
           isPanningRef.current = false;
           setIsPanning(false);
         }
+      }
+      if (e.code === 'AltLeft' || e.code === 'AltRight') {
+        altDownRef.current = false;
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -1156,10 +1156,46 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
             endY: e.clientY - rect.top,
           });
           didDragRef.current = false;
+        } else if (!spacePressed && !isDrawing && !isConnectorTool) {
+          // Start element drag
+          const elementGroup = target.closest('[data-element-id]');
+          if (elementGroup && selectionManager) {
+            const elId = elementGroup.getAttribute('data-element-id');
+            if (elId) {
+              const el = scene.elements.find((e2) => e2.id === elId);
+              if (el && !el.locked) {
+                const elLayer = layerMap.get(el.layerId);
+                if (!elLayer?.locked) {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const canvasPt = screenToCanvas(e.clientX - rect.left, e.clientY - rect.top);
+                  let dragIds: string[];
+                  if (selectionManager.isSelected(elId)) {
+                    dragIds = [...selectionManager.selectedIds];
+                  } else {
+                    dragIds = [elId];
+                  }
+                  const ds: ElementDragState = {
+                    elementIds: dragIds,
+                    startX: canvasPt.x,
+                    startY: canvasPt.y,
+                    movedX: 0,
+                    movedY: 0,
+                    snappedX: 0,
+                    snappedY: 0,
+                  };
+                  elementDragRef.current = ds;
+                  elementDragStartRef.current = { x: canvasPt.x, y: canvasPt.y };
+                  setElementDrag(ds);
+                  e.stopPropagation();
+                  return;
+                }
+              }
+            }
+          }
         }
       }
     },
-    [spacePressed, isDrawing, activeTool, screenToCanvas, isConnectorTool, scene.elements]
+    [spacePressed, isDrawing, activeTool, screenToCanvas, isConnectorTool, scene.elements, selectionManager, layerMap]
   );
 
   const handleMouseMove = useCallback(
@@ -1200,6 +1236,101 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
         return;
       }
 
+      if (elementDragRef.current && elementDragStartRef.current) {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const canvasPt = screenToCanvas(e.clientX - rect.left, e.clientY - rect.top);
+        const start = elementDragStartRef.current;
+        const rawDx = canvasPt.x - start.x;
+        const rawDy = canvasPt.y - start.y;
+
+        const dragEls = scene.elements.filter((e2) =>
+          elementDragRef.current!.elementIds.includes(e2.id) && e2.type !== 'connector',
+        );
+        const dragEl = dragEls[0];
+        const rawX = dragEl ? dragEl.transform.x + rawDx : canvasPt.x;
+        const rawY = dragEl ? dragEl.transform.y + rawDy : canvasPt.y;
+        const dragW = dragEl?.transform.width ?? 0;
+        const dragH = dragEl?.transform.height ?? 0;
+
+        let snappedDx = rawDx;
+        let snappedDy = rawDy;
+        if (snapManager && !altDownRef.current && dragEls.length > 0) {
+          const snapResult = snapManager.snapPosition(
+            rawX, rawY, dragW, dragH,
+            gridSize,
+            scene.elements,
+            elementDragRef.current!.elementIds,
+          );
+          snappedDx = snapResult.x - dragEls[0].transform.x;
+          snappedDy = snapResult.y - dragEls[0].transform.y;
+
+          if (snapResult.snappedX || snapResult.snappedY) {
+            const lines: { verticals: number[]; horizontals: number[] } = { verticals: [], horizontals: [] };
+            if (snapResult.snappedX) {
+              for (const el of scene.elements) {
+                if (elementDragRef.current!.elementIds.includes(el.id)) continue;
+                if (el.type === 'connector') continue;
+                if (!el.visible) continue;
+                const b = getBBox(el);
+                const targets = [b.x, b.x + b.width, b.x + b.width / 2];
+                for (const t of targets) {
+                  if (Math.abs(snapResult.x - t) <= snapManager.config.snapDistance ||
+                      Math.abs(snapResult.x + dragW - t) <= snapManager.config.snapDistance) {
+                    if (!lines.verticals.includes(t)) lines.verticals.push(t);
+                  }
+                }
+              }
+              if (gridSize > 0 && snapManager.config.gridSnap) {
+                const gx = Math.round(rawX / gridSize) * gridSize;
+                if (Math.abs(snapResult.x - gx) < 0.5 || Math.abs(snapResult.x + dragW - gx) < 0.5) {
+                  if (!lines.verticals.includes(gx)) lines.verticals.push(gx);
+                }
+              }
+            }
+            if (snapResult.snappedY) {
+              for (const el of scene.elements) {
+                if (elementDragRef.current!.elementIds.includes(el.id)) continue;
+                if (el.type === 'connector') continue;
+                if (!el.visible) continue;
+                const b = getBBox(el);
+                const targets = [b.y, b.y + b.height, b.y + b.height / 2];
+                for (const t of targets) {
+                  if (Math.abs(snapResult.y - t) <= snapManager.config.snapDistance ||
+                      Math.abs(snapResult.y + dragH - t) <= snapManager.config.snapDistance) {
+                    if (!lines.horizontals.includes(t)) lines.horizontals.push(t);
+                  }
+                }
+              }
+              if (gridSize > 0 && snapManager.config.gridSnap) {
+                const gy = Math.round(rawY / gridSize) * gridSize;
+                if (Math.abs(snapResult.y - gy) < 0.5 || Math.abs(snapResult.y + dragH - gy) < 0.5) {
+                  if (!lines.horizontals.includes(gy)) lines.horizontals.push(gy);
+                }
+              }
+            }
+            setSnapLines(lines.verticals.length > 0 || lines.horizontals.length > 0 ? lines : null);
+          } else {
+            setSnapLines(null);
+          }
+        } else {
+          setSnapLines(null);
+        }
+
+        const ed = elementDragRef.current;
+        const newState: ElementDragState = {
+          ...ed,
+          movedX: snappedDx,
+          movedY: snappedDy,
+          snappedX: snappedDx,
+          snappedY: snappedDy,
+        };
+        elementDragRef.current = newState;
+        setElementDrag(newState);
+
+        didDragRef.current = true;
+        return;
+      }
+
       if (marquee) {
         const rect = e.currentTarget.getBoundingClientRect();
         const mx = e.clientX - rect.left;
@@ -1232,10 +1363,26 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
         setHoveredAnchorId(null);
       }
     },
-    [viewport, notifyChange, marquee, screenToCanvas, isConnectorTool, scene.elements]
+    [viewport, notifyChange, marquee, screenToCanvas, isConnectorTool, scene.elements, snapManager, gridSize]
   );
 
   const handleMouseUp = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
+    if (elementDragRef.current && elementDragStartRef.current && onElementMove) {
+      const ed = elementDragRef.current;
+      if (ed.movedX !== 0 || ed.movedY !== 0) {
+        onElementMove(ed.elementIds, { dx: ed.movedX, dy: ed.movedY });
+      } else if (ed.elementIds.length === 1 && !didDragRef.current) {
+        // Was a click - already handled by onClick
+      }
+      elementDragRef.current = null;
+      elementDragStartRef.current = null;
+      setElementDrag(null);
+      setSnapLines(null);
+      if (ed.movedX !== 0 || ed.movedY !== 0) {
+        return;
+      }
+    }
+
     if ((e.button === 1 || e.button === 0) && isPanningRef.current) {
       isPanningRef.current = false;
       setIsPanning(false);
@@ -1384,16 +1531,14 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
     }
 
     setMarquee(null);
-  }, [viewport, marquee, selectionManager, scene, onSelectionChange, activeTool, completeDragDraw, onDrawComplete, drawingLayerId, onConnectorRouteChange, bendPointDragPos, screenToCanvas]);
+  }, [viewport, marquee, selectionManager, scene, onSelectionChange, activeTool, completeDragDraw, onDrawComplete, drawingLayerId, onConnectorRouteChange, bendPointDragPos, screenToCanvas, onElementMove, layerMap]);
 
   const handleContextMenu = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     e.preventDefault();
     if (isPanningRef.current) return;
 
-    const rect = e.currentTarget.getBoundingClientRect();
     const screenX = e.clientX;
     const screenY = e.clientY;
-    const canvasPt = screenToCanvas(screenX - rect.left, screenY - rect.top);
 
     const target = e.target as Element;
     const elementGroup = target.closest('[data-element-id]');
@@ -1415,6 +1560,7 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
 
   const getCursor = (): string => {
     if (isPanning) return 'grabbing';
+    if (elementDrag) return 'grabbing';
     if (spacePressed) return 'grab';
     if (activeTool === 'connector') return 'crosshair';
     if (activeTool === 'polygon') return 'crosshair';
@@ -1441,8 +1587,33 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
     >
       <defs>
         {buildArrowMarkers(scene)}
+        {gridSize > 0 && (
+          <pattern id="grid-pattern" width={gridSize} height={gridSize} patternUnits="userSpaceOnUse">
+            <circle cx={0} cy={0} r={1} fill="#d0d0d0" opacity={0.6} />
+            <line x1={gridSize / 2} y1={0} x2={gridSize / 2} y2={0} />
+          </pattern>
+        )}
       </defs>
       <g transform={viewportTransform}>
+        {gridSize > 0 && (
+          <rect x={-10000} y={-10000} width={20000} height={20000} fill="url(#grid-pattern)" pointerEvents="none" />
+        )}
+        {snapLines && (() => {
+          const allV = snapLines.verticals;
+          const allH = snapLines.horizontals;
+          return (
+            <g pointerEvents="none">
+              {allV.map((v, i) => (
+                <line key={`sv-${i}`} x1={v} y1={-10000} x2={v} y2={10000}
+                  stroke="#2196F3" strokeWidth={1} strokeDasharray="4 2" opacity={0.6} />
+              ))}
+              {allH.map((h, i) => (
+                <line key={`sh-${i}`} x1={-10000} y1={h} x2={10000} y2={h}
+                  stroke="#2196F3" strokeWidth={1} strokeDasharray="4 2" opacity={0.6} />
+              ))}
+            </g>
+          );
+        })()}
         {layersSorted.map((layer) => {
           const els = layerElementMap.get(layer.id) ?? [];
           const isLayerLocked = layer.locked;
@@ -1454,16 +1625,21 @@ export function CanvasView({ scene, viewport, width, height, className, onViewpo
               data-layer-name={layer.name}
               style={isLayerHidden ? { visibility: 'hidden' } : undefined}
             >
-              {els.map((el) => (
+              {els.map((el) => {
+                const isDragged = elementDrag && elementDrag.elementIds.includes(el.id);
+                const dragTransform = isDragged ? `translate(${elementDrag.movedX}, ${elementDrag.movedY})` : undefined;
+                return (
                 <g
                   key={el.id}
                   onClick={isLayerLocked || el.locked ? undefined : (e) => handleElementClick(e, el)}
                   style={{ cursor: isLayerLocked || el.locked ? 'default' : 'pointer' }}
                   data-element-id={el.id}
+                  transform={dragTransform}
                 >
-                  {renderElement(el, scene.elements)}
+                  {renderElement(el)}
                 </g>
-              ))}
+                );
+              })}
             </g>
           );
         })}

@@ -896,3 +896,16 @@
 | 修改记录      | 新建：src/ui/LayerPanel.tsx（LayerPanel 组件：图层列表按 order 降序显示、可见性切换、锁定切换、元素计数、点击选中全层元素、拖拽排序（HTML5 drag-and-drop）、双击重命名、批量操作下拉菜单（全选/改色/改透明度/显示隐藏/复制到层/移动到层/删除全部）、冲突图层红色高亮）；修改：src/ui/index.ts（新增 LayerPanel/LayerPanelProps 导出）、src/App.tsx（集成 LayerPanel 组件） |
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0248（LayerPanel）、API-0249（LayerPanelProps） |
+
+### T-12-07 实现网格、标尺和吸附
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号 | T-12-07 |
+| 任务名称 | 实现网格、标尺和吸附 |
+| 完成时间 | 2026-05-21 17:52 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| Git Commit | 73364b4 |
+| 修改记录 | 新建：src/canvas/snap.ts（SnapManager 类：网格吸附、元素边缘/中心吸附、可配置吸附距离、Alt 临时禁用）、src/ui/Ruler.tsx（Ruler 组件：顶部水平标尺、左侧垂直标尺、自适应刻度间隔、主刻度+子刻度渲染、角方块）、src/tests/unit/snap.test.ts（13 个 SnapManager 单元测试）；修改：src/canvas/CanvasView.tsx（新增 snapManager/onElementMove props、新增元素拖拽交互（mousedown/mousemove/mouseup 三阶段、支持多选拖拽、拖拽预览变换、dragging 光标）、网格点阵渲染（SVG pattern 加 background rect）、吸附参考线渲染（垂直/水平虚线）、Alt 键临时禁用吸附）、src/canvas/index.ts（新增 SnapManager/SnapConfig/SnapResult 导出）、src/ui/index.ts（新增 Ruler/RulerProps 导出）、src/App.tsx（新增 SnapManager 实例化、Ruler 组件集成（含 window resize 监听）、元素拖拽 MoveElementsCommand 回调） |
+| 发现缺陷 | 无 |
+| 产出接口/函数 | API-0250（SnapManager）、API-0251（SnapConfig）、API-0252（SnapResult）、API-0253（Ruler）、API-0254（RulerProps） |

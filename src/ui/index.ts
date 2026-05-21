@@ -23,3 +23,5 @@ export { LayerPanel } from './LayerPanel';
 export type { LayerPanelProps } from './LayerPanel';
 export { ContextMenu } from './ContextMenu';
 export type { MenuItem, ContextMenuState } from './ContextMenu';
+export { Ruler } from './Ruler';
+export type { RulerProps } from './Ruler';
