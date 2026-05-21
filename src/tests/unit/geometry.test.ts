@@ -581,11 +581,12 @@ describe('createGeometryAdapter', () => {
     expect(bbox).toEqual({ x: 10, y: 20, width: 100, height: 50 });
   });
 
-  it('getGeometry is provided and intersects is reserved (undefined)', () => {
+  it('getGeometry and intersects are provided', () => {
     const adapter = createGeometryAdapter();
     expect(adapter.getGeometry).toBeDefined();
     expect(adapter.getGeometry).toBeInstanceOf(Function);
-    expect(adapter.intersects).toBeUndefined();
+    expect(adapter.intersects).toBeDefined();
+    expect(adapter.intersects).toBeInstanceOf(Function);
   });
 });
 

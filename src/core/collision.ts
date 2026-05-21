@@ -1,4 +1,4 @@
-import type { SceneElement, GeometryAdapter, BBox } from './types';
+import type { SceneElement, GeometryAdapter, BBox, CollisionStrategy } from './types';
 
 export interface CollisionEntry {
   elementA: string;
@@ -15,6 +15,7 @@ export interface CollisionCheckOptions {
   skipHidden?: boolean;
   skipLocked?: boolean;
   skipConnectors?: boolean;
+  collisionStrategy?: CollisionStrategy;
 }
 
 function bboxesOverlap(a: BBox, b: BBox): boolean {
@@ -42,6 +43,7 @@ export function checkLayerCollisions(
   const collisions: CollisionEntry[] = [];
 
   const skipConnectors = options?.skipConnectors !== false;
+  const useGeometry = options?.collisionStrategy === 'geometry' && typeof geometryAdapter.intersects === 'function';
   const candidates = elements.filter((el) => {
     if (skipConnectors && el.type === 'connector') return false;
     if (options?.skipHidden && !el.visible) return false;
@@ -55,7 +57,17 @@ export function checkLayerCollisions(
     for (let j = i + 1; j < candidates.length; j++) {
       const b = candidates[j];
       const bboxB = geometryAdapter.getBBox(b);
-      if (bboxesOverlap(bboxA, bboxB)) {
+      if (!bboxesOverlap(bboxA, bboxB)) continue;
+
+      if (useGeometry) {
+        if (geometryAdapter.intersects!(a, b)) {
+          collisions.push({
+            elementA: a.id,
+            elementB: b.id,
+            overlapBBox: bboxIntersection(bboxA, bboxB),
+          });
+        }
+      } else {
         collisions.push({
           elementA: a.id,
           elementB: b.id,
@@ -69,4 +81,29 @@ export function checkLayerCollisions(
     hasCollision: collisions.length > 0,
     collisions,
   };
+}
+
+/**
+ * Check if two SceneElements collide, respecting the collision strategy.
+ *
+ * When `strategy` is 'geometry' and the adapter provides `intersects`,
+ * polygon-level intersection is used after a quick BBox pre-filter.
+ * Falls back to BBox overlap when `strategy` is 'bbox' or geometry
+ * cannot be extracted.
+ */
+export function checkElementsCollide(
+  a: SceneElement,
+  b: SceneElement,
+  adapter: GeometryAdapter,
+  strategy: CollisionStrategy,
+): boolean {
+  const bboxA = adapter.getBBox(a);
+  const bboxB = adapter.getBBox(b);
+  if (!bboxesOverlap(bboxA, bboxB)) return false;
+
+  if (strategy === 'geometry' && adapter.intersects) {
+    return adapter.intersects(a, b);
+  }
+
+  return true;
 }

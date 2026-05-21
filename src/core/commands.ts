@@ -10,7 +10,7 @@ import { successResult, failureResult } from './errors';
 import { useDocumentStore } from './store';
 import type { DocumentStore } from './store';
 import { generateId } from './utils';
-import { checkLayerCollisions, type CollisionCheckOptions } from './collision';
+import { checkLayerCollisions, checkElementsCollide, type CollisionCheckOptions } from './collision';
 import { createGeometryAdapter } from './geometry';
 import type { GeometryAdapter } from './types';
 import { ErrorCode } from './errors';
@@ -245,6 +245,7 @@ function buildElementFromInput(input: ElementInput, id: string): SceneElement {
 function checkElementCollision(
   newElement: SceneElement,
   existingElements: SceneElement[],
+  collisionStrategy?: string,
 ): ValidationError | null {
   if (newElement.type === 'connector') return null;
 
@@ -254,22 +255,26 @@ function checkElementCollision(
   for (const existing of existingElements) {
     if (existing.type === 'connector') continue;
     const existingBBox = geometryAdapter.getBBox(existing);
-    if (bboxesOverlap(newBBox, existingBBox)) {
-      const overlapX = Math.max(newBBox.x, existingBBox.x);
-      const overlapY = Math.max(newBBox.y, existingBBox.y);
-      const overlapW = Math.min(newBBox.x + newBBox.width, existingBBox.x + existingBBox.width) - overlapX;
-      const overlapH = Math.min(newBBox.y + newBBox.height, existingBBox.y + existingBBox.height) - overlapY;
+    if (!bboxesOverlap(newBBox, existingBBox)) continue;
 
-      return {
-        code: ErrorCode.GEO_SAME_LAYER_OVERLAP as string,
-        message: `Can't add element: would overlap with "${existing.name || existing.id}" in layer "${newElement.layerId}"`,
-        severity: 'error',
-        layerIds: [newElement.layerId],
-        elementIds: [newElement.id, existing.id],
-        bboxes: [{ x: overlapX, y: overlapY, width: overlapW, height: overlapH }],
-        suggestion: 'Move the new element to a different position or layer to avoid overlap',
-      };
+    if (collisionStrategy === 'geometry' && geometryAdapter.intersects) {
+      if (!geometryAdapter.intersects(newElement, existing)) continue;
     }
+
+    const overlapX = Math.max(newBBox.x, existingBBox.x);
+    const overlapY = Math.max(newBBox.y, existingBBox.y);
+    const overlapW = Math.min(newBBox.x + newBBox.width, existingBBox.x + existingBBox.width) - overlapX;
+    const overlapH = Math.min(newBBox.y + newBBox.height, existingBBox.y + existingBBox.height) - overlapY;
+
+    return {
+      code: ErrorCode.GEO_SAME_LAYER_OVERLAP as string,
+      message: `Can't add element: would overlap with "${existing.name || existing.id}" in layer "${newElement.layerId}"`,
+      severity: 'error',
+      layerIds: [newElement.layerId],
+      elementIds: [newElement.id, existing.id],
+      bboxes: [{ x: overlapX, y: overlapY, width: overlapW, height: overlapH }],
+      suggestion: 'Move the new element to a different position or layer to avoid overlap',
+    };
   }
 
   return null;
@@ -308,7 +313,7 @@ export class CreateElementCommand implements SceneCommand {
 
     const prospectiveElement = buildElementFromInput(this.input, this.generatedId);
     const layerElements = scene.elements.filter((el) => el.layerId === this.input.layerId);
-    const collisionError = checkElementCollision(prospectiveElement, layerElements);
+    const collisionError = checkElementCollision(prospectiveElement, layerElements, scene.rules.collisionStrategy);
     if (collisionError) {
       return failureResult(collisionError);
     }
@@ -2247,6 +2252,7 @@ export class MoveLayersCommand implements SceneCommand {
       const options: CollisionCheckOptions = {};
       if (newScene.rules.hiddenElementsCollide === false) options.skipHidden = true;
       if (newScene.rules.lockedElementsCollide === false) options.skipLocked = true;
+      options.collisionStrategy = newScene.rules.collisionStrategy;
 
       const collisionResult = checkLayerCollisions(layerElements, geometryAdapter, options);
 

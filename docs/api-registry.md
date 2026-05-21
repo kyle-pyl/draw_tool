@@ -1317,14 +1317,14 @@
 | 所属模块 | geometry |
 | 状态 | 活跃 |
 | 创建日期 | 2026-05-19 |
-| 最后修订日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-21 |
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | 创建 GeometryAdapter 实例的工厂函数。返回的适配器对象包含完整实现的 getBBox 方法，getGeometry 和 intersects 方法预留为 undefined 供未来高级碰撞检测实现 |
+| 功能描述 | 创建 GeometryAdapter 实例的工厂函数。返回的适配器对象包含完整实现的 getBBox、getGeometry 和 intersects 方法。intersects 使用 polygon-clipping 库进行真实几何相交检测：先通过 BBox 快速剔除明显不重叠的元素对，对候选对提取真实几何形状（shape 元素的 rect/circle/ellipse/polygon），使用 polygon-clipping intersection 判断是否实际相交。非 shape 类型元素退化为 BBox 重叠判断 |
 | 输入参数 | 无 |
 | 输出参数 | GeometryAdapter - 包含 getBBox（已实现）、getGeometry（undefined 占位）、intersects（undefined 占位）的适配器对象 |
 | 典型用例 | `const adapter = createGeometryAdapter(); const bbox = adapter.getBBox(element);` |
-| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-01）|
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-01）; 2026-05-21, OpenCode/deepseek-v4-pro, 新增 getGeometry 实现（T-11-01）; 2026-05-21, OpenCode/deepseek-v4-pro, 新增 intersects 实现（T-11-03） |
 
 ### API-0069 checkLayerCollisions
 
@@ -1393,14 +1393,14 @@
 | 所属模块 | collision |
 | 状态 | 活跃 |
 | 创建日期 | 2026-05-19 |
-| 最后修订日期 | 2026-05-19 |
+| 最后修订日期 | 2026-05-21 |
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | 碰撞检测的过滤选项，控制是否跳过隐藏或锁定元素的检测 |
-| 输入参数 | skipHidden?: boolean（跳过隐藏元素，默认 false 参与检测），skipLocked?: boolean（跳过锁定元素，默认 false 参与检测） |
+| 功能描述 | 碰撞检测的过滤选项，控制是否跳过隐藏或锁定元素的检测，以及碰撞检测策略（bbox 或 geometry） |
+| 输入参数 | skipHidden?: boolean（跳过隐藏元素，默认 false 参与检测），skipLocked?: boolean（跳过锁定元素，默认 false 参与检测），collisionStrategy?: CollisionStrategy（碰撞检测策略：'bbox' 按包围盒检测，'geometry' 按真实几何形状检测） |
 | 输出参数 | 无（接口类型） |
 | 典型用例 | `checkLayerCollisions(elements, adapter, { skipHidden: true })` |
-| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-02）|
+| 修订历史 | 2026-05-19, OpenCode/deepseek-v4-pro, 初始创建（T-04-02）; 2026-05-21, OpenCode/deepseek-v4-pro, 新增 collisionStrategy 选项（T-11-03） |
 
 ### API-0073 validateGeometryRules
 
@@ -4030,7 +4030,7 @@
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
 | 功能描述 | 从 shape 元素提取真实 GeometryShape（闭合路径顶点数组）。rect 转 4 顶点多边形（支持旋转），circle/ellipse 近似 64 顶点，polygon 直接使用顶点（支持旋转），path 暂不支持 |
-| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 (T-11-01); 2026-05-21, OpenCode/deepseek-v4-pro, intersects 函数调用 getGeometry 进行真实几何碰撞检测 (T-11-03) |
 
 ### API-0214 BooleanOperationCommand
 
@@ -4090,4 +4090,42 @@
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
 | 功能描述 | 将 GeometryShape 转换为相对于形状包围盒左上角的 SVG path 命令字符串，供裁剪后的形状元素使用 |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0218 intersects
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0218 |
+| 名称 | intersects |
+| 所属系统 | core |
+| 所属模块 | geometry |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 检查两个 SceneElement 是否在真实几何层面相交。先通过 BBox 快速剔除明显不重叠的元素对；若两者均为 shape 类型且可提取 GeometryShape，使用 polygon-clipping 的 intersection 操作判断多边形级相交；否则（text/image/connector 等）退化为 BBox 重叠判断 |
+| 输入参数 | a: SceneElement（第一个元素）, b: SceneElement（第二个元素） |
+| 输出参数 | boolean - 两个元素是否相交 |
+| 典型用例 | `const adapter = createGeometryAdapter(); if (adapter.intersects(elemA, elemB)) { /* real overlap detected */ }` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0219 checkElementsCollide
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0219 |
+| 名称 | checkElementsCollide |
+| 所属系统 | core |
+| 所属模块 | collision |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 检查两个 SceneElement 是否碰撞的便捷函数，遵循指定的碰撞策略。当 strategy 为 'geometry' 且适配器提供 intersects 时使用多边形级相交检测（带 BBox 预过滤）；否则使用 BBox 重叠判断 |
+| 输入参数 | a: SceneElement, b: SceneElement, adapter: GeometryAdapter, strategy: CollisionStrategy |
+| 输出参数 | boolean - 两个元素是否碰撞 |
+| 典型用例 | `if (checkElementsCollide(el1, el2, adapter, scene.rules.collisionStrategy)) { /* collision! */ }` |
 | 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |

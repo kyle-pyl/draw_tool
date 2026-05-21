@@ -1,3 +1,4 @@
+import * as pc from 'polygon-clipping';
 import type { SceneElement, BBox, GeometryAdapter, GeometryShape } from './types';
 
 function rotatePoint(
@@ -237,14 +238,66 @@ export function getGeometry(element: SceneElement): GeometryShape {
   }
 }
 
+function bboxesOverlap(a: BBox, b: BBox): boolean {
+  return (
+    a.x < b.x + b.width &&
+    a.x + a.width > b.x &&
+    a.y < b.y + b.height &&
+    a.y + a.height > b.y
+  );
+}
+
+function geometryToMultiPolygon(geom: GeometryShape): pc.MultiPolygon {
+  return geom.paths.map((path) =>
+    path.map((p) => [p.x, p.y] as pc.Pair)
+  ) as pc.MultiPolygon;
+}
+
 /**
- * Create a GeometryAdapter instance with getBBox fully implemented
- * and getGeometry provided for real geometry access.
+ * Check if two GeometryShapes intersect using polygon-clipping intersection.
+ * If the intersection produces any non-empty paths, the shapes overlap.
+ */
+function geometriesIntersect(a: GeometryShape, b: GeometryShape): boolean {
+  if (a.paths.length === 0 || b.paths.length === 0) return false;
+  const mpA = geometryToMultiPolygon(a);
+  const mpB = geometryToMultiPolygon(b);
+  const result = pc.intersection(mpA, mpB);
+  return result.length > 0 && result.some((poly) => poly.length > 0 && poly[0].length >= 3);
+}
+
+/**
+ * Test if two SceneElements truly intersect at the geometry level.
+ *
+ * Uses real geometry (via getGeometry) when both elements are shape types
+ * with extractable geometry. Falls back to BBox overlap when geometry
+ * cannot be extracted (e.g. text, image, container elements).
+ *
+ * A quick BBox rejection is performed first to avoid expensive polygon
+ * clipping when elements are clearly non-overlapping.
+ */
+export function intersects(a: SceneElement, b: SceneElement): boolean {
+  const bboxA = getBBox(a);
+  const bboxB = getBBox(b);
+  if (!bboxesOverlap(bboxA, bboxB)) return false;
+
+  const geomA = getGeometry(a);
+  const geomB = getGeometry(b);
+
+  if (geomA.paths.length === 0 || geomB.paths.length === 0) {
+    return true;
+  }
+
+  return geometriesIntersect(geomA, geomB);
+}
+
+/**
+ * Create a GeometryAdapter instance with getBBox, getGeometry, and intersects
+ * all fully implemented for real geometry collision detection.
  */
 export function createGeometryAdapter(): GeometryAdapter {
   return {
     getBBox,
     getGeometry,
-    intersects: undefined,
+    intersects,
   };
 }
