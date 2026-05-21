@@ -8,3 +8,4 @@ export { registerArchitectureTemplates, architectureTemplateDefinitions } from '
 export { registerRtlTemplates, rtlTemplateDefinitions } from './rtl-templates';
 export { generateChart, CHART_COLOR_SCHEMES, convertChartSvgToElements } from './chart';
 export type { ChartGenerationConfig, LegendPosition, ChartColorScheme, ConvertedElementResult } from './chart';
+export { FlowchartLayoutEngine, flowchartLayoutEngine } from './flowchart/layout';

@@ -3415,11 +3415,11 @@
 | 最后修订日期 | 2026-05-21 |
 | 创建者 | OpenCode/deepseek-v4-pro |
 | 最后修订者 | OpenCode/deepseek-v4-pro |
-| 功能描述 | 从场景元素中提取 LayoutNode 输入。仅提取 ID 在给定集合中的元素，读取 id、transform.width、transform.height 和 metadata |
+| 功能描述 | 从场景元素中提取 LayoutNode 输入。仅提取 ID 在给定集合中且类型不为 'connector' 的元素，读取 id、transform.width、transform.height 和 metadata |
 | 输入参数 | elements: SceneElement[]（场景元素数组），elementIds: Set<string>（需要包含的元素 ID 集合） |
 | 输出参数 | LayoutNode[] - 布局输入节点数组 |
 | 典型用例 | `const nodes = extractLayoutNodes(scene.elements, new Set(['e1', 'e2', 'e3']))` |
-| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建（T-10-01）|
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建（T-10-01） | 2026-05-21, OpenCode/deepseek-v4-pro, T-10-02 增加 connector 类型过滤 |
 
 ### API-0180 extractLayoutEdges
 
@@ -3458,3 +3458,79 @@
 | 输出参数 | 无（接口类型） |
 | 典型用例 | `const props: DataPanelProps = { dataSources: scene.dataSources, parsedData, loading: false, parseError: null, onSelectDataSource: handleSelect, onGenerateChart: handleGenerate }` |
 | 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 补充文档 |
+
+### API-0182 FlowchartLayoutEngine
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0182 |
+| 名称 | FlowchartLayoutEngine |
+| 所属系统 | modules |
+| 所属模块 | flowchart/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 流程图自动布局引擎，实现 LayoutEngine 接口。使用简化 dagre 式算法：最长路径 rank 分配、barycenter 启发式交叉减少、正交边界路由。支持 TB（从上到下）、LR（从左到右）、BT（从下到上）、RL（从右到左）四种方向 |
+| 输入参数 | nodes: LayoutNode[]（待布局节点列表，含 id/width/height）, edges: LayoutEdge[]（含 source/target/connectorId）, options?: LayoutOptions（方向、水平间距、垂直间距等配置） |
+| 输出参数 | LayoutResult（含 nodes: LayoutNodeResult[] 节点位置、edges: LayoutEdgeResult[] 边路由点、totalBBox: BBox 总包围盒） |
+| 典型用例 | const result = flowchartLayoutEngine.layout(nodes, edges, { direction: 'TB', hSpacing: 100, vSpacing: 80 }) |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0183 flowchartLayoutEngine
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0183 |
+| 名称 | flowchartLayoutEngine |
+| 所属系统 | modules |
+| 所属模块 | flowchart/layout |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | FlowchartLayoutEngine 的单例实例 |
+| 输入参数 | 无 |
+| 输出参数 | FlowchartLayoutEngine 实例 |
+| 典型用例 | import { flowchartLayoutEngine } from './modules/flowchart/layout' |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0184 LayoutCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0184 |
+| 名称 | LayoutCommand |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 布局命令，将自动布局操作纳入命令系统。封装三个原子操作：提取布局节点和边、运行 LayoutEngine 计算位置和路由、应用 LayoutResult 到场景。保存布局前位置和路由以支持撤销 |
+| 输入参数 | engine: LayoutEngine（布局引擎）, elementIds: string[]（参与布局的元素 ID 列表）, options?: LayoutOptions（布局配置） |
+| 输出参数 | 无（命令执行修改场景状态） |
+| 典型用例 | const cmd = new LayoutCommand(flowchartLayoutEngine, ['a', 'b', 'c1'], { direction: 'LR' }); executor.execute(cmd) |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0185 createLayoutCommand
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0185 |
+| 名称 | createLayoutCommand |
+| 所属系统 | core |
+| 所属模块 | commands |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 创建 LayoutCommand 的工厂函数 |
+| 输入参数 | engine: LayoutEngine, elementIds: string[], options?: LayoutOptions |
+| 输出参数 | LayoutCommand |
+| 典型用例 | const cmd = createLayoutCommand(flowchartLayoutEngine, ids, { direction: 'TB' }) |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |

@@ -105,6 +105,8 @@ export {
   MoveLayersCommand,
   DeleteElementCommand,
   ChartToVectorCommand,
+  LayoutCommand,
+  createLayoutCommand,
 } from './commands';
 export type { SceneCommand, CommandHistoryEntry, ElementInput, ElementChanges, TransformParams, AlignType, DistributeType, CircularDistributeOptions, BatchLayerOperation, LayerMoveDirection, DeleteElementStrategy } from './commands';
 

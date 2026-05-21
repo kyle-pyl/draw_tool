@@ -206,7 +206,7 @@ export function extractLayoutNodes(
   elementIds: Set<string>,
 ): LayoutNode[] {
   return elements
-    .filter((el) => elementIds.has(el.id))
+    .filter((el) => elementIds.has(el.id) && el.type !== 'connector')
     .map((el) => ({
       id: el.id,
       width: el.transform.width,

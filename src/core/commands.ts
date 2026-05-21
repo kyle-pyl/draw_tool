@@ -16,6 +16,8 @@ import type { GeometryAdapter } from './types';
 import { ErrorCode } from './errors';
 import { recalculateRoutesForElements } from './routing';
 import { convertChartSvgToElements } from '../modules/chart/convert';
+import type { LayoutEngine, LayoutOptions, LayoutResult } from './layout';
+import { extractLayoutNodes, extractLayoutEdges, applyLayoutToScene } from './layout';
 
 export interface SceneCommand {
   /** Unique command identifier */
@@ -2839,4 +2841,127 @@ export class ChartToVectorCommand implements SceneCommand {
 
     return invertCmd;
   }
+}
+
+// ─── Layout Command ────────────────────────────────────────────────────────────
+
+export class LayoutCommand implements SceneCommand {
+  id: string;
+  label: string;
+
+  private engine: LayoutEngine;
+  private elementIds: Set<string>;
+  private options: LayoutOptions;
+  private previousPositions: Map<string, { x: number; y: number }>;
+  private previousRoutes: Map<string, { x: number; y: number }[]>;
+
+  constructor(
+    engine: LayoutEngine,
+    elementIds: string[],
+    options?: LayoutOptions,
+  ) {
+    this.id = generateId('cmd-layout');
+    this.label = `Layout (${engine.name})`;
+    this.engine = engine;
+    this.elementIds = new Set(elementIds);
+    this.options = options ?? {};
+    this.previousPositions = new Map();
+    this.previousRoutes = new Map();
+  }
+
+  validate(scene: SceneDocument): ValidationResult {
+    if (this.elementIds.size === 0) {
+      return failureResult({
+        code: 'LAYOUT_NO_ELEMENTS',
+        message: 'No elements selected for layout',
+        severity: 'error',
+        suggestion: 'Select elements to arrange before applying layout',
+      });
+    }
+
+    for (const id of this.elementIds) {
+      const el = scene.elements.find((e) => e.id === id);
+      if (!el) {
+        return failureResult({
+          code: ErrorCode.REF_GROUP_NOT_FOUND,
+          message: `Element "${id}" not found in scene`,
+          severity: 'error',
+          elementIds: [id],
+          suggestion: 'The element may have been deleted',
+        });
+      }
+    }
+
+    return successResult();
+  }
+
+  execute(scene: SceneDocument): SceneDocument {
+    this.previousPositions.clear();
+    this.previousRoutes.clear();
+
+    for (const id of this.elementIds) {
+      const el = scene.elements.find((e) => e.id === id);
+      if (!el) continue;
+      this.previousPositions.set(id, {
+        x: el.transform.x,
+        y: el.transform.y,
+      });
+      if (el.type === 'connector') {
+        this.previousRoutes.set(id, [
+          ...(el as ConnectorElement).route.points.map((p) => ({ x: p.x, y: p.y })),
+        ]);
+      }
+    }
+
+    const nodes = extractLayoutNodes(scene.elements, this.elementIds);
+    const edges = extractLayoutEdges(scene.elements, this.elementIds);
+    const result = this.engine.layout(nodes, edges, this.options);
+
+    return applyLayoutToScene(scene, result);
+  }
+
+  invert(_scene: SceneDocument): SceneCommand | null {
+    const prevPositions = new Map(this.previousPositions);
+    const prevRoutes = new Map(this.previousRoutes);
+
+    return {
+      id: generateId('inv-layout'),
+      label: `Undo: ${this.label}`,
+      validate: () => successResult(),
+      execute: (scene: SceneDocument) => {
+        const elements = scene.elements.map((el) => {
+          const pos = prevPositions.get(el.id);
+          if (!pos) return el;
+
+          const updated = {
+            ...el,
+            transform: { ...el.transform, x: pos.x, y: pos.y },
+          };
+
+          if (el.type === 'connector') {
+            const route = prevRoutes.get(el.id);
+            if (route && route.length > 0) {
+              (updated as ConnectorElement).route = {
+                ...(el as ConnectorElement).route,
+                points: route.map((p) => ({ x: p.x, y: p.y })),
+              };
+            }
+          }
+
+          return updated;
+        });
+
+        return { ...scene, elements };
+      },
+      invert: () => null,
+    };
+  }
+}
+
+export function createLayoutCommand(
+  engine: LayoutEngine,
+  elementIds: string[],
+  options?: LayoutOptions,
+): LayoutCommand {
+  return new LayoutCommand(engine, elementIds, options);
 }
