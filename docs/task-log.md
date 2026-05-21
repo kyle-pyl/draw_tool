@@ -844,3 +844,16 @@
 | 修改记录 | 修改：src/io/exporters.ts（新增 RasterExportOptions 接口、exportToRaster、downloadRaster 函数）、src/io/index.ts（新增 exportToRaster/downloadRaster 和 RasterExportOptions 导出）；新建：src/tests/unit/raster-export.test.ts（23 个测试用例） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0223（RasterExportOptions）、API-0224（exportToRaster）、API-0225（downloadRaster） |
+
+### T-12-03 实现 PWA 离线支持
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号 | T-12-03 |
+| 任务名称 | 实现 PWA 离线支持 |
+| 完成时间 | 2026-05-21 14:35 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| Git Commit | 117dc4a |
+| 修改记录 | 新建：public/sw.js（自定义 Service Worker，实现离线缓存：install/activate/fetch 事件处理，stale-while-revalidate 策略缓存同源资源，SKIP_WAITING 消息支持更新）、public/manifest.webmanifest（PWA 应用清单：name/short_name/description/theme_color/background_color/display/icons）、public/pwa-192x192.png（192px PWA 图标）、public/pwa-512x512.png（512px PWA 图标）、src/ui/PwaPrompt.tsx（PWA 安装和更新提示组件：beforeinstallprompt 安装提示、Service Worker updatefound 更新提示、SKIP_WAITING 消息触发更新、UI 动画和样式）；修改：src/ui/index.ts（新增 PwaPrompt 和 PwaPromptProps 导出）、src/App.css（新增 .pwa-prompt 浮层样式含滑入动画）、src/App.tsx（集成 PwaPrompt 组件）、src/main.tsx（手动注册 Service Worker）、index.html（新增 PWA meta 标签：theme-color/description/apple-touch-icon/manifest link） |
+| 发现缺陷 | 无 |
+| 产出接口/函数 | API-0226（PwaPrompt）、API-0227（PwaPromptProps） |

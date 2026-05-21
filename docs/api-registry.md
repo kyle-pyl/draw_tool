@@ -4243,3 +4243,41 @@
 | 输出参数 | Promise<void> — 下载触发后解析 |
 | 典型用例 | await downloadRaster(scene, 'figure1', { format: 'jpg', quality: 0.9 }); |
 | 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0226 PwaPrompt
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0226 |
+| 名称 | PwaPrompt |
+| 所属系统 | ui |
+| 所属模块 | pwa |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | PWA 安装和更新提示组件。监听 beforeinstallprompt 事件提供安装按钮，监听 Service Worker updatefound 事件提供更新按钮。安装提示包含"Install"按钮和关闭按钮，更新提示包含"Update"按钮和关闭按钮。支持 onInstallStatusChange 回调通知安装状态变化。具备滑入动画和暗色主题样式。 |
+| 输入参数 | onInstallStatusChange?: (installed: boolean) => void（可选，安装状态变化回调） |
+| 输出参数 | React 组件，条件渲染安装提示和更新提示浮层 |
+| 典型用例 | `<PwaPrompt onInstallStatusChange={(installed) => console.log('PWA installed:', installed)} />` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0227 PwaPromptProps
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0227 |
+| 名称 | PwaPromptProps |
+| 所属系统 | ui |
+| 所属模块 | pwa |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | PwaPrompt 组件的 Props 接口类型定义。 |
+| 输入参数 | 无（类型定义） |
+| 输出参数 | { onInstallStatusChange?: (installed: boolean) => void } |
+| 典型用例 | `const props: PwaPromptProps = { onInstallStatusChange: handleInstallStatus };` |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |

@@ -54,3 +54,76 @@
   color: #1976D2;
   border-color: #1976D2;
 }
+
+.pwa-prompt {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 600;
+  animation: pwa-slide-up 0.3s ease-out;
+}
+
+@keyframes pwa-slide-up {
+  from {
+    transform: translateX(-50%) translateY(80px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+.pwa-prompt-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #1e1e2e;
+  color: #e0e0e0;
+  padding: 10px 16px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.pwa-prompt-icon {
+  font-size: 20px;
+}
+
+.pwa-prompt-text {
+  font-weight: 500;
+}
+
+.pwa-prompt-btn {
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pwa-prompt-btn-primary {
+  background: #4169E1;
+  color: #fff;
+}
+
+.pwa-prompt-btn-primary:hover {
+  background: #3158c8;
+}
+
+.pwa-prompt-btn-dismiss {
+  background: transparent;
+  color: #999;
+  padding: 4px 8px;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.pwa-prompt-btn-dismiss:hover {
+  color: #fff;
+}

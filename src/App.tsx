@@ -1,7 +1,7 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { CanvasView, Viewport, SelectionManager, ConflictHighlighter } from './canvas';
 import type { DrawingToolType } from './canvas';
-import { ShapeToolbar, ConflictPanel, TextEditor, ImageImportButton, PropertyPanel } from './ui';
+import { ShapeToolbar, ConflictPanel, TextEditor, ImageImportButton, PropertyPanel, PwaPrompt } from './ui';
 import { createGeometryAdapter } from './core/geometry';
 import { checkLayerCollisions } from './core/collision';
 import { useDocumentStore } from './core/store';
@@ -281,6 +281,7 @@ function App() {
           onCancel={handleTextCancel}
         />
       )}
+      <PwaPrompt />
     </div>
   );
 }

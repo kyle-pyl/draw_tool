@@ -16,3 +16,5 @@ export { TemplatePanel } from './TemplatePanel';
 export type { TemplatePanelProps } from './TemplatePanel';
 export { DataPanel } from './DataPanel';
 export type { DataPanelProps, ChartConfig } from './DataPanel';
+export { PwaPrompt } from './PwaPrompt';
+export type { PwaPromptProps } from './PwaPrompt';
