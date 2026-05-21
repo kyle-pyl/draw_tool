@@ -3,8 +3,8 @@
  */
 
 export { loadSceneFromFile, loadSceneFromFileObject, loadProjectFromDirectory, importProjectFromZip } from './importers';
-export { exportProjectToZip, saveProject, exportToSVG, downloadSvg } from './exporters';
-export type { SvgExportOptions } from './exporters';
+export { exportProjectToZip, saveProject, exportToSVG, downloadSvg, exportToRaster, downloadRaster } from './exporters';
+export type { SvgExportOptions, RasterExportOptions } from './exporters';
 export { sanitizeSvg, sanitizeSvgToBlob } from './svg-sanitizer';
 export { isSupportedImageFile, importImageFromFile } from './image-utils';
 export { parseCSV } from './csv-parser';

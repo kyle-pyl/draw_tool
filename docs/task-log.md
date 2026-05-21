@@ -827,7 +827,20 @@
 | 任务名称      | 实现 SVG 导出 |
 | 完成时间      | 2026-05-21 12:50 |
 | 作者/智能体   | OpenCode/deepseek-v4-pro |
-| Git Commit    | 待提交 |
+| Git Commit    | db69fae |
 | 修改记录      | 修改：src/io/exporters.ts（新增 SvgExportOptions 接口、svgAttr/attrStr/computeTransformString/styleToAttr/renderShapeToSvg/renderTextToSvg/renderImageToSvg/createArrowMarkerDef/resolveEndpointPositionSvg/computePathLength/computePointAtLength/renderConnectorToSvg/renderElementToSvg/collectArrowDefs/computeExportBBox/exportToSVG/downloadSvg 函数）、src/io/index.ts（新增 exportToSVG/downloadSvg 和 SvgExportOptions 导出）；新建：src/tests/unit/svg-export.test.ts（38 个测试用例） |
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0220（SvgExportOptions）、API-0221（exportToSVG）、API-0222（downloadSvg） |
+
+### T-12-02 实现 PNG/JPG 导出
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号 | T-12-02 |
+| 任务名称 | 实现 PNG/JPG 导出 |
+| 完成时间 | 2026-05-21 13:25 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| Git Commit | 2d3c0bd |
+| 修改记录 | 修改：src/io/exporters.ts（新增 RasterExportOptions 接口、exportToRaster、downloadRaster 函数）、src/io/index.ts（新增 exportToRaster/downloadRaster 和 RasterExportOptions 导出）；新建：src/tests/unit/raster-export.test.ts（23 个测试用例） |
+| 发现缺陷 | 无 |
+| 产出接口/函数 | API-0223（RasterExportOptions）、API-0224（exportToRaster）、API-0225（downloadRaster） |

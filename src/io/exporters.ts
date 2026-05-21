@@ -678,3 +678,131 @@ export function downloadSvg(scene: SceneDocument, fileName?: string, options?: S
   const blob = new Blob([svg], { type: 'image/svg+xml' });
   triggerDownload(blob, `${fileName ?? 'export'}.svg`);
 }
+
+// ─── Raster Export (PNG / JPG) ─────────────────────────────────────────────────
+
+/**
+ * Options for raster (PNG / JPG) export.
+ */
+export interface RasterExportOptions {
+  /** Output format. Default: 'png'. */
+  format?: 'png' | 'jpg';
+  /** Scale multiplier (1, 2, or 3). Higher values produce larger, sharper output. Default: 2. */
+  scale?: number;
+  /** DPI override — derived scale = dpi / 72. Takes precedence over `scale`. */
+  dpi?: number;
+  /** Background color for the exported image. Default: scene.canvas.background. */
+  backgroundColor?: string;
+  /** Enable transparent background (PNG only). Default: true for PNG, false for JPG. */
+  transparentBackground?: boolean;
+  /** Margin in canvas units around the exported content. Default: 10. */
+  margin?: number;
+  /** Export region mode. Default: 'full'. */
+  region?: 'viewport' | 'selection' | 'full';
+  /** Viewport bounding box in canvas coordinates (required when region is 'viewport'). */
+  viewportBBox?: BBox;
+  /** IDs of elements to export (required when region is 'selection'). */
+  selectedElementIds?: string[];
+  /** JPEG quality (0–1). Default: 0.92. */
+  quality?: number;
+}
+
+/**
+ * Rasterize the current scene to a PNG or JPG Blob.
+ *
+ * Generates an SVG representation of the scene via `exportToSVG`, then
+ * renders it onto an HTML Canvas and converts the canvas to the requested
+ * raster format.
+ *
+ * @param scene The scene document to export.
+ * @param options Export configuration.
+ * @returns A Promise resolving to a Blob of the raster image data.
+ */
+export async function exportToRaster(
+  scene: SceneDocument,
+  options: RasterExportOptions = {},
+): Promise<Blob> {
+  const format = options.format ?? 'png';
+  const quality = options.quality ?? 0.92;
+  const dpi = options.dpi;
+  const scale = dpi ? Math.max(1, Math.round(dpi / 72)) : (options.scale ?? 2);
+
+  const svgString = exportToSVG(scene, {
+    region: options.region ?? 'full',
+    viewportBBox: options.viewportBBox,
+    selectedElementIds: options.selectedElementIds,
+    backgroundColor: options.backgroundColor,
+    margin: options.margin ?? 10,
+  });
+
+  const parser = new DOMParser();
+  const svgDoc = parser.parseFromString(svgString, 'image/svg+xml');
+  const svgEl = svgDoc.documentElement;
+  const svgWidth = parseFloat(svgEl.getAttribute('width') ?? '1');
+  const svgHeight = parseFloat(svgEl.getAttribute('height') ?? '1');
+
+  const canvasWidth = Math.ceil(svgWidth * scale);
+  const canvasHeight = Math.ceil(svgHeight * scale);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
+  const ctx = canvas.getContext('2d')!;
+
+  const isTransparent = format === 'png' && (options.transparentBackground ?? true);
+  if (!isTransparent) {
+    const bg = options.backgroundColor ?? scene.canvas.background ?? '#ffffff';
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+  }
+
+  ctx.scale(scale, scale);
+
+  return new Promise<Blob>((resolve, reject) => {
+    const img = new Image();
+    const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(svgBlob);
+
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+
+      const mimeType = format === 'jpg' ? 'image/jpeg' : 'image/png';
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('Failed to create blob from canvas'));
+          }
+        },
+        mimeType,
+        format === 'jpg' ? quality : undefined,
+      );
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Failed to load SVG for rasterization'));
+    };
+
+    img.src = url;
+  });
+}
+
+/**
+ * Export the scene as a raster image and trigger a browser download.
+ *
+ * @param scene The scene document to export.
+ * @param fileName Base file name (without extension). Default: 'export'.
+ * @param options Export configuration.
+ */
+export async function downloadRaster(
+  scene: SceneDocument,
+  fileName?: string,
+  options?: RasterExportOptions,
+): Promise<void> {
+  const blob = await exportToRaster(scene, options);
+  const ext = options?.format === 'jpg' ? 'jpg' : 'png';
+  triggerDownload(blob, `${fileName ?? 'export'}.${ext}`);
+}

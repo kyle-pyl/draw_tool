@@ -4186,3 +4186,60 @@
 | 输出参数 | void - 无返回值，副作用为触发浏览器下载 |
 | 典型用例 | downloadSvg(scene, 'my-figure', { region: 'selection', selectedElementIds: ['e1', 'e2'] }) |
 | 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0223 RasterExportOptions
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0223 |
+| 名称 | RasterExportOptions |
+| 所属系统 | io |
+| 所属模块 | exporters |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 光栅图片（PNG/JPG）导出选项接口。配置导出格式、倍率/DPI、背景色、透明背景、边距、导出区域和 JPEG 质量。format 默认为 png，scale 默认为 2x，transparentBackground 默认为 true（PNG），quality 仅对 JPG 有效默认 0.92。dpi 优先级高于 scale，scale = dpi / 72。 |
+| 输入参数 | format?: 'png' | 'jpg'（默认 'png'）；scale?: number（默认 2，取值范围 1/2/3）；dpi?: number（覆盖 scale）；backgroundColor?: string（默认 scene.canvas.background）；transparentBackground?: boolean（PNG 默认 true）；margin?: number（默认 10）；region?: 'viewport' | 'selection' | 'full'（默认 'full'）；viewportBBox?: BBox（viewport 模式必填）；selectedElementIds?: string[]（selection 模式必填）；quality?: number（JPG 质量 0-1，默认 0.92） |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | const opts: RasterExportOptions = { format: 'png', scale: 3, transparentBackground: true, margin: 20 } |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0224 exportToRaster
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0224 |
+| 名称 | exportToRaster |
+| 所属系统 | io |
+| 所属模块 | exporters |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 将场景文档光栅化为 PNG 或 JPG Blob。先通过 exportToSVG 生成 SVG 字符串，解析宽高后按 scale 创建 Canvas，将 SVG 绘制到 Canvas 上，最后通过 canvas.toBlob 导出为光栅格式。PNG 格式默认支持透明背景，JPG 格式自动填充背景色。 |
+| 输入参数 | scene: SceneDocument（待导出的场景文档）；options?: RasterExportOptions（导出配置） |
+| 输出参数 | Promise<Blob> — MIME 类型为 image/png 或 image/jpeg 的光栅图片数据 |
+| 典型用例 | const blob = await exportToRaster(scene, { format: 'png', scale: 2 }); const url = URL.createObjectURL(blob); |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0225 downloadRaster
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0225 |
+| 名称 | downloadRaster |
+| 所属系统 | io |
+| 所属模块 | exporters |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 导出场景为光栅图片并触发浏览器下载。封装 exportToRaster 后将 Blob 转为临时 URL，通过隐藏 <a> 元素的 click 触发下载，文件名根据格式自动添加 .png 或 .jpg 扩展名。 |
+| 输入参数 | scene: SceneDocument（待导出的场景文档）；fileName?: string（文件名不含扩展名，默认 'export'）；options?: RasterExportOptions（导出配置） |
+| 输出参数 | Promise<void> — 下载触发后解析 |
+| 典型用例 | await downloadRaster(scene, 'figure1', { format: 'jpg', quality: 0.9 }); |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
