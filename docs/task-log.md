@@ -775,7 +775,7 @@
 | 任务名称 | 实现网络拓扑布局 |
 | 完成时间 | 2026-05-21 11:10 |
 | 作者/智能体 | OpenCode/deepseek-v4-pro |
-| Git Commit | a07a143 |
+| Git Commit | 96bf532 |
 | 修改记录 | 新建：src/modules/topology/layout.ts（TopologyLayoutEngine 类实现 LayoutEngine 接口、topologyLayoutEngine 单例、extractTopologyLayoutNodes/extractTopologyLayoutEdges 拓扑专用提取函数、TopologyLayoutOptions 接口、TopologyLayoutMode 类型、TopologyLayoutCommand 命令类、createTopologyLayoutCommand 工厂函数）。拓扑布局功能：hierarchical 模式（按网络层级分层排列，路由=核心层 rank0，交换机=分布层 rank1，防火墙/负载均衡/网关=聚合层 rank2，服务器=接入层 rank3，默认 TB 方向）、force-directed 模式（力导向迭代模拟节点位置，排斥力+吸引力+阻尼）、容器子网区域自动扩边包含子设备（layoutContainers 内部函数）、正交边路由（TB/LR/BT/RL 四种方向）、链路标签元数据保留（linkLabels/semanticKind）、撤消/重做支持（保存前态位置+尺寸+连接线路由）；修改：src/modules/index.ts（新增 topology/layout 模块全部导出）。新建：src/tests/unit/topology-layout.test.ts（37 个测试用例，覆盖：LayoutEngine 接口一致性、空输入、节点无边、层级设备排列 TB/LR、孤立节点 rank 排序、hSpacing/vSpacing 间距、正交边路由、自环过滤、未知端点过滤、总 BBox、force-directed 模式非重叠位置、force-directed 边生成、extractTopologyLayoutNodes（topologyNode 提取、deviceType/rank 元数据、container 提取含 childElementIds、非拓扑类型排除、宽高提取）、extractTopologyLayoutEdges（连接线边提取、semanticKind 丰富、源/目标不在集合排除、linkLabels 元数据）、TopologyLayoutCommand（工厂创建、验证存在/缺失/空列表、执行层级节点+连接器路由、撤销/重做、场景 applyLayoutToScene 集成、所有设备类型、容器定位）、TopologyLayoutOptions） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0201（TopologyLayoutEngine）、API-0202（topologyLayoutEngine）、API-0203（extractTopologyLayoutNodes）、API-0204（extractTopologyLayoutEdges）、API-0205（TopologyLayoutOptions）、API-0206（TopologyLayoutMode）、API-0207（TopologyLayoutCommand）、API-0208（createTopologyLayoutCommand）、API-0209（layoutContainers） |
