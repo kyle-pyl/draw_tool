@@ -818,3 +818,16 @@
 | 修改记录 | 新建：src/tests/unit/intersects.test.ts（26 个测试用例覆盖 intersects 函数 15 个、checkLayerCollisions 几何策略 7 个、checkElementsCollide 4 个）；修改：src/core/geometry.ts（新增 intersects 函数：BBox 快速剔除 + getGeometry 提取 + polygon-clipping intersection 真实几何检测；新增 geometriesIntersect 和 geometryToMultiPolygon 辅助函数；新增 bboxesOverlap 辅助函数（与 collision.ts 保持独立）；createGeometryAdapter 现在提供 intersects 而非 undefined）、src/core/collision.ts（CollisionCheckOptions 新增 collisionStrategy?: CollisionStrategy；checkLayerCollisions 在 strategy='geometry' 且适配器有 intersects 时使用真实几何检测，否则退化为 BBox；新增 checkElementsCollide 便捷函数供命令验证使用，支持策略参数）、src/core/validator.ts（validateGeometryRules 从 rulesObj.collisionStrategy 传递策略到 checkLayerCollisions 的 CollisionCheckOptions）、src/core/commands.ts（import checkElementsCollide；checkElementCollision 新增 collisionStrategy 参数，在 geometry 策略下使用 adapter.intersects 做真实几何过滤；CreateElementCommand 传递 scene.rules.collisionStrategy；MoveLayersCommand 传递策略到 checkLayerCollisions）、src/core/index.ts（导出 intersects 和 checkElementsCollide）、src/tests/unit/geometry.test.ts（createGeometryAdapter 测试从期望 intersects undefined 改为期望 defined） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0218（intersects）、API-0219（checkElementsCollide） |
+
+### T-12-01 实现 SVG 导出
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-12-01 |
+| 任务名称      | 实现 SVG 导出 |
+| 完成时间      | 2026-05-21 12:50 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | 待提交 |
+| 修改记录      | 修改：src/io/exporters.ts（新增 SvgExportOptions 接口、svgAttr/attrStr/computeTransformString/styleToAttr/renderShapeToSvg/renderTextToSvg/renderImageToSvg/createArrowMarkerDef/resolveEndpointPositionSvg/computePathLength/computePointAtLength/renderConnectorToSvg/renderElementToSvg/collectArrowDefs/computeExportBBox/exportToSVG/downloadSvg 函数）、src/io/index.ts（新增 exportToSVG/downloadSvg 和 SvgExportOptions 导出）；新建：src/tests/unit/svg-export.test.ts（38 个测试用例） |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | API-0220（SvgExportOptions）、API-0221（exportToSVG）、API-0222（downloadSvg） |

@@ -4129,3 +4129,60 @@
 | 输出参数 | boolean - 两个元素是否碰撞 |
 | 典型用例 | `if (checkElementsCollide(el1, el2, adapter, scene.rules.collisionStrategy)) { /* collision! */ }` |
 | 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0220 SvgExportOptions
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0220 |
+| 名称 | SvgExportOptions |
+| 所属系统 | io |
+| 所属模块 | exporters |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | SVG 导出配置接口。控制导出区域（region: viewport/selection/full）、视口包围盒（viewportBBox）、选中元素 ID（selectedElementIds）、背景色（backgroundColor）、边距（margin）和嵌入 CSS（embedCss）。 |
+| 输入参数 | region?: 'viewport' | 'selection' | 'full' | undefined, viewportBBox?: BBox | undefined, selectedElementIds?: string[] | undefined, backgroundColor?: string | undefined, margin?: number | undefined, embedCss?: string | undefined |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | const opts: SvgExportOptions = { region: 'full', margin: 20, backgroundColor: '#fff' } |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0221 exportToSVG
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0221 |
+| 名称 | exportToSVG |
+| 所属系统 | io |
+| 所属模块 | exporters |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 导出当前场景为独立 SVG 字符串。按图层顺序渲染所有可见元素，文本保留为 <text> 元素（非路径），图片为 <image> 元素，连接线含箭头 marker（在 <defs> 中定义）。生成包含正确 XML 命名空间声明、viewBox 和背景色的自包含 SVG 文档。支持三种导出区域：full（全部可见元素，默认）、viewport（指定 viewportBBox 区域）、selection（指定 selectedElementIds 元素）。默认 margin 为 10 像素。 |
+| 输入参数 | scene: SceneDocument - 待导出的场景文档；options?: SvgExportOptions - 导出配置（默认 region='full', margin=10） |
+| 输出参数 | string - 完整的 SVG 文档字符串，含 XML 声明和 xml namespace |
+| 典型用例 | const svgStr = exportToSVG(scene, { region: 'full', margin: 20 }); const blob = new Blob([svgStr], { type: 'image/svg+xml' }); |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0222 downloadSvg
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0222 |
+| 名称 | downloadSvg |
+| 所属系统 | io |
+| 所属模块 | exporters |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 便捷封装：调用 exportToSVG 生成 SVG 字符串并在浏览器中触发下载。创建 Blob（MIME 类型 image/svg+xml），调用 triggerDownload 弹出浏览器文件保存对话框。 |
+| 输入参数 | scene: SceneDocument - 待导出的场景文档；fileName?: string - 下载文件名（不含扩展名），默认 'export'；options?: SvgExportOptions - 导出配置，透传给 exportToSVG |
+| 输出参数 | void - 无返回值，副作用为触发浏览器下载 |
+| 典型用例 | downloadSvg(scene, 'my-figure', { region: 'selection', selectedElementIds: ['e1', 'e2'] }) |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
