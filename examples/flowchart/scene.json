@@ -1,0 +1,391 @@
+{
+  "schemaVersion": "1.0.0",
+  "project": {
+    "name": "Sample Flowchart",
+    "author": "OpenCode",
+    "description": "A complete flowchart demonstrating process flow with start, process, decision, and end nodes connected by directional connectors."
+  },
+  "canvas": {
+    "units": "px",
+    "background": "#ffffff",
+    "defaultFont": "Arial",
+    "gridSize": 0,
+    "snapToGrid": false
+  },
+  "rules": {
+    "maxLayerCount": 10,
+    "collisionStrategy": "bbox",
+    "hiddenElementsCollide": true,
+    "lockedElementsCollide": true,
+    "connectorsExempt": true
+  },
+  "layers": [
+    {
+      "id": "fl_nodes",
+      "name": "Flowchart Nodes",
+      "order": 1,
+      "visible": true,
+      "locked": false,
+      "defaultStyle": {
+        "fill": "#E8F4FD",
+        "stroke": "#2196F3",
+        "strokeWidth": 2,
+        "opacity": 1
+      }
+    },
+    {
+      "id": "fl_text",
+      "name": "Node Labels",
+      "order": 2,
+      "visible": true,
+      "locked": false,
+      "defaultStyle": {
+        "fill": "#333333",
+        "stroke": "none",
+        "strokeWidth": 0,
+        "opacity": 1,
+        "fontSize": 14,
+        "fontFamily": "Arial",
+        "fontWeight": "bold"
+      }
+    },
+    {
+      "id": "fl_connectors",
+      "name": "Flow Connectors",
+      "order": 3,
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "fl_annotations",
+      "name": "Annotations",
+      "order": 4,
+      "visible": true,
+      "locked": false,
+      "defaultStyle": {
+        "fill": "#666666",
+        "stroke": "none",
+        "strokeWidth": 0,
+        "opacity": 1,
+        "fontSize": 11,
+        "fontFamily": "Arial",
+        "fontStyle": "italic"
+      }
+    }
+  ],
+  "elements": [
+    {
+      "id": "fn_start",
+      "type": "shape",
+      "layerId": "fl_nodes",
+      "name": "Start",
+      "transform": { "x": 300, "y": 30, "width": 140, "height": 50, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#C8E6C9", "stroke": "#4CAF50", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "shapeKind": "rect",
+      "cornerRadius": [25, 25, 25, 25]
+    },
+    {
+      "id": "fn_input",
+      "type": "shape",
+      "layerId": "fl_nodes",
+      "name": "Receive Input",
+      "transform": { "x": 300, "y": 130, "width": 160, "height": 70, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#BBDEFB", "stroke": "#2196F3", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "shapeKind": "polygon",
+      "points": [
+        { "x": 20, "y": 0 },
+        { "x": 160, "y": 0 },
+        { "x": 140, "y": 70 },
+        { "x": 0, "y": 70 }
+      ]
+    },
+    {
+      "id": "fn_process",
+      "type": "shape",
+      "layerId": "fl_nodes",
+      "name": "Process Data",
+      "transform": { "x": 300, "y": 250, "width": 140, "height": 60, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#E8F4FD", "stroke": "#2196F3", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "shapeKind": "rect"
+    },
+    {
+      "id": "fn_decision",
+      "type": "shape",
+      "layerId": "fl_nodes",
+      "name": "Valid?",
+      "transform": { "x": 280, "y": 360, "width": 180, "height": 100, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#FFF9C4", "stroke": "#FBC02D", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "shapeKind": "polygon",
+      "points": [
+        { "x": 90, "y": 0 },
+        { "x": 180, "y": 50 },
+        { "x": 90, "y": 100 },
+        { "x": 0, "y": 50 }
+      ]
+    },
+    {
+      "id": "fn_error",
+      "type": "shape",
+      "layerId": "fl_nodes",
+      "name": "Log Error",
+      "transform": { "x": 70, "y": 520, "width": 140, "height": 60, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#FFCDD2", "stroke": "#F44336", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "shapeKind": "rect"
+    },
+    {
+      "id": "fn_output",
+      "type": "shape",
+      "layerId": "fl_nodes",
+      "name": "Generate Output",
+      "transform": { "x": 520, "y": 520, "width": 160, "height": 60, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#E8F4FD", "stroke": "#2196F3", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "shapeKind": "rect"
+    },
+    {
+      "id": "fn_end",
+      "type": "shape",
+      "layerId": "fl_nodes",
+      "name": "End",
+      "transform": { "x": 300, "y": 630, "width": 140, "height": 50, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#FFCDD2", "stroke": "#F44336", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "shapeKind": "rect",
+      "cornerRadius": [25, 25, 25, 25]
+    },
+    {
+      "id": "ft_start_label",
+      "type": "text",
+      "layerId": "fl_text",
+      "name": "Start Label",
+      "transform": { "x": 330, "y": 42, "width": 80, "height": 24, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#2E7D32", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 14, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "Start"
+    },
+    {
+      "id": "ft_input_label",
+      "type": "text",
+      "layerId": "fl_text",
+      "name": "Input Label",
+      "transform": { "x": 320, "y": 152, "width": 120, "height": 24, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#1565C0", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 13, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "Receive Input"
+    },
+    {
+      "id": "ft_process_label",
+      "type": "text",
+      "layerId": "fl_text",
+      "name": "Process Label",
+      "transform": { "x": 318, "y": 268, "width": 104, "height": 24, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#1565C0", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 13, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "Process Data"
+    },
+    {
+      "id": "ft_decision_label",
+      "type": "text",
+      "layerId": "fl_text",
+      "name": "Decision Label",
+      "transform": { "x": 320, "y": 398, "width": 100, "height": 24, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#F57F17", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 13, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "Valid?"
+    },
+    {
+      "id": "ft_error_label",
+      "type": "text",
+      "layerId": "fl_text",
+      "name": "Error Label",
+      "transform": { "x": 98, "y": 538, "width": 84, "height": 24, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#C62828", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 12, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "Log Error"
+    },
+    {
+      "id": "ft_output_label",
+      "type": "text",
+      "layerId": "fl_text",
+      "name": "Output Label",
+      "transform": { "x": 540, "y": 538, "width": 120, "height": 24, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#1565C0", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 12, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "Generate Output"
+    },
+    {
+      "id": "ft_end_label",
+      "type": "text",
+      "layerId": "fl_text",
+      "name": "End Label",
+      "transform": { "x": 340, "y": 644, "width": 60, "height": 24, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#C62828", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 14, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "End"
+    },
+    {
+      "id": "fa_yes",
+      "type": "text",
+      "layerId": "fl_annotations",
+      "name": "Yes Label",
+      "transform": { "x": 490, "y": 405, "width": 30, "height": 18, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#2E7D32", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 12, "fontFamily": "Arial", "fontWeight": "bold", "fontStyle": "normal" },
+      "visible": true,
+      "locked": false,
+      "text": "Yes"
+    },
+    {
+      "id": "fa_no",
+      "type": "text",
+      "layerId": "fl_annotations",
+      "name": "No Label",
+      "transform": { "x": 190, "y": 475, "width": 30, "height": 18, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#C62828", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 12, "fontFamily": "Arial", "fontWeight": "bold", "fontStyle": "normal" },
+      "visible": true,
+      "locked": false,
+      "text": "No"
+    },
+    {
+      "id": "fc_start_input",
+      "type": "connector",
+      "layerId": "fl_connectors",
+      "name": "Start to Input",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#666666", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 370, "y": 80 },
+      "target": { "x": 370, "y": 130 },
+      "route": { "type": "straight", "points": [{ "x": 370, "y": 80 }, { "x": 370, "y": 130 }] },
+      "arrowEnd": { "type": "triangle", "size": 1.2 },
+      "semanticKind": "flow"
+    },
+    {
+      "id": "fc_input_process",
+      "type": "connector",
+      "layerId": "fl_connectors",
+      "name": "Input to Process",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#666666", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 370, "y": 200 },
+      "target": { "x": 370, "y": 250 },
+      "route": { "type": "straight", "points": [{ "x": 370, "y": 200 }, { "x": 370, "y": 250 }] },
+      "arrowEnd": { "type": "triangle", "size": 1.2 },
+      "semanticKind": "flow"
+    },
+    {
+      "id": "fc_process_decision",
+      "type": "connector",
+      "layerId": "fl_connectors",
+      "name": "Process to Decision",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#666666", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 370, "y": 310 },
+      "target": { "x": 370, "y": 360 },
+      "route": { "type": "straight", "points": [{ "x": 370, "y": 310 }, { "x": 370, "y": 360 }] },
+      "arrowEnd": { "type": "triangle", "size": 1.2 },
+      "semanticKind": "flow"
+    },
+    {
+      "id": "fc_decision_error",
+      "type": "connector",
+      "layerId": "fl_connectors",
+      "name": "Decision to Error (No)",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#F44336", "strokeWidth": 2, "opacity": 1, "strokeDasharray": "5,3" },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 280, "y": 410 },
+      "target": { "x": 210, "y": 520 },
+      "route": { "type": "polyline", "points": [{ "x": 280, "y": 410 }, { "x": 210, "y": 410 }, { "x": 210, "y": 520 }] },
+      "arrowEnd": { "type": "triangle", "size": 1.2 },
+      "semanticKind": "flow",
+      "labels": [
+        { "text": "No", "position": 0.45, "offset": { "dx": -20, "dy": 0 } }
+      ]
+    },
+    {
+      "id": "fc_decision_output",
+      "type": "connector",
+      "layerId": "fl_connectors",
+      "name": "Decision to Output (Yes)",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#4CAF50", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 460, "y": 410 },
+      "target": { "x": 520, "y": 520 },
+      "route": { "type": "polyline", "points": [{ "x": 460, "y": 410 }, { "x": 520, "y": 410 }, { "x": 520, "y": 520 }] },
+      "arrowEnd": { "type": "triangle", "size": 1.2 },
+      "semanticKind": "flow",
+      "labels": [
+        { "text": "Yes", "position": 0.45, "offset": { "dx": 20, "dy": 0 } }
+      ]
+    },
+    {
+      "id": "fc_error_end",
+      "type": "connector",
+      "layerId": "fl_connectors",
+      "name": "Error to End",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#F44336", "strokeWidth": 2, "opacity": 1, "strokeDasharray": "5,3" },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 210, "y": 580 },
+      "target": { "x": 370, "y": 630 },
+      "route": { "type": "polyline", "points": [{ "x": 210, "y": 580 }, { "x": 210, "y": 655 }, { "x": 370, "y": 655 }] },
+      "arrowEnd": { "type": "triangle", "size": 1.2 },
+      "semanticKind": "flow"
+    },
+    {
+      "id": "fc_output_end",
+      "type": "connector",
+      "layerId": "fl_connectors",
+      "name": "Output to End",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#4CAF50", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 520, "y": 580 },
+      "target": { "x": 370, "y": 630 },
+      "route": { "type": "polyline", "points": [{ "x": 520, "y": 580 }, { "x": 520, "y": 655 }, { "x": 370, "y": 655 }] },
+      "arrowEnd": { "type": "triangle", "size": 1.2 },
+      "semanticKind": "flow"
+    }
+  ],
+  "groups": [],
+  "dataSources": [],
+  "charts": [],
+  "templates": [],
+  "exportPresets": [
+    {
+      "id": "flowchart_svg",
+      "name": "Flowchart SVG Export",
+      "region": "full",
+      "format": "svg"
+    }
+  ]
+}

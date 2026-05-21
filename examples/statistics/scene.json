@@ -1,0 +1,246 @@
+{
+  "schemaVersion": "1.0.0",
+  "project": {
+    "name": "Statistical Chart Example",
+    "author": "OpenCode",
+    "description": "A bar chart generated from CSV data showing measurements across experimental groups and categories, with error bars."
+  },
+  "canvas": {
+    "units": "px",
+    "background": "#ffffff",
+    "defaultFont": "Arial, Helvetica, sans-serif",
+    "gridSize": 0,
+    "snapToGrid": false
+  },
+  "rules": {
+    "maxLayerCount": 10,
+    "collisionStrategy": "bbox",
+    "hiddenElementsCollide": true,
+    "lockedElementsCollide": true,
+    "connectorsExempt": true
+  },
+  "layers": [
+    {
+      "id": "st_chart",
+      "name": "Chart",
+      "order": 1,
+      "visible": true,
+      "locked": false,
+      "defaultStyle": {
+        "fill": "none",
+        "stroke": "none",
+        "strokeWidth": 0,
+        "opacity": 1
+      }
+    },
+    {
+      "id": "st_labels",
+      "name": "Labels & Legend",
+      "order": 2,
+      "visible": true,
+      "locked": false,
+      "defaultStyle": {
+        "fill": "#333333",
+        "stroke": "none",
+        "strokeWidth": 0,
+        "opacity": 1,
+        "fontSize": 12,
+        "fontFamily": "Arial, Helvetica, sans-serif"
+      }
+    },
+    {
+      "id": "st_axes",
+      "name": "Axes & Grid",
+      "order": 3,
+      "visible": true,
+      "locked": false
+    }
+  ],
+  "elements": [
+    {
+      "id": "sc_bar_chart",
+      "type": "chart",
+      "layerId": "st_chart",
+      "name": "Grouped Bar Chart",
+      "transform": { "x": 50, "y": 50, "width": 700, "height": 400, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#ffffff", "stroke": "#cccccc", "strokeWidth": 1, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "dataSourceId": "ds_measurements",
+      "chartType": "bar",
+      "columnMappings": {
+        "x": "category",
+        "y": "value",
+        "group": "group",
+        "color": "group"
+      },
+      "options": {
+        "title": "Experimental Measurements by Group",
+        "xLabel": "Category",
+        "yLabel": "Value (units)",
+        "errorColumn": "error",
+        "colorScheme": "category10",
+        "showLegend": true,
+        "showGrid": true
+      }
+    },
+    {
+      "id": "sl_title",
+      "type": "text",
+      "layerId": "st_labels",
+      "name": "Chart Title",
+      "transform": { "x": 200, "y": 25, "width": 400, "height": 28, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#222222", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 16, "fontFamily": "Arial, Helvetica, sans-serif", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "Experimental Measurements by Group"
+    },
+    {
+      "id": "sl_x_label",
+      "type": "text",
+      "layerId": "st_labels",
+      "name": "X Axis Label",
+      "transform": { "x": 300, "y": 470, "width": 200, "height": 20, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#555555", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 12, "fontFamily": "Arial, Helvetica, sans-serif", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "Category"
+    },
+    {
+      "id": "sl_y_label",
+      "type": "text",
+      "layerId": "st_labels",
+      "name": "Y Axis Label",
+      "transform": { "x": 10, "y": 230, "width": 30, "height": 20, "rotation": 270, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#555555", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 12, "fontFamily": "Arial, Helvetica, sans-serif", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "Value"
+    },
+    {
+      "id": "sl_legend_control",
+      "type": "text",
+      "layerId": "st_labels",
+      "name": "Legend Control",
+      "transform": { "x": 620, "y": 80, "width": 100, "height": 18, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#1f77b4", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 11, "fontFamily": "Arial, Helvetica, sans-serif" },
+      "visible": true,
+      "locked": false,
+      "text": "Control"
+    },
+    {
+      "id": "sl_legend_treatment",
+      "type": "text",
+      "layerId": "st_labels",
+      "name": "Legend Treatment",
+      "transform": { "x": 620, "y": 105, "width": 100, "height": 18, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#ff7f0e", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 11, "fontFamily": "Arial, Helvetica, sans-serif" },
+      "visible": true,
+      "locked": false,
+      "text": "Treatment"
+    },
+    {
+      "id": "sl_legend_baseline",
+      "type": "text",
+      "layerId": "st_labels",
+      "name": "Legend Baseline",
+      "transform": { "x": 620, "y": 130, "width": 100, "height": 18, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#2ca02c", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 11, "fontFamily": "Arial, Helvetica, sans-serif" },
+      "visible": true,
+      "locked": false,
+      "text": "Baseline"
+    },
+    {
+      "id": "sl_note",
+      "type": "text",
+      "layerId": "st_labels",
+      "name": "Footer Note",
+      "transform": { "x": 50, "y": 500, "width": 500, "height": 18, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#999999", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 10, "fontFamily": "Arial, Helvetica, sans-serif", "fontStyle": "italic" },
+      "visible": true,
+      "locked": false,
+      "text": "Note: Error bars represent +/- 1 SEM. n = 24-32 per group."
+    },
+    {
+      "id": "sa_x_axis",
+      "type": "connector",
+      "layerId": "st_axes",
+      "name": "X Axis Line",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#333333", "strokeWidth": 1, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 120, "y": 450 },
+      "target": { "x": 700, "y": 450 },
+      "route": { "type": "straight", "points": [{ "x": 120, "y": 450 }, { "x": 700, "y": 450 }] },
+      "arrowEnd": { "type": "triangle", "size": 0.8 },
+      "semanticKind": "flow"
+    },
+    {
+      "id": "sa_y_axis",
+      "type": "connector",
+      "layerId": "st_axes",
+      "name": "Y Axis Line",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#333333", "strokeWidth": 1, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 120, "y": 50 },
+      "target": { "x": 120, "y": 450 },
+      "route": { "type": "straight", "points": [{ "x": 120, "y": 50 }, { "x": 120, "y": 450 }] },
+      "arrowEnd": { "type": "triangle", "size": 0.8 },
+      "semanticKind": "flow"
+    }
+  ],
+  "groups": [],
+  "dataSources": [
+    {
+      "id": "ds_measurements",
+      "path": "data/measurements.csv",
+      "type": "csv",
+      "parseConfig": {
+        "header": true,
+        "delimiter": ",",
+        "dynamicTyping": true
+      }
+    }
+  ],
+  "charts": [
+    {
+      "id": "ch_bar_01",
+      "dataSourceId": "ds_measurements",
+      "chartType": "bar",
+      "columnMappings": {
+        "x": "category",
+        "y": "value",
+        "group": "group",
+        "color": "group"
+      },
+      "options": {
+        "title": "Experimental Measurements by Group",
+        "xLabel": "Category",
+        "yLabel": "Value (units)",
+        "errorColumn": "error",
+        "colorScheme": "category10",
+        "showLegend": true,
+        "showGrid": true
+      }
+    }
+  ],
+  "templates": [],
+  "exportPresets": [
+    {
+      "id": "stat_svg",
+      "name": "Statistics SVG Export",
+      "region": "full",
+      "format": "svg"
+    },
+    {
+      "id": "stat_png_2x",
+      "name": "Statistics PNG 2x Export",
+      "region": "full",
+      "format": "png",
+      "options": { "scale": 2, "dpi": 300 }
+    }
+  ]
+}

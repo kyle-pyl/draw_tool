@@ -922,3 +922,16 @@
 | 修改记录      | 修改：vite.config.ts（新增 define.__BUNDLE_TYPE__/__BUILD_TIME__ 常量注入、build.outDir 按包类型分目录输出 dist/lite 和 dist/full、Lite 包 rollupOptions.external 排除 xlsx）；修改：src/vite-env.d.ts（声明 __BUNDLE_TYPE__ 和 __BUILD_TIME__ 全局类型）；修改：src/io/excel-parser.ts（新增 __BUNDLE_TYPE__ === 'lite' 编译期提早返回，避免 Lite 包运行时触发失败的 xlsx 动态 import）；修改：src/main.tsx（根据 __BUNDLE_TYPE__ 设置文档标题）；修改：package.json（新增 build:all/preview:lite/preview:full 脚本，build 脚本默认输出 dist/full） |
 | 发现缺陷      | 无 |
 | 产出接口/函数 | API-0255（__BUNDLE_TYPE__）、API-0256（__BUILD_TIME__） |
+
+### T-12-09 创建示例项目集
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-12-09 |
+| 任务名称      | 创建示例项目集 |
+| 完成时间      | 2026-05-21 19:02 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | d324ad1 |
+| 修改记录      | 新建：examples/flowchart/scene.json（完整流程图：开始→输入→处理→判断→分支→结束，7 个节点、4 个图层、7 条连接线）、examples/architecture/scene.json（三层架构图：表示层/应用层/数据层，3 个容器、12 个服务节点、5 个图层、9 条依赖连接线）、examples/rtl/scene.json（RTL datapath：PC、指令存储器、译码器、寄存器文件、ALU、数据存储器、多路选择器，7 个 rtlModule、8 条 net/bus 连接线、4 个图层）、examples/statistics/scene.json（统计图：柱状图 chart 元素、坐标轴、标题和图例标签、CSV 数据源和图表定义）、examples/topology/scene.json（网络拓扑图：核心层/分布层/接入层/DMZ/服务器区，5 个容器、11 个拓扑节点、4 个图层、8 条网络链路）、examples/statistics/data/measurements.csv（实验数据 CSV）、src/tests/unit/example-scenes-validation.test.ts（5 个示例项目的 validateScene 校验测试）；新建目录：examples/flowchart/data/、examples/flowchart/assets/、examples/architecture/data/、examples/architecture/assets/、examples/rtl/data/、examples/rtl/assets/、examples/statistics/data/、examples/statistics/assets/、examples/topology/data/、examples/topology/assets/ |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | 无（仅示例项目文件，无新增 API） |

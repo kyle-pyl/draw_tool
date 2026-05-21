@@ -1,0 +1,595 @@
+{
+  "schemaVersion": "1.0.0",
+  "project": {
+    "name": "Three-Tier Architecture",
+    "author": "OpenCode",
+    "description": "A three-tier web application architecture diagram with presentation, application, and data tiers."
+  },
+  "canvas": {
+    "units": "px",
+    "background": "#F5F7FA",
+    "defaultFont": "Arial",
+    "gridSize": 0,
+    "snapToGrid": false
+  },
+  "rules": {
+    "maxLayerCount": 10,
+    "collisionStrategy": "bbox",
+    "hiddenElementsCollide": true,
+    "lockedElementsCollide": true,
+    "connectorsExempt": true
+  },
+  "layers": [
+    {
+      "id": "ar_tiers",
+      "name": "Tier Boundaries",
+      "order": 1,
+      "visible": true,
+      "locked": false,
+      "defaultStyle": {
+        "fill": "none",
+        "stroke": "#90A4AE",
+        "strokeWidth": 2,
+        "opacity": 1,
+        "strokeDasharray": "8,4"
+      }
+    },
+    {
+      "id": "ar_services",
+      "name": "Services & Nodes",
+      "order": 2,
+      "visible": true,
+      "locked": false,
+      "defaultStyle": {
+        "fill": "#E3F2FD",
+        "stroke": "#1565C0",
+        "strokeWidth": 2,
+        "opacity": 1
+      }
+    },
+    {
+      "id": "ar_data",
+      "name": "Data Stores",
+      "order": 3,
+      "visible": true,
+      "locked": false,
+      "defaultStyle": {
+        "fill": "#E8F5E9",
+        "stroke": "#2E7D32",
+        "strokeWidth": 2,
+        "opacity": 1
+      }
+    },
+    {
+      "id": "ar_labels",
+      "name": "Labels",
+      "order": 4,
+      "visible": true,
+      "locked": false,
+      "defaultStyle": {
+        "fill": "#37474F",
+        "stroke": "none",
+        "strokeWidth": 0,
+        "opacity": 1,
+        "fontSize": 13,
+        "fontFamily": "Arial",
+        "fontWeight": "bold"
+      }
+    },
+    {
+      "id": "ar_connectors",
+      "name": "Dependencies",
+      "order": 5,
+      "visible": true,
+      "locked": false
+    }
+  ],
+  "elements": [
+    {
+      "id": "at_presentation",
+      "type": "container",
+      "layerId": "ar_tiers",
+      "name": "Presentation Tier",
+      "transform": { "x": 30, "y": 30, "width": 740, "height": 150, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#ECEFF1", "stroke": "#90A4AE", "strokeWidth": 2, "opacity": 1, "strokeDasharray": "8,4" },
+      "visible": true,
+      "locked": false,
+      "containerLabel": "Presentation Tier"
+    },
+    {
+      "id": "at_application",
+      "type": "container",
+      "layerId": "ar_tiers",
+      "name": "Application Tier",
+      "transform": { "x": 30, "y": 210, "width": 740, "height": 200, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#ECEFF1", "stroke": "#90A4AE", "strokeWidth": 2, "opacity": 1, "strokeDasharray": "8,4" },
+      "visible": true,
+      "locked": false,
+      "containerLabel": "Application Tier"
+    },
+    {
+      "id": "at_data",
+      "type": "container",
+      "layerId": "ar_tiers",
+      "name": "Data Tier",
+      "transform": { "x": 30, "y": 440, "width": 740, "height": 150, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#ECEFF1", "stroke": "#90A4AE", "strokeWidth": 2, "opacity": 1, "strokeDasharray": "8,4" },
+      "visible": true,
+      "locked": false,
+      "containerLabel": "Data Tier"
+    },
+    {
+      "id": "as_browser",
+      "type": "shape",
+      "layerId": "ar_services",
+      "name": "Web Browser",
+      "transform": { "x": 80, "y": 65, "width": 130, "height": 70, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#E3F2FD", "stroke": "#1565C0", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "shapeKind": "rect",
+      "cornerRadius": [8, 8, 8, 8]
+    },
+    {
+      "id": "as_mobile",
+      "type": "shape",
+      "layerId": "ar_services",
+      "name": "Mobile App",
+      "transform": { "x": 290, "y": 65, "width": 130, "height": 70, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#E3F2FD", "stroke": "#1565C0", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "shapeKind": "rect",
+      "cornerRadius": [8, 8, 8, 8]
+    },
+    {
+      "id": "as_spa",
+      "type": "shape",
+      "layerId": "ar_services",
+      "name": "Single Page App",
+      "transform": { "x": 500, "y": 65, "width": 130, "height": 70, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#E3F2FD", "stroke": "#1565C0", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "shapeKind": "rect",
+      "cornerRadius": [8, 8, 8, 8]
+    },
+    {
+      "id": "as_gateway",
+      "type": "shape",
+      "layerId": "ar_services",
+      "name": "API Gateway",
+      "transform": { "x": 80, "y": 250, "width": 130, "height": 70, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#F3E5F5", "stroke": "#7B1FA2", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "shapeKind": "rect",
+      "cornerRadius": [8, 8, 8, 8]
+    },
+    {
+      "id": "as_user_service",
+      "type": "shape",
+      "layerId": "ar_services",
+      "name": "User Service",
+      "transform": { "x": 290, "y": 250, "width": 130, "height": 70, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#E8F5E9", "stroke": "#2E7D32", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "shapeKind": "rect",
+      "cornerRadius": [8, 8, 8, 8]
+    },
+    {
+      "id": "as_order_service",
+      "type": "shape",
+      "layerId": "ar_services",
+      "name": "Order Service",
+      "transform": { "x": 500, "y": 250, "width": 130, "height": 70, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#E8F5E9", "stroke": "#2E7D32", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "shapeKind": "rect",
+      "cornerRadius": [8, 8, 8, 8]
+    },
+    {
+      "id": "as_message_queue",
+      "type": "shape",
+      "layerId": "ar_services",
+      "name": "Message Queue",
+      "transform": { "x": 80, "y": 350, "width": 130, "height": 50, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#FFF3E0", "stroke": "#E65100", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "shapeKind": "rect",
+      "cornerRadius": [6, 6, 6, 6]
+    },
+    {
+      "id": "as_cache_layer",
+      "type": "shape",
+      "layerId": "ar_services",
+      "name": "Cache Layer",
+      "transform": { "x": 290, "y": 350, "width": 130, "height": 50, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#FCE4EC", "stroke": "#C62828", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "shapeKind": "rect",
+      "cornerRadius": [6, 6, 6, 6]
+    },
+    {
+      "id": "as_worker",
+      "type": "shape",
+      "layerId": "ar_services",
+      "name": "Worker Service",
+      "transform": { "x": 500, "y": 350, "width": 130, "height": 50, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#E8EAF6", "stroke": "#283593", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "shapeKind": "rect",
+      "cornerRadius": [6, 6, 6, 6]
+    },
+    {
+      "id": "ad_primary_db",
+      "type": "shape",
+      "layerId": "ar_data",
+      "name": "Primary Database",
+      "transform": { "x": 100, "y": 470, "width": 110, "height": 90, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#E8F5E9", "stroke": "#2E7D32", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "shapeKind": "path",
+      "pathCommands": "M 55 0 Q 110 0 110 15 Q 110 30 55 30 Q 0 30 0 15 Q 0 0 55 0 M 0 15 L 0 75 Q 0 90 55 90 Q 110 90 110 75 L 110 15"
+    },
+    {
+      "id": "ad_replica_db",
+      "type": "shape",
+      "layerId": "ar_data",
+      "name": "Read Replica",
+      "transform": { "x": 300, "y": 470, "width": 110, "height": 90, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#E8F5E9", "stroke": "#2E7D32", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "shapeKind": "path",
+      "pathCommands": "M 55 0 Q 110 0 110 15 Q 110 30 55 30 Q 0 30 0 15 Q 0 0 55 0 M 0 15 L 0 75 Q 0 90 55 90 Q 110 90 110 75 L 110 15"
+    },
+    {
+      "id": "ad_object_store",
+      "type": "shape",
+      "layerId": "ar_data",
+      "name": "Object Storage",
+      "transform": { "x": 500, "y": 470, "width": 130, "height": 90, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#FFF8E1", "stroke": "#F9A825", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "shapeKind": "rect",
+      "cornerRadius": [6, 6, 6, 6]
+    },
+    {
+      "id": "al_browser_label",
+      "type": "text",
+      "layerId": "ar_labels",
+      "name": "Browser Label",
+      "transform": { "x": 93, "y": 90, "width": 104, "height": 20, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#37474F", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 12, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "Web Browser"
+    },
+    {
+      "id": "al_mobile_label",
+      "type": "text",
+      "layerId": "ar_labels",
+      "name": "Mobile Label",
+      "transform": { "x": 308, "y": 90, "width": 94, "height": 20, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#37474F", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 12, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "Mobile App"
+    },
+    {
+      "id": "al_spa_label",
+      "type": "text",
+      "layerId": "ar_labels",
+      "name": "SPA Label",
+      "transform": { "x": 508, "y": 90, "width": 114, "height": 20, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#37474F", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 12, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "Single Page App"
+    },
+    {
+      "id": "al_gateway_label",
+      "type": "text",
+      "layerId": "ar_labels",
+      "name": "Gateway Label",
+      "transform": { "x": 97, "y": 275, "width": 96, "height": 20, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#4A148C", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 12, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "API Gateway"
+    },
+    {
+      "id": "al_user_service_label",
+      "type": "text",
+      "layerId": "ar_labels",
+      "name": "User Service Label",
+      "transform": { "x": 305, "y": 275, "width": 100, "height": 20, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#1B5E20", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 12, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "User Service"
+    },
+    {
+      "id": "al_order_service_label",
+      "type": "text",
+      "layerId": "ar_labels",
+      "name": "Order Service Label",
+      "transform": { "x": 510, "y": 275, "width": 110, "height": 20, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#1B5E20", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 12, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "Order Service"
+    },
+    {
+      "id": "al_queue_label",
+      "type": "text",
+      "layerId": "ar_labels",
+      "name": "Queue Label",
+      "transform": { "x": 92, "y": 365, "width": 106, "height": 20, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#BF360C", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 11, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "Message Queue"
+    },
+    {
+      "id": "al_cache_label",
+      "type": "text",
+      "layerId": "ar_labels",
+      "name": "Cache Label",
+      "transform": { "x": 310, "y": 365, "width": 90, "height": 20, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#B71C1C", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 11, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "Cache Layer"
+    },
+    {
+      "id": "al_worker_label",
+      "type": "text",
+      "layerId": "ar_labels",
+      "name": "Worker Label",
+      "transform": { "x": 510, "y": 365, "width": 110, "height": 20, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#1A237E", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 11, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "Worker Service"
+    },
+    {
+      "id": "al_db_label",
+      "type": "text",
+      "layerId": "ar_labels",
+      "name": "DB Label",
+      "transform": { "x": 105, "y": 510, "width": 100, "height": 20, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#1B5E20", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 11, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "Primary DB"
+    },
+    {
+      "id": "al_replica_label",
+      "type": "text",
+      "layerId": "ar_labels",
+      "name": "Replica Label",
+      "transform": { "x": 310, "y": 510, "width": 90, "height": 20, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#1B5E20", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 11, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "Read Replica"
+    },
+    {
+      "id": "al_object_label",
+      "type": "text",
+      "layerId": "ar_labels",
+      "name": "Object Storage Label",
+      "transform": { "x": 508, "y": 510, "width": 114, "height": 20, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#E65100", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 11, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "Object Storage"
+    },
+    {
+      "id": "al_tier1_label",
+      "type": "text",
+      "layerId": "ar_labels",
+      "name": "Tier 1 Label",
+      "transform": { "x": 35, "y": 32, "width": 150, "height": 22, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#546E7A", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 14, "fontFamily": "Arial", "fontWeight": "bold" },
+      "visible": true,
+      "locked": false,
+      "text": "Presentation Tier"
+    },
+    {
+      "id": "al_tier2_label",
+      "type": "text",
+      "layerId": "ar_labels",
+      "name": "Tier 2 Label",
+      "transform": { "x": 35, "y": 212, "width": 170, "height": 22, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#546E7A", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 14, "fontFamily": "Arial", "fontWeight": "bold" },
+      "visible": true,
+      "locked": false,
+      "text": "Application Tier"
+    },
+    {
+      "id": "al_tier3_label",
+      "type": "text",
+      "layerId": "ar_labels",
+      "name": "Tier 3 Label",
+      "transform": { "x": 35, "y": 442, "width": 100, "height": 22, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#546E7A", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 14, "fontFamily": "Arial", "fontWeight": "bold" },
+      "visible": true,
+      "locked": false,
+      "text": "Data Tier"
+    },
+    {
+      "id": "ac_user_db",
+      "type": "connector",
+      "layerId": "ar_connectors",
+      "name": "User-to-DB",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#78909C", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 355, "y": 320 },
+      "target": { "x": 155, "y": 470 },
+      "route": { "type": "polyline", "points": [{ "x": 355, "y": 320 }, { "x": 355, "y": 395 }, { "x": 155, "y": 395 }, { "x": 155, "y": 470 }] },
+      "arrowEnd": { "type": "triangle", "size": 1 },
+      "semanticKind": "dependency"
+    },
+    {
+      "id": "ac_order_db",
+      "type": "connector",
+      "layerId": "ar_connectors",
+      "name": "Order-to-DB",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#78909C", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 565, "y": 320 },
+      "target": { "x": 565, "y": 470 },
+      "route": { "type": "straight", "points": [{ "x": 565, "y": 320 }, { "x": 565, "y": 470 }] },
+      "arrowEnd": { "type": "triangle", "size": 1 },
+      "semanticKind": "dependency"
+    },
+    {
+      "id": "ac_gateway_user",
+      "type": "connector",
+      "layerId": "ar_connectors",
+      "name": "Gateway-to-User",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#78909C", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 210, "y": 285 },
+      "target": { "x": 290, "y": 285 },
+      "route": { "type": "straight", "points": [{ "x": 210, "y": 285 }, { "x": 290, "y": 285 }] },
+      "arrowEnd": { "type": "triangle", "size": 1 },
+      "semanticKind": "dependency"
+    },
+    {
+      "id": "ac_gateway_order",
+      "type": "connector",
+      "layerId": "ar_connectors",
+      "name": "Gateway-to-Order",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#78909C", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 210, "y": 295 },
+      "target": { "x": 500, "y": 295 },
+      "route": { "type": "straight", "points": [{ "x": 210, "y": 295 }, { "x": 500, "y": 295 }] },
+      "arrowEnd": { "type": "triangle", "size": 1 },
+      "semanticKind": "dependency"
+    },
+    {
+      "id": "ac_browser_gateway",
+      "type": "connector",
+      "layerId": "ar_connectors",
+      "name": "Browser-to-Gateway",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#78909C", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 145, "y": 135 },
+      "target": { "x": 145, "y": 250 },
+      "route": { "type": "straight", "points": [{ "x": 145, "y": 135 }, { "x": 145, "y": 250 }] },
+      "arrowEnd": { "type": "triangle", "size": 1 },
+      "semanticKind": "dependency"
+    },
+    {
+      "id": "ac_svc_queue",
+      "type": "connector",
+      "layerId": "ar_connectors",
+      "name": "Service-to-Queue",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#BF360C", "strokeWidth": 2, "opacity": 1, "strokeDasharray": "4,3" },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 355, "y": 320 },
+      "target": { "x": 210, "y": 375 },
+      "route": { "type": "straight", "points": [{ "x": 355, "y": 320 }, { "x": 210, "y": 375 }] },
+      "arrowEnd": { "type": "triangle", "size": 1 },
+      "semanticKind": "dependency"
+    },
+    {
+      "id": "ac_queue_worker",
+      "type": "connector",
+      "layerId": "ar_connectors",
+      "name": "Queue-to-Worker",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#BF360C", "strokeWidth": 2, "opacity": 1, "strokeDasharray": "4,3" },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 210, "y": 375 },
+      "target": { "x": 500, "y": 375 },
+      "route": { "type": "straight", "points": [{ "x": 210, "y": 375 }, { "x": 500, "y": 375 }] },
+      "arrowEnd": { "type": "triangle", "size": 1 },
+      "semanticKind": "dependency"
+    },
+    {
+      "id": "ac_db_replica",
+      "type": "connector",
+      "layerId": "ar_connectors",
+      "name": "DB-to-Replica",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#78909C", "strokeWidth": 2, "opacity": 1, "strokeDasharray": "6,3" },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 210, "y": 515 },
+      "target": { "x": 300, "y": 515 },
+      "route": { "type": "straight", "points": [{ "x": 210, "y": 515 }, { "x": 300, "y": 515 }] },
+      "arrowEnd": { "type": "triangle", "size": 1 },
+      "semanticKind": "dependency"
+    },
+    {
+      "id": "ac_cache_reads",
+      "type": "connector",
+      "layerId": "ar_connectors",
+      "name": "Order-to-Cache",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#C62828", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 565, "y": 320 },
+      "target": { "x": 420, "y": 375 },
+      "route": { "type": "straight", "points": [{ "x": 565, "y": 320 }, { "x": 420, "y": 375 }] },
+      "arrowEnd": { "type": "triangle", "size": 1 },
+      "semanticKind": "dependency"
+    }
+  ],
+  "groups": [
+    {
+      "id": "ag_microservices",
+      "name": "Microservices",
+      "elementIds": ["as_user_service", "as_order_service"]
+    },
+    {
+      "id": "ag_data_stores",
+      "name": "Data Stores",
+      "elementIds": ["ad_primary_db", "ad_replica_db", "ad_object_store"]
+    }
+  ],
+  "dataSources": [],
+  "charts": [],
+  "templates": [],
+  "exportPresets": [
+    {
+      "id": "arch_svg",
+      "name": "Architecture SVG Export",
+      "region": "full",
+      "format": "svg"
+    },
+    {
+      "id": "arch_png",
+      "name": "Architecture PNG Export",
+      "region": "full",
+      "format": "png"
+    }
+  ]
+}

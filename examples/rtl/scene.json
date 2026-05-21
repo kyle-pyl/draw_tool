@@ -1,0 +1,449 @@
+{
+  "schemaVersion": "1.0.0",
+  "project": {
+    "name": "RTL Datapath Example",
+    "author": "OpenCode",
+    "description": "A simple RTL datapath showing PC, instruction memory, register file, ALU, and data memory connected via nets and buses."
+  },
+  "canvas": {
+    "units": "px",
+    "background": "#FAFAFA",
+    "defaultFont": "Arial",
+    "gridSize": 10,
+    "snapToGrid": true
+  },
+  "rules": {
+    "maxLayerCount": 10,
+    "collisionStrategy": "bbox",
+    "hiddenElementsCollide": true,
+    "lockedElementsCollide": true,
+    "connectorsExempt": true
+  },
+  "layers": [
+    {
+      "id": "rtl_modules",
+      "name": "RTL Modules",
+      "order": 1,
+      "visible": true,
+      "locked": false,
+      "defaultStyle": {
+        "fill": "#E8EAF6",
+        "stroke": "#3F51B5",
+        "strokeWidth": 2,
+        "opacity": 1
+      }
+    },
+    {
+      "id": "rtl_ports",
+      "name": "Port Labels",
+      "order": 2,
+      "visible": true,
+      "locked": false,
+      "defaultStyle": {
+        "fill": "#1A237E",
+        "stroke": "none",
+        "strokeWidth": 0,
+        "opacity": 1,
+        "fontSize": 10,
+        "fontFamily": "Consolas, monospace"
+      }
+    },
+    {
+      "id": "rtl_labels",
+      "name": "Module Labels",
+      "order": 3,
+      "visible": true,
+      "locked": false,
+      "defaultStyle": {
+        "fill": "#283593",
+        "stroke": "none",
+        "strokeWidth": 0,
+        "opacity": 1,
+        "fontSize": 12,
+        "fontFamily": "Arial",
+        "fontWeight": "bold"
+      }
+    },
+    {
+      "id": "rtl_nets",
+      "name": "Nets & Buses",
+      "order": 4,
+      "visible": true,
+      "locked": false
+    }
+  ],
+  "elements": [
+    {
+      "id": "rm_pc",
+      "type": "rtlModule",
+      "layerId": "rtl_modules",
+      "name": "PC",
+      "transform": { "x": 50, "y": 80, "width": 120, "height": 80, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#E8EAF6", "stroke": "#3F51B5", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "moduleName": "register",
+      "instanceName": "pc_reg",
+      "parameters": { "WIDTH": 32 },
+      "ports": [
+        { "id": "pc_clk", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "input", "bitWidth": 1, "portName": "clk" },
+        { "id": "pc_rst", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "input", "bitWidth": 1, "portName": "rst_n" },
+        { "id": "pc_next", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "input", "bitWidth": 32, "portName": "next_pc" },
+        { "id": "pc_out", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "output", "bitWidth": 32, "portName": "pc" }
+      ]
+    },
+    {
+      "id": "rm_imem",
+      "type": "rtlModule",
+      "layerId": "rtl_modules",
+      "name": "Instruction Memory",
+      "transform": { "x": 50, "y": 240, "width": 130, "height": 90, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#FFF3E0", "stroke": "#E65100", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "moduleName": "memory",
+      "instanceName": "inst_mem",
+      "parameters": { "ADDR_WIDTH": 10, "DATA_WIDTH": 32 },
+      "ports": [
+        { "id": "im_addr", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "input", "bitWidth": 10, "portName": "addr" },
+        { "id": "im_instr", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "output", "bitWidth": 32, "portName": "instr" }
+      ]
+    },
+    {
+      "id": "rm_decode",
+      "type": "rtlModule",
+      "layerId": "rtl_modules",
+      "name": "Decoder",
+      "transform": { "x": 280, "y": 240, "width": 130, "height": 90, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#F3E5F5", "stroke": "#7B1FA2", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "moduleName": "controller",
+      "instanceName": "decoder",
+      "ports": [
+        { "id": "dc_instr", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "input", "bitWidth": 32, "portName": "instr" },
+        { "id": "dc_ctrl", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "output", "bitWidth": 12, "portName": "ctrl_signals" }
+      ]
+    },
+    {
+      "id": "rm_rf",
+      "type": "rtlModule",
+      "layerId": "rtl_modules",
+      "name": "Register File",
+      "transform": { "x": 280, "y": 70, "width": 140, "height": 100, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#E8F5E9", "stroke": "#2E7D32", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "moduleName": "register",
+      "instanceName": "reg_file",
+      "parameters": { "NUM_REGS": 32, "WIDTH": 32 },
+      "ports": [
+        { "id": "rf_rs1", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "input", "bitWidth": 5, "portName": "rs1_addr" },
+        { "id": "rf_rs2", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "input", "bitWidth": 5, "portName": "rs2_addr" },
+        { "id": "rf_rd", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "input", "bitWidth": 5, "portName": "rd_addr" },
+        { "id": "rf_wdata", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "input", "bitWidth": 32, "portName": "wdata" },
+        { "id": "rf_rdata1", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "output", "bitWidth": 32, "portName": "rdata1" },
+        { "id": "rf_rdata2", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "output", "bitWidth": 32, "portName": "rdata2" }
+      ]
+    },
+    {
+      "id": "rm_alu",
+      "type": "rtlModule",
+      "layerId": "rtl_modules",
+      "name": "ALU",
+      "transform": { "x": 540, "y": 70, "width": 140, "height": 100, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#FCE4EC", "stroke": "#C62828", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "moduleName": "ALU",
+      "instanceName": "alu",
+      "ports": [
+        { "id": "alu_a", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "input", "bitWidth": 32, "portName": "op_a" },
+        { "id": "alu_b", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "input", "bitWidth": 32, "portName": "op_b" },
+        { "id": "alu_op", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "input", "bitWidth": 4, "portName": "alu_op" },
+        { "id": "alu_result", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "output", "bitWidth": 32, "portName": "result" },
+        { "id": "alu_zero", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "output", "bitWidth": 1, "portName": "zero" }
+      ]
+    },
+    {
+      "id": "rm_dmem",
+      "type": "rtlModule",
+      "layerId": "rtl_modules",
+      "name": "Data Memory",
+      "transform": { "x": 540, "y": 240, "width": 130, "height": 90, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#FFF3E0", "stroke": "#E65100", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "moduleName": "memory",
+      "instanceName": "data_mem",
+      "parameters": { "ADDR_WIDTH": 10, "DATA_WIDTH": 32 },
+      "ports": [
+        { "id": "dm_addr", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "input", "bitWidth": 10, "portName": "addr" },
+        { "id": "dm_wdata", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "input", "bitWidth": 32, "portName": "wdata" },
+        { "id": "dm_wen", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "input", "bitWidth": 1, "portName": "wen" },
+        { "id": "dm_rdata", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "output", "bitWidth": 32, "portName": "rdata" }
+      ]
+    },
+    {
+      "id": "rm_pc_mux",
+      "type": "rtlModule",
+      "layerId": "rtl_modules",
+      "name": "Mux",
+      "transform": { "x": 280, "y": 410, "width": 100, "height": 60, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#E8EAF6", "stroke": "#3F51B5", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "moduleName": "mux",
+      "instanceName": "pc_mux",
+      "ports": [
+        { "id": "mux_a", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "input", "bitWidth": 32, "portName": "in_0" },
+        { "id": "mux_b", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "input", "bitWidth": 32, "portName": "in_1" },
+        { "id": "mux_sel", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "input", "bitWidth": 1, "portName": "sel" },
+        { "id": "mux_out", "type": "rtlPort", "layerId": "", "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 }, "style": { "fill": "none", "stroke": "none", "strokeWidth": 0, "opacity": 1 }, "visible": true, "locked": false, "direction": "output", "bitWidth": 32, "portName": "out" }
+      ]
+    },
+    {
+      "id": "rl_pc_label",
+      "type": "text",
+      "layerId": "rtl_labels",
+      "name": "PC Label",
+      "transform": { "x": 60, "y": 108, "width": 100, "height": 20, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#1A237E", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 12, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "PC"
+    },
+    {
+      "id": "rl_imem_label",
+      "type": "text",
+      "layerId": "rtl_labels",
+      "name": "IMem Label",
+      "transform": { "x": 50, "y": 275, "width": 130, "height": 20, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#BF360C", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 12, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "Inst. Memory"
+    },
+    {
+      "id": "rl_decode_label",
+      "type": "text",
+      "layerId": "rtl_labels",
+      "name": "Decoder Label",
+      "transform": { "x": 295, "y": 275, "width": 100, "height": 20, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#4A148C", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 12, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "Decoder"
+    },
+    {
+      "id": "rl_rf_label",
+      "type": "text",
+      "layerId": "rtl_labels",
+      "name": "RF Label",
+      "transform": { "x": 290, "y": 108, "width": 120, "height": 20, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#1B5E20", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 12, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "Register File"
+    },
+    {
+      "id": "rl_alu_label",
+      "type": "text",
+      "layerId": "rtl_labels",
+      "name": "ALU Label",
+      "transform": { "x": 565, "y": 108, "width": 90, "height": 20, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#B71C1C", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 12, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "ALU"
+    },
+    {
+      "id": "rl_dmem_label",
+      "type": "text",
+      "layerId": "rtl_labels",
+      "name": "DMem Label",
+      "transform": { "x": 540, "y": 275, "width": 130, "height": 20, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#BF360C", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 12, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "Data Memory"
+    },
+    {
+      "id": "rl_mux_label",
+      "type": "text",
+      "layerId": "rtl_labels",
+      "name": "Mux Label",
+      "transform": { "x": 295, "y": 430, "width": 70, "height": 20, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "#1A237E", "stroke": "none", "strokeWidth": 0, "opacity": 1, "fontSize": 11, "fontFamily": "Arial", "fontWeight": "bold", "textAlign": "center" },
+      "visible": true,
+      "locked": false,
+      "text": "Mux"
+    },
+    {
+      "id": "rn_pc_imem",
+      "type": "connector",
+      "layerId": "rtl_nets",
+      "name": "Net: PC to IMem",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#1565C0", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 170, "y": 120 },
+      "target": { "x": 115, "y": 240 },
+      "route": { "type": "polyline", "points": [{ "x": 170, "y": 120 }, { "x": 170, "y": 180 }, { "x": 115, "y": 180 }, { "x": 115, "y": 240 }] },
+      "arrowEnd": { "type": "triangle", "size": 1 },
+      "semanticKind": "rtl-net",
+      "labels": [{ "text": "pc[31:0]", "position": 0.3, "offset": { "dx": 10, "dy": -8 } }]
+    },
+    {
+      "id": "rn_imem_decode",
+      "type": "connector",
+      "layerId": "rtl_nets",
+      "name": "Net: IMem to Decoder",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#1565C0", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 180, "y": 285 },
+      "target": { "x": 280, "y": 285 },
+      "route": { "type": "straight", "points": [{ "x": 180, "y": 285 }, { "x": 280, "y": 285 }] },
+      "arrowEnd": { "type": "triangle", "size": 1 },
+      "semanticKind": "rtl-net",
+      "labels": [{ "text": "instr[31:0]", "position": 0.5, "offset": { "dx": 0, "dy": -10 } }]
+    },
+    {
+      "id": "rn_rf_alu_a",
+      "type": "connector",
+      "layerId": "rtl_nets",
+      "name": "Net: RF rdata1 to ALU op_a",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#1565C0", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 420, "y": 100 },
+      "target": { "x": 540, "y": 100 },
+      "route": { "type": "straight", "points": [{ "x": 420, "y": 100 }, { "x": 540, "y": 100 }] },
+      "arrowEnd": { "type": "triangle", "size": 1 },
+      "semanticKind": "rtl-net",
+      "labels": [{ "text": "rdata1[31:0]", "position": 0.5, "offset": { "dx": 0, "dy": -10 } }]
+    },
+    {
+      "id": "rn_rf_alu_b",
+      "type": "connector",
+      "layerId": "rtl_nets",
+      "name": "Net: RF rdata2 to ALU op_b",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#1565C0", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 420, "y": 130 },
+      "target": { "x": 540, "y": 130 },
+      "route": { "type": "straight", "points": [{ "x": 420, "y": 130 }, { "x": 540, "y": 130 }] },
+      "arrowEnd": { "type": "triangle", "size": 1 },
+      "semanticKind": "rtl-net",
+      "labels": [{ "text": "rdata2[31:0]", "position": 0.5, "offset": { "dx": 0, "dy": -10 } }]
+    },
+    {
+      "id": "rn_alu_result_dmem",
+      "type": "connector",
+      "layerId": "rtl_nets",
+      "name": "Net: ALU result to DMem addr",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#1565C0", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 680, "y": 160 },
+      "target": { "x": 605, "y": 240 },
+      "route": { "type": "polyline", "points": [{ "x": 680, "y": 160 }, { "x": 680, "y": 200 }, { "x": 605, "y": 200 }, { "x": 605, "y": 240 }] },
+      "arrowEnd": { "type": "triangle", "size": 1 },
+      "semanticKind": "rtl-net",
+      "labels": [{ "text": "result[31:0]", "position": 0.5, "offset": { "dx": 15, "dy": 0 } }]
+    },
+    {
+      "id": "rn_alu_result_mux",
+      "type": "connector",
+      "layerId": "rtl_nets",
+      "name": "Net: ALU result to Mux",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#1565C0", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 680, "y": 140 },
+      "target": { "x": 380, "y": 440 },
+      "route": { "type": "polyline", "points": [{ "x": 680, "y": 140 }, { "x": 730, "y": 140 }, { "x": 730, "y": 440 }, { "x": 380, "y": 440 }] },
+      "arrowEnd": { "type": "triangle", "size": 1 },
+      "semanticKind": "rtl-net"
+    },
+    {
+      "id": "rn_pc_plus4_mux",
+      "type": "connector",
+      "layerId": "rtl_nets",
+      "name": "Net: PC+4 to Mux in_0",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#1565C0", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 110, "y": 160 },
+      "target": { "x": 280, "y": 425 },
+      "route": { "type": "polyline", "points": [{ "x": 110, "y": 160 }, { "x": 110, "y": 425 }, { "x": 280, "y": 425 }] },
+      "arrowEnd": { "type": "triangle", "size": 1 },
+      "semanticKind": "rtl-net",
+      "labels": [{ "text": "pc_plus4[31:0]", "position": 0.7, "offset": { "dx": 0, "dy": -10 } }]
+    },
+    {
+      "id": "rn_mux_pc",
+      "type": "connector",
+      "layerId": "rtl_nets",
+      "name": "Net: Mux to PC next_pc",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#1565C0", "strokeWidth": 2, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 330, "y": 440 },
+      "target": { "x": 110, "y": 160 },
+      "route": { "type": "polyline", "points": [{ "x": 330, "y": 440 }, { "x": 330, "y": 480 }, { "x": 50, "y": 480 }, { "x": 50, "y": 160 }, { "x": 110, "y": 160 }] },
+      "arrowEnd": { "type": "triangle", "size": 1 },
+      "semanticKind": "rtl-net",
+      "labels": [{ "text": "next_pc[31:0]", "position": 0.4, "offset": { "dx": 0, "dy": -10 } }]
+    },
+    {
+      "id": "rn_decode_control_bus",
+      "type": "connector",
+      "layerId": "rtl_nets",
+      "name": "Bus: Decoder control signals",
+      "transform": { "x": 0, "y": 0, "width": 0, "height": 0, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+      "style": { "fill": "none", "stroke": "#7B1FA2", "strokeWidth": 3, "opacity": 1 },
+      "visible": true,
+      "locked": false,
+      "source": { "x": 410, "y": 300 },
+      "target": { "x": 540, "y": 170 },
+      "route": { "type": "polyline", "points": [{ "x": 410, "y": 300 }, { "x": 450, "y": 300 }, { "x": 450, "y": 170 }, { "x": 540, "y": 170 }] },
+      "arrowEnd": { "type": "triangle", "size": 1.3 },
+      "semanticKind": "rtl-bus",
+      "labels": [{ "text": "ctrl[11:0]", "position": 0.5, "offset": { "dx": 15, "dy": 0 } }]
+    }
+  ],
+  "groups": [
+    {
+      "id": "rg_datapath",
+      "name": "Datapath",
+      "elementIds": ["rm_pc", "rm_imem", "rm_rf", "rm_alu", "rm_dmem", "rm_pc_mux"]
+    },
+    {
+      "id": "rg_memories",
+      "name": "Memories",
+      "elementIds": ["rm_imem", "rm_dmem"]
+    }
+  ],
+  "dataSources": [],
+  "charts": [],
+  "templates": [],
+  "exportPresets": [
+    {
+      "id": "rtl_svg",
+      "name": "RTL SVG Export",
+      "region": "full",
+      "format": "svg"
+    }
+  ]
+}
