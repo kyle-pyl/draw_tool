@@ -8,3 +8,5 @@ export { sanitizeSvg, sanitizeSvgToBlob } from './svg-sanitizer';
 export { isSupportedImageFile, importImageFromFile } from './image-utils';
 export { parseCSV } from './csv-parser';
 export type { ParsedData, ColumnInfo, CsvParseOptions } from './csv-parser';
+export { parseExcel, parseExcelFromBuffer, getExcelSheetNames, getExcelSheetNamesFromBuffer } from './excel-parser';
+export type { ExcelParseOptions } from './excel-parser';

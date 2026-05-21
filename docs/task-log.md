@@ -701,3 +701,16 @@
 | 修改记录 | 新建：src/modules/chart/convert.ts（convertChartSvgToElements 函数 + SVG 元素解析器：支持 rect/circle/ellipse/line/polyline/polygon/path/text 标签提取和坐标映射、ConvertedElementResult 接口）、src/tests/unit/chart-convert.test.ts（21 个测试用例覆盖 6 种图表类型转换、坐标映射、元素属性、ID 唯一性、边界情况）；修改：src/core/commands.ts（新增 ChartToVectorCommand 类：校验图表类型/svgContent、创建新图层、转换 SVG 为独立 shape/text 元素、生成 ElementGroup、撤销恢复原图表/删除新图层和组）、src/core/index.ts（新增 ChartToVectorCommand 导出）、src/modules/chart/index.ts（新增 convertChartSvgToElements 和 ConvertedElementResult 导出）、src/modules/index.ts（新增导出）、src/tests/unit/commands.test.ts（新增 13 个 ChartToVectorCommand 测试用例：构造、校验、执行、撤销、重做） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | API-0160（convertChartSvgToElements）、API-0161（ConvertedElementResult）、API-0162（ChartToVectorCommand） |
+
+### T-09-06 实现 Excel 解析（Full 包）
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号 | T-09-06 |
+| 任务名称 | 实现 Excel 解析（Full 包） |
+| 完成时间 | 2026-05-21 |
+| 作者/智能体 | OpenCode/deepseek-v4-pro |
+| Git Commit | 30e8db9 |
+| 修改记录 | 新建：src/io/excel-parser.ts（parseExcel/parseExcelFromBuffer/getExcelSheetNames/getExcelSheetNamesFromBuffer 函数 + ExcelParseOptions 接口，动态加载 SheetJS xlsx 库，Lite 包返回友好错误提示，支持工作表选择，内部通过 sheet_to_csv → parseCSV 保证输出格式一致，导出 _resetXlsxCacheForTesting/_setXlsxCacheForTesting 测试辅助）、src/tests/unit/excel-parser.test.ts（14 个测试用例覆盖 File/ArrayBuffer 解析、指定工作表、工作表不存在、空工作簿、列类型推断、缺失值处理、空数据、默认第一工作表、Lite 包错误提示、getExcelSheetNames 功能）；修改：src/io/index.ts（新增 parseExcel/parseExcelFromBuffer/getExcelSheetNames/getExcelSheetNamesFromBuffer 导出和 ExcelParseOptions 类型导出）、package.json（新增 xlsx 依赖） |
+| 发现缺陷 | 无 |
+| 产出接口/函数 | API-0163（parseExcel）、API-0164（parseExcelFromBuffer）、API-0165（getExcelSheetNames）、API-0166（getExcelSheetNamesFromBuffer）、API-0167（ExcelParseOptions） |

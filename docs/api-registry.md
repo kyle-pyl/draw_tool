@@ -3078,3 +3078,98 @@
 | 输出参数 | implements SceneCommand - 可通过 CommandExecutor 执行、撤销和重做；getNewLayerId(): string - 返回新图层 ID |
 | 典型用例 | const cmd = new ChartToVectorCommand(['chart1']); executor.execute(cmd); const newLayerId = cmd.getNewLayerId(); |
 | 修订历史 | 2026-05-20, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0163 parseExcel
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0163 |
+| 名称 | parseExcel |
+| 所属系统 | io |
+| 所属模块 | excel-parser |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 解析 Excel 文件（.xlsx / .xls），返回与 parseCSV 相同的 ParsedData 格式。动态加载 SheetJS（xlsx 库），在 Lite 包中该库不可用时返回友好错误提示。支持通过 ExcelParseOptions 指定工作表（sheetName）。内部先调用 xlsx 将工作表转为 CSV，再通过 parseCSV 解析，确保列类型推断、缺失值处理与 CSV 解析器完全一致。 |
+| 输入参数 | file: File（Excel 文件对象）, options?: ExcelParseOptions（可选：sheetName 指定工作表名称） |
+| 输出参数 | Promise<ParsedData> — 与 CSV 解析器相同格式的解析结果。Lite 包下 parseErrors 包含提示需要 Full 包的错误信息 |
+| 典型用例 | const result = await parseExcel(file, { sheetName: 'Sheet1' }); console.log(result.columns); |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0164 parseExcelFromBuffer
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0164 |
+| 名称 | parseExcelFromBuffer |
+| 所属系统 | io |
+| 所属模块 | excel-parser |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 从 ArrayBuffer 解析 Excel 数据，适用于从 ZIP 文件或 File System Access API 目录读取后解析。行为与 parseExcel 一致。 |
+| 输入参数 | buffer: ArrayBuffer, options?: ExcelParseOptions |
+| 输出参数 | Promise<ParsedData> |
+| 典型用例 | const result = await parseExcelFromBuffer(buffer, { sheetName: 'Data' }); |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0165 getExcelSheetNames
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0165 |
+| 名称 | getExcelSheetNames |
+| 所属系统 | io |
+| 所属模块 | excel-parser |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 返回 Excel 文件中所有工作表的名称列表，用于构建工作表选择 UI。Lite 包下返回空数组。 |
+| 输入参数 | file: File（Excel 文件对象） |
+| 输出参数 | Promise<string[]> — 工作表名称数组 |
+| 典型用例 | const names = await getExcelSheetNames(file); // ['Sheet1', 'Sheet2', 'Sheet3'] |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0166 getExcelSheetNamesFromBuffer
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0166 |
+| 名称 | getExcelSheetNamesFromBuffer |
+| 所属系统 | io |
+| 所属模块 | excel-parser |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | 从 ArrayBuffer 返回 Excel 文件中所有工作表的名称列表，适用于从 ZIP 等场景读取。 |
+| 输入参数 | buffer: ArrayBuffer |
+| 输出参数 | Promise<string[]> — 工作表名称数组 |
+| 典型用例 | const names = await getExcelSheetNamesFromBuffer(buffer); |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
+
+### API-0167 ExcelParseOptions
+
+| 字段 | 内容 |
+|---|---|
+| 序号 | API-0167 |
+| 名称 | ExcelParseOptions |
+| 所属系统 | io |
+| 所属模块 | excel-parser |
+| 状态 | 活跃 |
+| 创建日期 | 2026-05-21 |
+| 最后修订日期 | 2026-05-21 |
+| 创建者 | OpenCode/deepseek-v4-pro |
+| 最后修订者 | OpenCode/deepseek-v4-pro |
+| 功能描述 | Excel 解析函数的可选配置接口，目前支持指定目标工作表名称。 |
+| 输入参数 | sheetName?: string（可选，目标工作表名称，默认使用第一个工作表） |
+| 输出参数 | 无（接口类型） |
+| 典型用例 | const options: ExcelParseOptions = { sheetName: 'Sheet2' }; |
+| 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
