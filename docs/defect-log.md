@@ -58,7 +58,7 @@
 | 记录时间 | 2026-05-21 21:25 |
 | 修复时间 | 2026-05-21 21:30 |
 | 修复方式 | 删除重复的 import 行 |
-| 关联 Commit | 待提交 |
+| 关联 Commit | 84bc7d6 |
 | 回归验证 | 编译通过，运行正常 |
 
 ### DEF-0002 Windows PowerShell 下 Lite 包构建失败
@@ -82,7 +82,7 @@
 | 记录时间 | 2026-05-21 21:25 |
 | 修复时间 | 2026-05-21 21:30 |
 | 修复方式 | 安装 cross-env 作为 devDependency，将 build:lite/build:full 脚本改为 `cross-env VITE_BUNDLE=lite vite build` |
-| 关联 Commit | 待提交 |
+| 关联 Commit | 84bc7d6 |
 | 回归验证 | `npm run build:lite` 成功构建到 dist/lite，`npm run build:full` 成功构建到 dist/full |
 
 ### DEF-0003 polygon-clipping ESM 导出警告
@@ -106,7 +106,7 @@
 | 记录时间 | 2026-05-21 21:25 |
 | 修复时间 | 2026-05-21 22:15 |
 | 修复方式 | 将 `import * as pc from 'polygon-clipping'` 改为 `import pc from 'polygon-clipping'`（default import）。polygon-clipping 的 ESM 文件仅提供 default export，default import 匹配其实际导出结构，消除 Rollup 警告 |
-| 关联 Commit | 待提交 |
+| 关联 Commit | 84bc7d6 |
 | 回归验证 | `npm run build:full` 构建无警告，tests 全部通过 |
 
 ### DEF-0004 API-0209 编号缺失
@@ -130,7 +130,7 @@
 | 记录时间 | 2026-05-21 21:25 |
 | 修复时间 | 2026-05-21 21:30 |
 | 修复方式 | 在 API-0208 和 API-0210 之间添加注释标记该编号有意空缺 |
-| 关联 Commit | 待提交 |
+| 关联 Commit | 84bc7d6 |
 | 回归验证 | 文档编号序列已标注 |
 
 ### DEF-0005 commands.ts 文件过大
@@ -154,7 +154,7 @@
 | 记录时间 | 2026-05-21 21:25 |
 | 修复时间 | 2026-05-21 22:15 |
 | 修复方式 | 拆分 commands.ts 为 6 个模块：`commands/base.ts`（268 行，共享接口/CommandExecutor/辅助函数）、`commands/element.ts`（782 行，元素级命令）、`commands/group.ts`（229 行，分组命令）、`commands/layout.ts`（1178 行，对齐/分布/批量/布局命令）、`commands/geometry.ts`（626 行，布尔运算/裁剪/图表转矢量命令）、`commands/index.ts`（barrel 重导出）。原始 commands.ts 改为单行重导出 |
-| 关联 Commit | 待提交 |
+| 关联 Commit | 84bc7d6 |
 | 回归验证 | `npx tsc --noEmit` 无错误，1632 tests 全部通过，build 成功 |
 
 ### DEF-0006 Ruler 组件 jsdom 测试中 Canvas getContext 不可用
@@ -178,5 +178,5 @@
 | 记录时间 | 2026-05-21 21:25 |
 | 修复时间 | 2026-05-21 22:15 |
 | 修复方式 | 在 `src/tests/unit/setup.ts` 中为 `HTMLCanvasElement.prototype.getContext` 添加 mock，返回包含 scale/fillRect/strokeRect/beginPath/moveTo/lineTo/stroke/fillText/save/restore/translate/rotate 等 no-op 方法的 Canvas 2D 上下文对象 |
-| 关联 Commit | 待提交 |
+| 关联 Commit | 84bc7d6 |
 | 回归验证 | Ruler 测试 9/9 通过，无 "Not implemented" 控制台错误

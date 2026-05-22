@@ -15,7 +15,19 @@ export default defineConfig({
   build: {
     outDir: isLite ? 'dist/lite' : 'dist/full',
     rollupOptions: {
+      // Lite: mark xlsx as external so the dynamic import never resolves to a real chunk.
+      // Full: let Rollup bundle xlsx lazily via code-splitting (no external list).
       external: isLite ? ['xlsx'] : [],
+      output: isLite
+        ? {}
+        : {
+            // Split xlsx into its own chunk so the main bundle stays lean.
+            // The dynamic `import('xlsx')` in excel-parser.ts creates this split
+            // automatically; this manualChunks entry guarantees a stable name.
+            manualChunks: {
+              xlsx: ['xlsx'],
+            },
+          },
     },
   },
   test: {

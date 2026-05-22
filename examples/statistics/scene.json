@@ -76,13 +76,13 @@
       },
       "options": {
         "title": "Experimental Measurements by Group",
-        "xLabel": "Category",
-        "yLabel": "Value (units)",
-        "errorColumn": "error",
-        "colorScheme": "category10",
-        "showLegend": true,
+        "xAxisLabel": "Category",
+        "yAxisLabel": "Value (units)",
+        "colorScheme": "default",
+        "legendPosition": "bottom",
         "showGrid": true
-      }
+      },
+      "svgContent": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"700\" height=\"400\"><rect width=\"700\" height=\"400\" fill=\"#fff\" stroke=\"#ccc\" stroke-width=\"1\"/><text x=\"350\" y=\"22\" font-family=\"Arial\" font-size=\"14\" font-weight=\"bold\" text-anchor=\"middle\" fill=\"#222\">Experimental Measurements by Group</text><line x1=\"65\" y1=\"35\" x2=\"65\" y2=\"340\" stroke=\"#333\" stroke-width=\"1.5\"/><line x1=\"65\" y1=\"340\" x2=\"620\" y2=\"340\" stroke=\"#333\" stroke-width=\"1.5\"/><line x1=\"65\" y1=\"274\" x2=\"620\" y2=\"274\" stroke=\"#ddd\" stroke-width=\"0.5\" stroke-dasharray=\"4,2\"/><line x1=\"65\" y1=\"208\" x2=\"620\" y2=\"208\" stroke=\"#ddd\" stroke-width=\"0.5\" stroke-dasharray=\"4,2\"/><line x1=\"65\" y1=\"142\" x2=\"620\" y2=\"142\" stroke=\"#ddd\" stroke-width=\"0.5\" stroke-dasharray=\"4,2\"/><line x1=\"65\" y1=\"76\" x2=\"620\" y2=\"76\" stroke=\"#ddd\" stroke-width=\"0.5\" stroke-dasharray=\"4,2\"/><text x=\"60\" y=\"344\" font-family=\"Arial\" font-size=\"10\" text-anchor=\"end\" fill=\"#555\">0</text><text x=\"60\" y=\"278\" font-family=\"Arial\" font-size=\"10\" text-anchor=\"end\" fill=\"#555\">10</text><text x=\"60\" y=\"212\" font-family=\"Arial\" font-size=\"10\" text-anchor=\"end\" fill=\"#555\">20</text><text x=\"60\" y=\"146\" font-family=\"Arial\" font-size=\"10\" text-anchor=\"end\" fill=\"#555\">30</text><text x=\"60\" y=\"80\" font-family=\"Arial\" font-size=\"10\" text-anchor=\"end\" fill=\"#555\">40</text><rect x=\"95\" y=\"184\" width=\"26\" height=\"156\" fill=\"#4e79a7\"/><rect x=\"125\" y=\"153\" width=\"26\" height=\"187\" fill=\"#f28e2b\"/><rect x=\"155\" y=\"241\" width=\"26\" height=\"99\" fill=\"#59a14f\"/><text x=\"162\" y=\"357\" font-family=\"Arial\" font-size=\"11\" text-anchor=\"middle\" fill=\"#333\">A</text><rect x=\"265\" y=\"219\" width=\"26\" height=\"121\" fill=\"#4e79a7\"/><rect x=\"295\" y=\"106\" width=\"26\" height=\"234\" fill=\"#f28e2b\"/><rect x=\"325\" y=\"259\" width=\"26\" height=\"81\" fill=\"#59a14f\"/><text x=\"332\" y=\"357\" font-family=\"Arial\" font-size=\"11\" text-anchor=\"middle\" fill=\"#333\">B</text><rect x=\"435\" y=\"136\" width=\"26\" height=\"204\" fill=\"#4e79a7\"/><rect x=\"465\" y=\"61\" width=\"26\" height=\"279\" fill=\"#f28e2b\"/><rect x=\"495\" y=\"209\" width=\"26\" height=\"131\" fill=\"#59a14f\"/><text x=\"502\" y=\"357\" font-family=\"Arial\" font-size=\"11\" text-anchor=\"middle\" fill=\"#333\">C</text><text x=\"350\" y=\"395\" font-family=\"Arial\" font-size=\"11\" text-anchor=\"middle\" fill=\"#555\">Category</text><rect x=\"220\" y=\"370\" width=\"12\" height=\"10\" fill=\"#4e79a7\"/><text x=\"236\" y=\"379\" font-family=\"Arial\" font-size=\"11\" fill=\"#333\">Control</text><rect x=\"310\" y=\"370\" width=\"12\" height=\"10\" fill=\"#f28e2b\"/><text x=\"326\" y=\"379\" font-family=\"Arial\" font-size=\"11\" fill=\"#333\">Treatment</text><rect x=\"420\" y=\"370\" width=\"12\" height=\"10\" fill=\"#59a14f\"/><text x=\"436\" y=\"379\" font-family=\"Arial\" font-size=\"11\" fill=\"#333\">Baseline</text></svg>"
     },
     {
       "id": "sl_title",
