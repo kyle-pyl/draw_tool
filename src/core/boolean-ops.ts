@@ -1,4 +1,4 @@
-import * as pc from 'polygon-clipping';
+import pc from 'polygon-clipping';
 import type { GeometryShape } from './types';
 
 export type BooleanOperationType = 'union' | 'intersect' | 'xor' | 'subtract';

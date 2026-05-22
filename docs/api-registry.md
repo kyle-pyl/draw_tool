@@ -3972,6 +3972,8 @@
 | 典型用例 | const cmd = createTopologyLayoutCommand(['router1', 'switch1', 'c1'], { mode: 'hierarchical' }) |
 | 修订历史 | 2026-05-21, OpenCode/deepseek-v4-pro, 初始创建 |
 
+<!-- API-0209: intentionally vacant (numbering gap) -->
+
 ### API-0210 BooleanOperationType
 
 | 字段 | 内容 |

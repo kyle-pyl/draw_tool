@@ -1,5 +1,4 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
-import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { CanvasView, Viewport, SelectionManager, ConflictHighlighter, SnapManager } from './canvas';
 import type { DrawingToolType, CanvasContextMenuEvent } from './canvas';
 import { ShapeToolbar, ConflictPanel, TextEditor, ImageImportButton, PropertyPanel, LayerPanel, PwaPrompt, useKeyboardShortcuts, ContextMenu, Ruler } from './ui';

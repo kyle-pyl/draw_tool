@@ -7,8 +7,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:lite": "VITE_BUNDLE=lite vite build",
-    "build:full": "VITE_BUNDLE=full vite build",
+    "build:lite": "cross-env VITE_BUNDLE=lite vite build",
+    "build:full": "cross-env VITE_BUNDLE=full vite build",
     "build:all": "npm run build:lite && npm run build:full",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -47,6 +47,7 @@
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.3",
     "@vitest/coverage-v8": "^1.6.0",
+    "cross-env": "^10.1.0",
     "eslint": "^9.13.0",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.14",

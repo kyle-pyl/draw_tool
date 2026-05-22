@@ -1,4 +1,4 @@
-import * as pc from 'polygon-clipping';
+import pc from 'polygon-clipping';
 import type { SceneElement, BBox, GeometryAdapter, GeometryShape } from './types';
 
 function rotatePoint(
