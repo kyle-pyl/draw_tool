@@ -974,3 +974,16 @@
 | 修改记录 | 新建：src/tests/unit/clipboard.test.ts（16个测试，覆盖getClipboard/setClipboard/clearClipboard/hasClipboard/elementToClipboardInput/computePastePosition）、src/tests/unit/context-menu.test.tsx（13个测试，覆盖渲染/点击/禁用/Escape关闭/外部点击关闭/子菜单/位置调整）、src/tests/unit/layer-panel.test.tsx（12个测试，覆盖图层列表/折叠展开/批量操作菜单/添加图层/重命名/可见性/锁定/冲突高亮）、src/tests/unit/ruler.test.tsx（9个测试，覆盖双canvas渲染/角标/自定义尺寸/缩放和平移状态）、src/tests/unit/pwa-prompt.test.tsx（6个测试，覆盖安装提示/安装按钮/关闭/更新提示）、src/tests/integration/open-save.test.ts（10个测试，覆盖场景校验/加载/脏标志/JSON序列化往返/ZIP导出/updateScene）、src/tests/integration/csv-import.test.ts（10个测试，覆盖带表头CSV/无表头CSV/类型推断/缺失率/行数/错误/数据行格式/空CSV/单行CSV）、src/tests/integration/chart-export.test.ts（10个测试，覆盖图表生成/SVG导出/图表转矢量/文本导出/背景色）、src/tests/integration/connector-export.test.ts（10个测试，覆盖连接线校验/锚点/碰撞检测/BBox/命令/撤销/创建元素）、src/tests/e2e/canvas-interaction.spec.ts、src/tests/e2e/drawing-tools.spec.ts、src/tests/e2e/navigation.spec.ts（3个E2E测试文件）、playwright.config.ts（Playwright E2E配置）；修改：vite.config.ts（增加coverage配置/覆盖率阈值80%/排除E2E目录/test include规则）、package.json（增加test:coverage/test:all脚本） |
 | 发现缺陷 | 无 |
 | 产出接口/函数 | 无（仅测试文件，无新增API） |
+
+### T-12-12 编写用户手册和 Agent 指南
+
+| 字段          | 内容 |
+| ------------- | ---- |
+| 任务编号      | T-12-12 |
+| 任务名称      | 编写用户手册和 Agent 指南 |
+| 完成时间      | 2026-05-22 00:00 |
+| 作者/智能体   | OpenCode/deepseek-v4-pro |
+| Git Commit    | 72aeb43 |
+| 修改记录      | 新建：docs/user-manual.md（用户手册：涵盖安装启动、界面布局、打开保存项目、画布操作、绘制图形、编辑元素、图层管理、对齐分布、数据图表、导出、示例项目）、docs/agent-guide.md（Agent 生成指南：scene.json 顶层结构、所有字段详细定义、11 种元素类型完整 Schema 参考含 JSON 示例、错误码参考与修复方式、校验器工作流程、7 个生成示例含流程图/架构图/RTL/拓扑/统计图模式、图层规划原则、锚点参考、项目目录结构）；修改：docs/documentation-guide.md（文档清单新增用户手册和 Agent 指南）、README.md（可用功能新增文档编写记录、文档索引新增两条记录） |
+| 发现缺陷      | 无 |
+| 产出接口/函数 | 无（仅文档文件，无新增 API） |

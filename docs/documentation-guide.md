@@ -12,6 +12,8 @@
 | 接口/函数文档 | 项目所有公开接口的注册表 | docs/api-registry.md | 每次新增、修改或废弃接口后 |
 | 缺陷记录表 | 开发过程中的缺陷跟踪 | docs/defect-log.md | 发现缺陷时新增，修复后更新状态 |
 | 文档维护指南 | 文档体系说明和维护规则 | docs/documentation-guide.md | 文档体系变更时 |
+| 用户手册 | 面向人类用户的操作指南 | docs/user-manual.md | 功能变更影响用户操作时 |
+| Agent 生成指南 | 面向 Agent 的 scene.json 生成参考 | docs/agent-guide.md | scene.json schema 变更时 |
 | README | 项目介绍和当前状态 | README.md | 任何影响项目状态的修改后 |
 
 ## 通用维护规则

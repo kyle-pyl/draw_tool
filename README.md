@@ -32,7 +32,7 @@ Agent 友好的论文与技术图表绘制工具。纯 Web 应用，本地优先
 
 **导出：** SVG 导出（exportToSVG/downloadSvg）、PNG/JPG 导出（exportToRaster/downloadRaster）已实现。
 
-**产品化：** PWA 离线支持已实现（Service Worker 缓存、安装提示、更新提示）。快捷键系统已实现（Ctrl+Z/Y/C/V/X/A/G/S 等）。右键菜单已实现（Canvas/Element 上下文菜单）。图层面板 UI（LayerPanel：列表/锁定/可见性/拖拽排序/批量操作）。网格/标尺/吸附已实现（SnapManager + Ruler）。示例项目集已创建（basic、flowchart、architecture、rtl、statistics、topology）。
+**产品化：** PWA 离线支持已实现（Service Worker 缓存、安装提示、更新提示）。快捷键系统已实现（Ctrl+Z/Y/C/V/X/A/G/S 等）。右键菜单已实现（Canvas/Element 上下文菜单）。图层面板 UI（LayerPanel：列表/锁定/可见性/拖拽排序/批量操作）。网格/标尺/吸附已实现（SnapManager + Ruler）。示例项目集已创建（basic、flowchart、architecture、rtl、statistics、topology）。用户手册已编写（docs/user-manual.md）。Agent 生成指南已编写（docs/agent-guide.md）。
 
 ## 功能目标
 
@@ -94,4 +94,6 @@ examples/     # 示例项目
 | 任务日志 | 每个任务的完成记录 | docs/task-log.md | 2026-05-21 | T-12-08 |
 | 接口/函数文档 | 项目所有公开接口的注册表 | docs/api-registry.md | 2026-05-21 | T-12-08 |
 | 缺陷记录表 | 开发过程中的缺陷跟踪 | docs/defect-log.md | 2026-05-18 | T-00-01 |
-| 文档维护指南 | 文档体系说明和维护规则 | docs/documentation-guide.md | 2026-05-18 | T-00-01 |
+| 文档维护指南 | 文档体系说明和维护规则 | docs/documentation-guide.md | 2026-05-22 | T-12-12 |
+| 用户手册 | 面向人类用户的操作指南 | docs/user-manual.md | 2026-05-22 | T-12-12 |
+| Agent 生成指南 | 面向 Agent 的 scene.json 生成参考 | docs/agent-guide.md | 2026-05-22 | T-12-12 |
